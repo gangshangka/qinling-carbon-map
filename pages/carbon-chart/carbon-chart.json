@@ -1,0 +1,5 @@
+{
+  "usingComponents": {
+    "ec-canvas": "../../miniprogram_npm/echarts-for-weixin/index"
+  }
+}

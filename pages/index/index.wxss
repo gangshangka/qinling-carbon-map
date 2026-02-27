@@ -1,0 +1,281 @@
+/* pages/index/index.wxss */
+.container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #f5f5f5;
+}
+
+/* 影像查看器 */
+.image-viewer {
+  flex: 1;
+  position: relative;
+  background: #000000;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 60vh;
+}
+
+.remote-image {
+  width: 100%;
+  height: auto;
+  max-height: 100%;
+  transform-origin: center center;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.remote-image.hidden {
+  opacity: 0;
+}
+
+/* 加载状态 */
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+}
+
+.loading-spinner {
+  width: 60rpx;
+  height: 60rpx;
+  border: 6rpx solid #f3f3f3;
+  border-top: 6rpx solid #52c41a;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 30rpx;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-overlay text {
+  color: white;
+  font-size: 28rpx;
+  margin-bottom: 15rpx;
+  display: block;
+  text-align: center;
+}
+
+.progress-text {
+  color: #52c41a;
+  font-size: 24rpx;
+  margin-top: 10rpx;
+}
+
+/* 信息覆盖层 */
+.info-overlay {
+  position: absolute;
+  top: 30rpx;
+  left: 30rpx;
+  right: 30rpx;
+  z-index: 10;
+}
+
+.info-card {
+  background: rgba(0, 0, 0, 0.75);
+  border-radius: 16rpx;
+  padding: 30rpx;
+  color: white;
+}
+
+.info-title {
+  display: block;
+  font-size: 32rpx;
+  font-weight: bold;
+  margin-bottom: 10rpx;
+}
+
+.info-subtitle {
+  display: block;
+  font-size: 26rpx;
+  color: #52c41a;
+  margin-bottom: 20rpx;
+}
+
+.info-details text {
+  display: block;
+  font-size: 24rpx;
+  color: #cccccc;
+  margin-bottom: 8rpx;
+}
+
+/* 控制按钮 */
+.control-buttons {
+  position: absolute;
+  bottom: 30rpx;
+  right: 30rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 15rpx;
+  z-index: 10;
+}
+
+.control-btn {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+.control-btn::after {
+  border: none;
+}
+
+.control-btn text {
+  font-size: 32rpx;
+  font-weight: bold;
+}
+
+/* 控制面板 */
+.control-panel {
+  background: white;
+  padding: 30rpx;
+  box-shadow: 0 -2rpx 10rpx rgba(0, 0, 0, 0.1);
+}
+
+.year-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.year-label {
+  font-size: 28rpx;
+  color: #333;
+  font-weight: bold;
+}
+
+.current-year {
+  font-size: 40rpx;
+  font-weight: bold;
+  color: #1890ff;
+}
+
+.year-range {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 15rpx;
+  font-size: 26rpx;
+  color: #666;
+}
+
+.range-label {
+  color: #999;
+  font-size: 24rpx;
+}
+
+/* 预加载状态 */
+.preload-status {
+  margin-top: 20rpx;
+  padding: 20rpx;
+  background: #f0f9ff;
+  border-radius: 12rpx;
+}
+
+.preload-status text {
+  display: block;
+  font-size: 26rpx;
+  color: #1890ff;
+  margin-bottom: 15rpx;
+}
+
+.progress-bar {
+  height: 8rpx;
+  background: #e6f7ff;
+  border-radius: 4rpx;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #52c41a, #1890ff);
+  transition: width 0.3s ease;
+}
+
+/* 图表面板 */
+.chart-panel {
+  background: white;
+  margin: 20rpx;
+  padding: 30rpx;
+  border-radius: 16rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
+  flex-shrink: 0;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.chart-header text {
+  font-size: 30rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.chart-buttons {
+  display: flex;
+  gap: 15rpx;
+}
+
+.chart-buttons button {
+  font-size: 24rpx;
+  padding: 10rpx 20rpx;
+  line-height: 1.2;
+  border-radius: 8rpx;
+  background: #f0f2f5;
+  color: #333;
+  border: none;
+}
+
+.chart-buttons button::after {
+  border: none;
+}
+
+.chart-buttons button:active {
+  background: #e6e8eb;
+}
+
+.chart-container {
+  width: 100%;
+  height: 550rpx;          /* 可继续调大 */
+  background: #fafafa;
+  border: 1rpx solid #ddd;
+  border-radius: 12rpx;
+  overflow: hidden;        /* 防止内容溢出 */
+  box-sizing: border-box;
+}
+
+.chart-footer {
+  margin-top: 20rpx;
+  text-align: center;
+}
+
+.chart-footer text {
+  font-size: 22rpx;
+  color: #999;
+  font-style: italic;
+}

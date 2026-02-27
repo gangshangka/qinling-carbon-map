@@ -1,0 +1,227 @@
+.container {
+  padding: 20rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+}
+
+.title {
+  font-size: 36rpx;
+  color: white;
+  text-align: center;
+  padding: 30rpx 0;
+  font-weight: bold;
+}
+
+/* 年份选择器 */
+.year-selector {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10rpx 30rpx rgba(0,0,0,0.1);
+}
+
+.year-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 40rpx;
+  margin-bottom: 20rpx;
+}
+
+.nav-btn {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  border: 2rpx solid white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.nav-btn::after {
+  border: none;
+}
+
+.nav-btn[disabled] {
+  opacity: 0.5;
+}
+
+.nav-icon {
+  color: white;
+  font-size: 36rpx;
+  font-weight: bold;
+}
+
+.year-picker {
+  background: white;
+  border-radius: 50rpx;
+  padding: 20rpx 40rpx;
+  min-width: 200rpx;
+  text-align: center;
+  box-shadow: 0 5rpx 15rpx rgba(0,0,0,0.1);
+}
+
+.picker-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10rpx;
+}
+
+.current-year {
+  font-size: 42rpx;
+  font-weight: bold;
+  color: #667eea;
+}
+
+.picker-label {
+  font-size: 28rpx;
+  color: #666;
+}
+
+.picker-icon {
+  font-size: 20rpx;
+  color: #999;
+  margin-left: 10rpx;
+}
+
+.year-info {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 26rpx;
+}
+
+/* 图表容器 */
+.chart-container {
+  width: 100%;
+  height: 750rpx;
+  background: white;
+  border-radius: 20rpx;
+  padding: 20rpx;
+  box-shadow: 0 10rpx 30rpx rgba(0,0,0,0.2);
+  margin-bottom: 30rpx;
+}
+
+/* 统计卡片 */
+.stats-container {
+  display: flex;
+  justify-content: space-between;
+  gap: 20rpx;
+  margin-bottom: 30rpx;
+}
+
+.stats-card {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 15rpx;
+  padding: 25rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  backdrop-filter: blur(10px);
+  border: 1rpx solid rgba(255, 255, 255, 0.2);
+}
+
+.stats-label {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 10rpx;
+}
+
+.stats-value {
+  font-size: 36rpx;
+  color: white;
+  font-weight: bold;
+}
+
+/* 控制按钮 */
+.control-panel {
+  display: flex;
+  justify-content: center;
+  gap: 30rpx;
+  margin-bottom: 40rpx;
+}
+
+.control-btn {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 2rpx solid white;
+  border-radius: 50rpx;
+  padding: 20rpx 40rpx;
+  font-size: 28rpx;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.control-btn::after {
+  border: none;
+}
+
+.control-btn.play {
+  background: rgba(78, 205, 196, 0.3);
+  border-color: #4ECDC4;
+}
+
+.control-btn.pause {
+  background: rgba(255, 107, 107, 0.3);
+  border-color: #FF6B6B;
+}
+
+.control-btn.reset {
+  background: rgba(102, 126, 234, 0.3);
+  border-color: #667eea;
+}
+
+.control-btn:active {
+  transform: scale(0.95);
+}
+
+/* 数据说明 */
+.description {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 15rpx;
+  padding: 30rpx;
+  backdrop-filter: blur(10px);
+}
+
+.desc-item {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  margin-bottom: 20rpx;
+}
+
+.desc-item:last-child {
+  margin-bottom: 0;
+}
+
+.color-dot {
+  width: 24rpx;
+  height: 24rpx;
+  border-radius: 50%;
+}
+
+.color-dot.positive {
+  background: #4ECDC4;
+}
+
+.color-dot.negative {
+  background: #FF6B6B;
+}
+
+.color-dot.average {
+  background: #FFC107;
+  width: 24rpx;
+  height: 8rpx;
+  border-radius: 4rpx;
+}
+
+.desc-item text {
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.9);
+  flex: 1;
+}

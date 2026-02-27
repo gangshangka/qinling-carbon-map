@@ -1,0 +1,88 @@
+<view class="container">
+  <!-- 标题 -->
+  <view class="title">秦岭碳汇统计</view>
+  
+  <!-- 模式切换 -->
+  <view class="mode-switch">
+    <view class="mode-tabs">
+      <view 
+        class="mode-tab {{chartMode === 'annual' ? 'active' : ''}}" 
+        bindtap="switchChartMode" 
+        data-mode="annual"
+      >
+        年度统计
+      </view>
+      <view 
+        class="mode-tab {{chartMode === 'county' ? 'active' : ''}}" 
+        bindtap="switchChartMode" 
+        data-mode="county"
+      >
+        县级排名
+      </view>
+      <view 
+        class="mode-tab {{chartMode === 'monthly' ? 'active' : ''}}" 
+        bindtap="switchChartMode" 
+        data-mode="monthly"
+      >
+        月度统计
+      </view>
+    </view>
+    <view wx:if="{{chartMode === 'monthly'}}" class="current-item">
+      <text class="current-value">{{ currentYear }}</text>
+      <text class="value-text">年</text>
+      <view class="item-details">
+        <text>月度数据: {{ monthlyDataCount }} 个</text>
+        <text>年度总量: {{ getYearTotal() }} 吨</text>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 图表容器 -->
+  <view class="chart-container">
+    <ec-canvas 
+      id="carbon-chart" 
+      canvas-id="carbon-chart" 
+      echarts="{{ echarts }}"
+      ec="{{ ec }}" 
+      style="width: 100%; height: 100%;"
+    ></ec-canvas>
+  </view>
+  
+  <!-- 当前数据项显示 -->
+  <view class="data-display">
+    <view wx:if="{{chartMode === 'annual'}}" class="current-item">
+      <text class="current-value">{{ annualData && annualData[currentYearIndex] ? annualData[currentYearIndex].year : '' }}</text>
+      <text class="value-text">年</text>
+      <view class="item-details">
+        <text>碳汇量: {{ annualData && annualData[currentYearIndex] ? annualData[currentYearIndex].value.toFixed(2) : '0.00' }} 吨</text>
+        <text>同比增长: {{ annualData && annualData[currentYearIndex] ? annualData[currentYearIndex].change.toFixed(2) : '0.00' }}%</text>
+      </view>
+    </view>
+    <view wx:if="{{chartMode === 'county'}}" class="current-item">
+      <text class="current-value">{{ countyData && countyData[currentCountyIndex] ? countyData[currentCountyIndex].county : '' }}</text>
+      <text class="value-text">县</text>
+      <view class="item-details">
+        <text>碳汇量: {{ countyData && countyData[currentCountyIndex] ? countyData[currentCountyIndex].value.toFixed(2) : '0.00' }} 吨</text>
+        <text>排名: 第{{ countyData && countyData[currentCountyIndex] ? countyData[currentCountyIndex].rank : '0' }}名</text>
+      </view>
+    </view>
+
+    <view wx:if="{{chartMode === 'monthly'}}" class="current-item">
+      <text class="current-value">{{ currentYear }}</text>
+      <text class="value-text">年</text>
+      <view class="item-details">
+        <text>月度数据: {{ monthlyDataCount }} 个</text>
+        <text>年度总量: {{ getYearTotal() }} 吨</text>
+      </view>
+    </view>
+  </view>
+  
+
+  
+  <!-- 说明 -->
+  <view class="description">
+    <text>数据来源：秦岭碳汇监测</text>
+    <text>单位：吨碳当量</text>
+    <text>更新日期: {{updateTime}}</text>
+  </view>
+</view>

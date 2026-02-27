@@ -1,0 +1,18 @@
+{
+  "pages": ["pages/index/index", "pages/curve-statistics/curve-statistics", "pages/carbon-chart/carbon-chart"],
+  "window": {
+    "navigationBarTitleText": "秦岭碳收支遥感监测系统",
+    "navigationBarTextStyle": "white",
+    "navigationBarBackgroundColor": "#2E7D32",
+    "backgroundColor": "#f8f9fa"
+  },
+  "permission": {
+    "scope.userLocation": {
+      "desc": "用于地图定位和空间分析"
+    }
+  },
+  "requiredPrivateInfos": [
+    "getLocation"
+  ],
+  "sitemapLocation": "sitemap.json"
+}

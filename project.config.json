@@ -1,0 +1,15 @@
+{
+  "description": "项目配置文件",
+  "packOptions": {
+    "ignore": []
+  },
+  "setting": {
+    "urlCheck": false,
+    "es6": true,
+    "postcss": true,
+    "minified": true,
+    "minifyWXML": true
+  },
+  "compileType": "miniprogram",
+  "appid": "wx1d07d404f0e0cacd"
+}

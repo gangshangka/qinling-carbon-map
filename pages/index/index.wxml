@@ -1,0 +1,121 @@
+<!-- pages/index/index.wxml -->
+<view class="container">
+  <!-- 影像显示区域 -->
+  <view class="image-viewer">
+    <!-- 加载状态 -->
+    <view wx:if="{{isLoading}}" class="loading-overlay">
+      <view class="loading-spinner"></view>
+      <text>加载 {{currentYear}} 年影像...</text>
+      <text wx:if="{{loadProgress > 0}}" class="progress-text">
+        已预加载 {{loadProgress}}%
+      </text>
+    </view>
+    
+    <!-- 遥感影像 -->
+    <image
+      src="{{currentImageUrl}}"
+      mode="widthFix"
+      bindload="onImageLoad"
+      binderror="onImageError"
+      class="remote-image {{imageLoaded ? '' : 'hidden'}}"
+      style="transform: scale({{imageScale}}); transform-origin: center center; opacity: {{imageOpacity}};"
+    />
+    
+    <!-- 信息覆盖层 -->
+    <view wx:if="{{showInfoOverlay && !isLoading}}" class="info-overlay">
+      <view class="info-card">
+        <text class="info-title">{{currentYear}}年 秦岭碳汇分布</text>
+        <text class="info-subtitle">遥感影像分析</text>
+        <view class="info-details">
+          <text>影像尺寸: {{imageInfo.width}}×{{imageInfo.height}}</text>
+          <text>宽高比: {{imageInfo.ratio}}</text>
+          <text>缩放: {{scalePercent}}%</text>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 控制按钮 -->
+    <view class="control-buttons">
+      <button class="control-btn" size="mini" bindtap="zoomIn">
+        <text>+</text>
+      </button>
+      <button class="control-btn" size="mini" bindtap="zoomOut">
+        <text>-</text>
+      </button>
+      <button class="control-btn" size="mini" bindtap="resetZoom">
+        <text>↺</text>
+      </button>
+      <button class="control-btn" size="mini" bindtap="toggleOpacity">
+        <text>◐</text>
+      </button>
+      <button class="control-btn" size="mini" bindtap="toggleInfoOverlay">
+        <text>i</text>
+      </button>
+    </view>
+  </view>
+
+  <!-- 控制面板 -->
+  <view class="control-panel">
+    <!-- 年份滑块 -->
+    <view class="slider-section">
+      <view class="year-header">
+        <text class="year-label">时间序列</text>
+        <text class="current-year">{{currentYear}} 年</text>
+        <button size="mini" bindtap="jumpToYear">快速跳转</button>
+      </view>
+      
+      <slider
+        min="{{minYear}}"
+        max="{{maxYear}}"
+        step="1"
+        value="{{currentYear}}"
+        activeColor="#52c41a"
+        backgroundColor="#e8e8e8"
+        block-color="#1890ff"
+        block-size="24"
+        bindchanging="onYearSliderChanging"
+        bindchange="onYearSliderChange"
+        show-value
+      />
+      
+      <view class="year-range">
+        <text>{{minYear}}</text>
+        <text class="range-label">拖动滑块查看不同年份</text>
+        <text>{{maxYear}}</text>
+      </view>
+    </view>
+    
+    <!-- 预加载状态 -->
+    <view wx:if="{{preloadedYears.length > 0}}" class="preload-status">
+      <text>已预加载 {{preloadedYears.length}} 个年份影像</text>
+      <view class="progress-bar">
+        <view class="progress-fill" style="width: {{loadProgress + '%'}}"></view>
+      </view>
+    </view>
+  </view>
+
+    <!-- 数据图表 -->
+    <view class="chart-panel">
+      <view class="chart-header">
+        <text>碳汇月度统计</text>
+        <view class="chart-buttons">
+          <button size="mini" bindtap="navigateToCarbonChart">碳汇统计</button>
+          <button size="mini" bindtap="navigateToCurveStatistics">曲线统计</button>
+          <button size="mini" bindtap="showSystemInfo">系统信息</button>
+        </view>
+      </view>
+    
+    <view class="chart-container">
+  <canvas 
+    id="monthlyChart"
+    canvas-id="monthlyChart" 
+    type="2d"
+    style="width: 100%; height: 100%;"
+  ></canvas>
+</view>
+    
+    <view class="chart-footer">
+      <text>注: 当前为模拟数据，可替换为真实碳汇数据</text>
+    </view>
+  </view>
+</view>

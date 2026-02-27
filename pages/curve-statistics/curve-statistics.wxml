@@ -1,0 +1,89 @@
+<view class="container">
+  <!-- 标题 -->
+  <view class="title">碳汇月度曲线统计</view>
+  
+  <!-- 年份选择器 -->
+  <view class="year-selector">
+    <view class="year-nav">
+      <button class="nav-btn" bindtap="prevYear" disabled="{{years.length == 0}}">
+        <text class="nav-icon">◀</text>
+      </button>
+      
+      <picker 
+        class="year-picker" 
+        value="{{currentYear}}" 
+        range="{{years}}" 
+        bindchange="onYearChange"
+      >
+        <view class="picker-content">
+          <text class="current-year">{{currentYear}}</text>
+          <text class="picker-label">年</text>
+          <text class="picker-icon">▼</text>
+        </view>
+      </picker>
+      
+      <button class="nav-btn" bindtap="nextYear" disabled="{{years.length == 0}}">
+        <text class="nav-icon">▶</text>
+      </button>
+    </view>
+    
+    <view class="year-info">
+      <text>共 {{years.length}} 年数据</text>
+    </view>
+  </view>
+  
+  <!-- 图表容器（注意：去掉了 echarts 属性） -->
+  <view class="chart-container">
+    <ec-canvas 
+      id="curve-chart" 
+      canvas-id="curve-chart" 
+      ec="{{ ec }}" 
+      style="width: 100%; height: 100%;"
+    ></ec-canvas>
+  </view>
+  
+  <!-- 数据统计 -->
+  <view class="stats-container">
+    <view class="stats-card">
+      <text class="stats-label">当前年份</text>
+      <text class="stats-value">{{currentYear}}</text>
+    </view>
+    <view class="stats-card">
+      <text class="stats-label">月度数量</text>
+      <text class="stats-value">{{currentYearData.length}}</text>
+    </view>
+    <view class="stats-card">
+      <text class="stats-label">年度总量</text>
+      <text class="stats-value">{{yearTotal}}</text>
+    </view>
+  </view>
+  
+  <!-- 控制按钮 -->
+  <view class="control-panel">
+    <button 
+      class="control-btn {{isPlaying ? 'pause' : 'play'}}" 
+      bindtap="toggleAutoPlay"
+    >
+      {{isPlaying ? '暂停播放' : '开始播放'}}
+    </button>
+    <button class="control-btn reset" bindtap="resetToLatest">
+      回到最新年份
+    </button>
+  </view>
+  
+  <!-- 数据说明 -->
+  <view class="description">
+    <view class="desc-item">
+      <view class="color-dot positive"></view>
+      <text>正值表示碳吸收，负值表示碳排放</text>
+    </view>
+    <view class="desc-item">
+      <view class="color-dot negative"></view>
+      <text>曲线显示月度碳汇变化趋势</text>
+    </view>
+    <view class="desc-item">
+      <view class="color-dot average"></view>
+      <text>虚线表示年度平均值</text>
+    </view>
+  </view>
+</view>
