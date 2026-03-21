@@ -37,6 +37,33 @@
     </view>
   </view>
   
+  <!-- 年份选择 -->
+  <view class="year-switch" wx:if="{{chartMode === 'monthly'}}">
+    <view class="year-tabs">
+      <view 
+        class="year-tab {{currentYear === 2020 ? 'active' : ''}}" 
+        bindtap="switchYear" 
+        data-year="2020"
+      >
+        2020年
+      </view>
+      <view 
+        class="year-tab {{currentYear === 2021 ? 'active' : ''}}" 
+        bindtap="switchYear" 
+        data-year="2021"
+      >
+        2021年
+      </view>
+      <view 
+        class="year-tab {{currentYear === 2022 ? 'active' : ''}}" 
+        bindtap="switchYear" 
+        data-year="2022"
+      >
+        2022年
+      </view>
+    </view>
+  </view>
+  
   <!-- 图表容器 -->
   <view class="chart-container">
     <ec-canvas 

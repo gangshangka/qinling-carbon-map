@@ -1,33 +1,66 @@
 /* pages/index/index.wxss */
 .container {
-  height: 100vh;
+  height: 100%;
   display: flex;
   flex-direction: column;
-  background: #f5f5f5;
+  align-items: stretch;
+  justify-content: flex-start;
+  background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-smooth: always;
+  position: relative;
 }
 
 /* 影像查看器 */
 .image-viewer {
-  flex: 1;
+  flex: none;
   position: relative;
-  background: #000000;
+  background: #ffffff;
   overflow: hidden;
-  display: flex;
-  justify-content: center;
-  align-items: center;
   width: 100%;
-  height: 60vh;
+  height: 35vh;
+  margin-top: -88rpx;
+  border: none;
 }
 
-.remote-image {
+.placeholder-image,
+.target-image {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
-  height: auto;
-  max-height: 100%;
+  height: 100%;
+  display: block;
+  margin: 0;
+  padding: 0;
   transform-origin: center center;
   transition: transform 0.3s ease, opacity 0.3s ease;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+  -ms-interpolation-mode: nearest-neighbor;
 }
 
-.remote-image.hidden {
+.placeholder-image {
+  opacity: 1;
+  z-index: 1;
+}
+
+.target-image {
+  opacity: 0;
+  z-index: 2;
+}
+
+.target-image.visible {
+  opacity: 1;
+}
+
+.target-image.hidden {
   opacity: 0;
 }
 
@@ -38,7 +71,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(255, 255, 255, 0.95);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -49,8 +82,8 @@
 .loading-spinner {
   width: 60rpx;
   height: 60rpx;
-  border: 6rpx solid #f3f3f3;
-  border-top: 6rpx solid #52c41a;
+  border: 6rpx solid #e0e0e0;
+  border-top: 6rpx solid #4CAF50;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 30rpx;
@@ -62,7 +95,7 @@
 }
 
 .loading-overlay text {
-  color: white;
+  color: #333;
   font-size: 28rpx;
   margin-bottom: 15rpx;
   display: block;
@@ -70,7 +103,7 @@
 }
 
 .progress-text {
-  color: #52c41a;
+  color: #4CAF50;
   font-size: 24rpx;
   margin-top: 10rpx;
 }
@@ -148,16 +181,16 @@
 
 /* 控制面板 */
 .control-panel {
-  background: white;
-  padding: 30rpx;
-  box-shadow: 0 -2rpx 10rpx rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.95);
+  padding: 15rpx 20rpx; /* 进一步压缩内边距 */
+  backdrop-filter: blur(5px);
 }
 
 .year-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20rpx;
+  margin-bottom: 15rpx;
 }
 
 .year-label {
@@ -167,9 +200,45 @@
 }
 
 .current-year {
-  font-size: 40rpx;
+  font-size: 38rpx;
   font-weight: bold;
-  color: #1890ff;
+  color: #4CAF50;
+}
+
+/* 年份选项卡样式 */
+.year-tabs {
+  display: flex;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 30rpx;
+  padding: 6rpx;
+  margin: 15rpx 0;
+  backdrop-filter: blur(5px);
+  border: 1rpx solid rgba(76, 175, 80, 0.3);
+  min-height: 80rpx; /* 压缩最小高度 */
+}
+
+.year-tab {
+  flex: 1;
+  text-align: center;
+  padding: 20rpx 0; /* 压缩内边距 */
+  font-size: 26rpx; /* 减小字体 */
+  font-weight: 500;
+  color: #333333;
+  border-radius: 25rpx;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.8);
+  margin: 0 3rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.year-tab.active {
+  background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+  color: white;
+  font-weight: bold;
+  box-shadow: 0 3rpx 10rpx rgba(76, 175, 80, 0.3);
+  font-size: 28rpx; /* 激活状态字体略大 */
 }
 
 .year-range {
@@ -187,23 +256,23 @@
 
 /* 预加载状态 */
 .preload-status {
-  margin-top: 20rpx;
-  padding: 20rpx;
+  margin-top: 15rpx;
+  padding: 15rpx;
   background: #f0f9ff;
-  border-radius: 12rpx;
+  border-radius: 10rpx;
 }
 
 .preload-status text {
   display: block;
-  font-size: 26rpx;
+  font-size: 22rpx;
   color: #1890ff;
-  margin-bottom: 15rpx;
+  margin-bottom: 10rpx;
 }
 
 .progress-bar {
-  height: 8rpx;
+  height: 6rpx;
   background: #e6f7ff;
-  border-radius: 4rpx;
+  border-radius: 3rpx;
   overflow: hidden;
 }
 
@@ -277,5 +346,58 @@
 .chart-footer text {
   font-size: 22rpx;
   color: #999;
+  font-style: italic;
+}
+
+/* 错误提示样式 */
+.error-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.95);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 90;
+}
+
+.error-card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 24rpx;
+  padding: 60rpx 40rpx;
+  text-align: center;
+  max-width: 80%;
+  box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.3);
+  border: 2rpx solid #ff4d4f;
+}
+
+.error-icon {
+  font-size: 80rpx;
+  display: block;
+  margin-bottom: 30rpx;
+}
+
+.error-title {
+  display: block;
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #ff4d4f;
+  margin-bottom: 20rpx;
+}
+
+.error-message {
+  display: block;
+  font-size: 30rpx;
+  color: #333;
+  margin-bottom: 15rpx;
+  line-height: 1.4;
+}
+
+.error-hint {
+  display: block;
+  font-size: 26rpx;
+  color: #666;
   font-style: italic;
 }

@@ -1,0 +1,167 @@
+<!--pages/county-stats/county-stats.wxml-->
+<view class="page-container">
+  <!-- 年份选项卡 -->
+  <view class="year-tabs">
+    <view 
+      wx:for="{{yearTabs}}" 
+      wx:key="index"
+      class="year-tab {{item === currentYear ? 'active' : ''}}"
+      bindtap="switchYear"
+      data-year="{{item}}"
+    >
+      {{item}}年
+    </view>
+  </view>
+
+  <!-- 轮播图区域 -->
+  <view class="swiper-section">
+    <view class="section-header">
+      <view class="section-title">
+        <text class="title-text">{{currentYear}}年月度碳汇分布图</text>
+        <text class="subtitle">基于2012年1月底图对比分析</text>
+      </view>
+      <view class="section-actions">
+        <text class="action-text">左右滑动切换月份</text>
+        <text class="action-icon">⇄</text>
+      </view>
+    </view>
+    
+    <view class="image-container">
+      <!-- 固定底图：2012年1月 -->
+      <image 
+        class="base-image" 
+        src="/images/nep201201.png" 
+        mode="aspectFit"
+        lazy-load="{{true}}"
+      />
+      
+      <!-- 月度图片轮播 -->
+      <swiper 
+        class="image-swiper" 
+        indicator-dots="{{true}}" 
+        indicator-color="rgba(255, 255, 255, 0.3)"
+        indicator-active-color="#4CAF50"
+        autoplay="{{false}}"
+        interval="3000"
+        duration="500"
+        circular="{{true}}"
+        bindchange="onSwiperChange"
+      >
+        <block wx:for="{{swiperImages}}" wx:key="index">
+          <swiper-item>
+            <view class="swiper-item" bindtap="previewImage" data-index="{{index}}">
+              <image 
+                class="swiper-image" 
+                src="{{item}}" 
+                mode="aspectFit"
+                lazy-load="{{true}}"
+              />
+              <view class="image-overlay">
+                <text class="month-label">{{currentYear}}年{{index + 1}}月</text>
+                <text class="compare-label">与基准图对比</text>
+              </view>
+            </view>
+          </swiper-item>
+        </block>
+      </swiper>
+    </view>
+    
+    <view class="swiper-info">
+      <view class="info-item">
+        <text class="info-icon">📍</text>
+        <text class="info-text">底图：2012年1月（基准）</text>
+      </view>
+      <view class="info-item">
+        <text class="info-icon">📊</text>
+        <text class="info-text">当前：{{currentYear}}年{{swiperImages.length}}个月份</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 统计表格区域 -->
+  <view class="stats-section">
+    <view class="section-title">
+      <text class="title-text">{{currentYear}}年区县碳汇统计</text>
+      <text class="subtitle">单位: 吨/月（全年累计）</text>
+    </view>
+    
+    <!-- 排序控件 -->
+    <view class="sort-controls">
+      <view 
+        class="sort-btn {{sortField === 'name' ? 'active' : ''}}"
+        bindtap="toggleSort"
+        data-field="name"
+      >
+        区县名称
+        <text class="sort-icon" wx:if="{{sortField === 'name'}}">
+          {{sortOrder === 'asc' ? '↑' : '↓'}}
+        </text>
+      </view>
+      <view 
+        class="sort-btn {{sortField === 'value' ? 'active' : ''}}"
+        bindtap="toggleSort"
+        data-field="value"
+      >
+        碳汇总量
+        <text class="sort-icon" wx:if="{{sortField === 'value'}}">
+          {{sortOrder === 'asc' ? '↑' : '↓'}}
+        </text>
+      </view>
+    </view>
+
+    <!-- 加载状态 -->
+    <view wx:if="{{loading}}" class="loading-container">
+      <text class="loading-text">加载中...</text>
+    </view>
+
+    <!-- 数据表格 -->
+    <view wx:else class="stats-table">
+      <view class="table-header">
+        <view class="table-cell table-cell-name">区县</view>
+        <view class="table-cell table-cell-value">碳汇总量</view>
+        <view class="table-cell table-cell-rank">排名</view>
+      </view>
+      
+      <scroll-view class="table-body" scroll-y>
+        <block wx:for="{{countyStats}}" wx:key="name">
+          <view class="table-row {{index % 2 === 0 ? 'even' : 'odd'}}">
+            <view class="table-cell table-cell-name">{{item.name}}</view>
+            <view class="table-cell table-cell-value {{item.value >= 0 ? 'positive' : 'negative'}}">
+              {{item.value.toFixed(2)}}
+            </view>
+            <view class="table-cell table-cell-rank">
+              {{index + 1}}
+              <text class="rank-icon" wx:if="{{index < 3}}">🏆</text>
+            </view>
+          </view>
+        </block>
+        
+        <view wx:if="{{countyStats.length === 0}}" class="empty-data">
+          <text class="empty-text">暂无数据</text>
+        </view>
+      </scroll-view>
+    </view>
+
+    <!-- 统计摘要 -->
+    <view class="stats-summary">
+      <view class="summary-item">
+        <text class="summary-label">区县数量</text>
+        <text class="summary-value">{{countyStats.length}}</text>
+      </view>
+      <view class="summary-item">
+        <text class="summary-label">平均碳汇</text>
+        <text class="summary-value">{{averageCarbon}}</text>
+      </view>
+      <view class="summary-item">
+        <text class="summary-label">最高碳汇</text>
+        <text class="summary-value">{{maxCarbon}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 自然环保提示 -->
+  <view class="eco-tips">
+    <text class="eco-icon">🌿</text>
+    <text class="eco-text">保护秦岭生态，共建绿色家园</text>
+  </view>
+</view>

@@ -1,0 +1,564 @@
+/* 管理员上传页面样式 */
+.admin-container {
+  min-height: 100vh;
+  background-color: #f8f9fa;
+  padding-bottom: 40rpx;
+}
+
+/* 登录界面样式 */
+.login-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 80vh;
+  padding: 40rpx;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 600rpx;
+  background-color: #ffffff;
+  border-radius: 16rpx;
+  box-shadow: 0 4rpx 24rpx rgba(0, 0, 0, 0.08);
+  padding: 60rpx 40rpx;
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 60rpx;
+}
+
+.login-title {
+  display: block;
+  font-size: 40rpx;
+  font-weight: bold;
+  color: #2E7D32;
+  margin-bottom: 16rpx;
+}
+
+.login-subtitle {
+  display: block;
+  font-size: 28rpx;
+  color: #666;
+}
+
+.login-form {
+  width: 100%;
+}
+
+.form-item {
+  margin-bottom: 40rpx;
+}
+
+.form-label {
+  display: block;
+  font-size: 28rpx;
+  color: #333;
+  margin-bottom: 16rpx;
+  font-weight: 500;
+}
+
+.form-input {
+  width: 100%;
+  height: 80rpx;
+  border: 2rpx solid #e0e0e0;
+  border-radius: 8rpx;
+  padding: 0 24rpx;
+  font-size: 28rpx;
+  background-color: #fff;
+}
+
+.form-input:focus {
+  border-color: #2E7D32;
+}
+
+.error-message {
+  background-color: #ffebee;
+  color: #d32f2f;
+  padding: 20rpx 24rpx;
+  border-radius: 8rpx;
+  font-size: 26rpx;
+  margin-bottom: 30rpx;
+}
+
+.login-btn {
+  width: 100%;
+  height: 88rpx;
+  background-color: #2E7D32;
+  color: #fff;
+  font-size: 32rpx;
+  border-radius: 8rpx;
+  margin-top: 20rpx;
+}
+
+.login-tip {
+  text-align: center;
+  margin-top: 40rpx;
+  font-size: 24rpx;
+  color: #999;
+}
+
+/* 管理界面样式 */
+.management-section {
+  padding: 20rpx;
+}
+
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20rpx 0;
+  margin-bottom: 30rpx;
+  border-bottom: 2rpx solid #e0e0e0;
+}
+
+.user-info {
+  flex: 1;
+}
+
+.welcome-text {
+  font-size: 32rpx;
+  color: #2E7D32;
+  font-weight: bold;
+}
+
+.logout-btn {
+  background-color: #f5f5f5;
+  color: #666;
+  border: 2rpx solid #ddd;
+}
+
+/* 选择区域样式 */
+.selection-section {
+  background-color: #fff;
+  border-radius: 16rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+  font-size: 32rpx;
+  color: #333;
+  font-weight: bold;
+  margin-bottom: 30rpx;
+  padding-bottom: 20rpx;
+  border-bottom: 2rpx solid #f0f0f0;
+}
+
+.selection-row {
+  display: flex;
+  gap: 40rpx;
+}
+
+.picker-container {
+  flex: 1;
+}
+
+.picker-label {
+  display: block;
+  font-size: 28rpx;
+  color: #666;
+  margin-bottom: 16rpx;
+}
+
+.picker {
+  width: 100%;
+}
+
+.picker-text {
+  height: 80rpx;
+  border: 2rpx solid #e0e0e0;
+  border-radius: 8rpx;
+  padding: 0 24rpx;
+  font-size: 28rpx;
+  display: flex;
+  align-items: center;
+  background-color: #fff;
+  color: #333;
+}
+
+/* 轮播区域样式 */
+.swiper-section {
+  background-color: #fff;
+  border-radius: 16rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
+}
+
+.image-swiper {
+  height: 400rpx;
+  border-radius: 12rpx;
+  overflow: hidden;
+}
+
+.swiper-item {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.swiper-image {
+  width: 100%;
+  height: 320rpx;
+  background-color: #f5f5f5;
+}
+
+.image-info {
+  flex: 1;
+  padding: 20rpx;
+  background-color: #fafafa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.image-title {
+  font-size: 28rpx;
+  color: #333;
+  font-weight: 500;
+}
+
+.swiper-indicator {
+  text-align: center;
+  margin-top: 20rpx;
+  font-size: 26rpx;
+  color: #666;
+}
+
+/* 上传区域样式 */
+.upload-section {
+  background-color: #fff;
+  border-radius: 16rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
+}
+
+.upload-card {
+  background-color: #fafafa;
+  border-radius: 12rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+  border: 2rpx solid #e8f5e9;
+}
+
+.upload-card:last-child {
+  margin-bottom: 0;
+}
+
+.upload-header {
+  margin-bottom: 30rpx;
+}
+
+.upload-title {
+  display: block;
+  font-size: 30rpx;
+  color: #2E7D32;
+  font-weight: bold;
+  margin-bottom: 8rpx;
+}
+
+.upload-subtitle {
+  display: block;
+  font-size: 26rpx;
+  color: #666;
+}
+
+.upload-content {
+  width: 100%;
+}
+
+.upload-status {
+  display: flex;
+  align-items: center;
+  margin-bottom: 24rpx;
+}
+
+.status-label {
+  font-size: 28rpx;
+  color: #333;
+  margin-right: 20rpx;
+  font-weight: 500;
+}
+
+.status-value {
+  font-size: 28rpx;
+  color: #666;
+}
+
+.status-value.success {
+  color: #2E7D32;
+  font-weight: bold;
+}
+
+.status-value.error {
+  color: #d32f2f;
+  font-weight: bold;
+}
+
+.upload-progress {
+  margin-bottom: 30rpx;
+}
+
+.upload-progress progress {
+  width: 100%;
+}
+
+.progress-text {
+  display: block;
+  text-align: center;
+  font-size: 26rpx;
+  color: #666;
+  margin-top: 10rpx;
+}
+
+.upload-buttons {
+  display: flex;
+  gap: 20rpx;
+}
+
+.upload-btn {
+  flex: 1;
+  background-color: #2E7D32;
+  color: #fff;
+  border-radius: 8rpx;
+  font-size: 26rpx;
+  height: 70rpx;
+  line-height: 70rpx;
+}
+
+.upload-btn[disabled] {
+  background-color: #ccc !important;
+  color: #999 !important;
+}
+
+.batch-upload {
+  margin-top: 40rpx;
+}
+
+.batch-upload-btn {
+  width: 100%;
+  height: 88rpx;
+  background-color: #ff9800;
+  color: #fff;
+  font-size: 32rpx;
+  border-radius: 8rpx;
+}
+
+.batch-upload-btn[disabled] {
+  background-color: #ccc !important;
+  color: #999 !important;
+}
+
+/* 记录区域样式 */
+.records-section {
+  background-color: #fff;
+  border-radius: 16rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30rpx;
+}
+
+.clear-btn {
+  background-color: #f5f5f5;
+  color: #666;
+  border: 2rpx solid #ddd;
+  font-size: 24rpx;
+}
+
+.clear-btn[disabled] {
+  background-color: #fafafa !important;
+  color: #ccc !important;
+  border-color: #eee !important;
+}
+
+.records-list {
+  max-height: 600rpx;
+  overflow-y: auto;
+}
+
+.record-item {
+  background-color: #fafafa;
+  border-radius: 12rpx;
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+  border-left: 6rpx solid #2E7D32;
+}
+
+.record-item:last-child {
+  margin-bottom: 0;
+}
+
+.record-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
+
+.record-type {
+  padding: 6rpx 16rpx;
+  border-radius: 20rpx;
+  font-size: 22rpx;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.record-type.png {
+  background-color: #e8f5e9;
+  color: #2E7D32;
+}
+
+.record-type.json {
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.record-time {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.record-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12rpx;
+}
+
+.record-filename {
+  font-size: 28rpx;
+  color: #333;
+  font-weight: 500;
+}
+
+.record-yearmonth {
+  font-size: 26rpx;
+  color: #666;
+}
+
+.record-id {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.record-id-text {
+  font-family: monospace;
+}
+
+.empty-records {
+  text-align: center;
+  padding: 60rpx 0;
+}
+
+.empty-text {
+  font-size: 28rpx;
+  color: #999;
+}
+
+/* 云存储区域样式 */
+.cloud-section {
+  background-color: #fff;
+  border-radius: 16rpx;
+  padding: 30rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
+}
+
+.cloud-files {
+  max-height: 600rpx;
+  overflow-y: auto;
+}
+
+.cloud-file-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24rpx;
+  border-bottom: 2rpx solid #f0f0f0;
+}
+
+.cloud-file-item:last-child {
+  border-bottom: none;
+}
+
+.file-info {
+  flex: 1;
+}
+
+.file-name {
+  display: block;
+  font-size: 28rpx;
+  color: #333;
+  margin-bottom: 8rpx;
+  font-weight: 500;
+}
+
+.file-size {
+  display: block;
+  font-size: 24rpx;
+  color: #999;
+}
+
+.file-actions {
+  display: flex;
+  gap: 20rpx;
+}
+
+.file-action-btn {
+  background-color: #f5f5f5;
+  color: #666;
+  border: 2rpx solid #ddd;
+  font-size: 24rpx;
+  min-width: 100rpx;
+}
+
+.file-action-btn.delete {
+  background-color: #ffebee;
+  color: #d32f2f;
+  border-color: #ffcdd2;
+}
+
+.empty-cloud {
+  text-align: center;
+  padding: 60rpx 0;
+}
+
+.refresh-btn {
+  margin-top: 30rpx;
+  background-color: #2E7D32;
+  color: #fff;
+}
+
+/* 响应式调整 */
+@media (max-width: 750rpx) {
+  .selection-row {
+    flex-direction: column;
+    gap: 30rpx;
+  }
+  
+  .upload-buttons {
+    flex-direction: column;
+    gap: 20rpx;
+  }
+  
+  .record-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8rpx;
+  }
+  
+  .file-actions {
+    flex-direction: column;
+    gap: 10rpx;
+  }
+}

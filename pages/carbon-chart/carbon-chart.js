@@ -20,7 +20,8 @@ Page({
     totalCounties: carbonData.totalCounties || 40,
     currentYear: carbonData.latestYear || 2022, // 当前选择的年份
     monthlyDataCount: 0,
-    availableYears: [] // 可用的年份列表
+    availableYears: [], // 可用的年份列表
+    yearTabs: [2020, 2021, 2022] // 年份选项卡
   },
 
   onLoad() {
@@ -221,10 +222,25 @@ Page({
     const years = annualData.map(item => item.year);
     const values = annualData.map(item => item.value);
 
+    const echarts = this.data.echarts;
     const barData = values.map((value, _index) => ({
       value: value,
       itemStyle: {
-        color: value >= 0 ? '#4ECDC4' : '#FF6B6B'
+        color: value >= 0 ? new echarts.graphic.LinearGradient(
+          0, 0, 0, 1,
+          [
+            { offset: 0, color: '#52c41a' },
+            { offset: 0.5, color: '#4CAF50' },
+            { offset: 1, color: '#2E7D32' }
+          ]
+        ) : new echarts.graphic.LinearGradient(
+          0, 0, 0, 1,
+          [
+            { offset: 0, color: '#ff7875' },
+            { offset: 0.5, color: '#ff4d4f' },
+            { offset: 1, color: '#cf1322' }
+          ]
+        )
       }
     }));
 
@@ -322,13 +338,21 @@ Page({
     const values = countyData.map(item => item.value);
     const ranks = countyData.map(item => item.rank);
 
-    // 根据排名设置颜色：前3名用特殊颜色
+    // 根据排名设置颜色：前3名用特殊颜色，其他用绿色渐变
+    const echarts = this.data.echarts;
     const barData = values.map((value, _index) => ({
       value: value,
       itemStyle: {
         color: ranks[_index] === 1 ? '#FFD700' : // 第一名金色
                ranks[_index] === 2 ? '#C0C0C0' : // 第二名银色
-               ranks[_index] === 3 ? '#CD7F32' : '#4ECDC4' // 其他县区
+               ranks[_index] === 3 ? '#CD7F32' : new echarts.graphic.LinearGradient(
+                 0, 0, 0, 1,
+                 [
+                   { offset: 0, color: '#52c41a' },
+                   { offset: 0.5, color: '#4CAF50' },
+                   { offset: 1, color: '#2E7D32' }
+                 ]
+               ) // 其他县区用绿色渐变
       }
     }));
 
@@ -472,10 +496,25 @@ Page({
     const values = yearData.map(item => item.value);
 
     // 创建bar数据，设置颜色
+    const echarts = this.data.echarts;
     const barData = values.map((value, _index) => ({
       value: value,
       itemStyle: {
-        color: value >= 0 ? '#4ECDC4' : '#FF6B6B'
+        color: value >= 0 ? new echarts.graphic.LinearGradient(
+          0, 0, 0, 1,
+          [
+            { offset: 0, color: '#52c41a' },
+            { offset: 0.5, color: '#4CAF50' },
+            { offset: 1, color: '#2E7D32' }
+          ]
+        ) : new echarts.graphic.LinearGradient(
+          0, 0, 0, 1,
+          [
+            { offset: 0, color: '#ff7875' },
+            { offset: 0.5, color: '#ff4d4f' },
+            { offset: 1, color: '#cf1322' }
+          ]
+        )
       }
     }));
 

@@ -2,96 +2,55 @@
 <view class="container">
   <!-- 影像显示区域 -->
   <view class="image-viewer">
-    <!-- 加载状态 -->
-    <view wx:if="{{isLoading}}" class="loading-overlay">
-      <view class="loading-spinner"></view>
-      <text>加载 {{currentYear}} 年影像...</text>
-      <text wx:if="{{loadProgress > 0}}" class="progress-text">
-        已预加载 {{loadProgress}}%
-      </text>
-    </view>
-    
-    <!-- 遥感影像 -->
+    <!-- 占位图 - 始终显示2012年1月图片 -->
     <image
-      src="{{currentImageUrl}}"
-      mode="widthFix"
-      bindload="onImageLoad"
-      binderror="onImageError"
-      class="remote-image {{imageLoaded ? '' : 'hidden'}}"
+      src="{{placeholderImageUrl}}"
+      mode="aspectFit"
+      class="placeholder-image"
       style="transform: scale({{imageScale}}); transform-origin: center center; opacity: {{imageOpacity}};"
     />
     
-    <!-- 信息覆盖层 -->
-    <view wx:if="{{showInfoOverlay && !isLoading}}" class="info-overlay">
-      <view class="info-card">
-        <text class="info-title">{{currentYear}}年 秦岭碳汇分布</text>
-        <text class="info-subtitle">遥感影像分析</text>
-        <view class="info-details">
-          <text>影像尺寸: {{imageInfo.width}}×{{imageInfo.height}}</text>
-          <text>宽高比: {{imageInfo.ratio}}</text>
-          <text>缩放: {{scalePercent}}%</text>
-        </view>
-      </view>
-    </view>
-    
-    <!-- 控制按钮 -->
-    <view class="control-buttons">
-      <button class="control-btn" size="mini" bindtap="zoomIn">
-        <text>+</text>
-      </button>
-      <button class="control-btn" size="mini" bindtap="zoomOut">
-        <text>-</text>
-      </button>
-      <button class="control-btn" size="mini" bindtap="resetZoom">
-        <text>↺</text>
-      </button>
-      <button class="control-btn" size="mini" bindtap="toggleOpacity">
-        <text>◐</text>
-      </button>
-      <button class="control-btn" size="mini" bindtap="toggleInfoOverlay">
-        <text>i</text>
-      </button>
-    </view>
+    <!-- 目标图 - 加载完成后显示 -->
+    <image
+      src="{{currentImageUrl}}"
+      mode="aspectFit"
+      bindload="onImageLoad"
+      binderror="onImageError"
+      class="target-image {{imageLoaded ? 'visible' : 'hidden'}}"
+      style="transform: scale({{imageScale}}); transform-origin: center center; opacity: {{imageOpacity}};"
+    />
   </view>
 
   <!-- 控制面板 -->
   <view class="control-panel">
-    <!-- 年份滑块 -->
+    <!-- 年份选项卡 -->
     <view class="slider-section">
       <view class="year-header">
-        <text class="year-label">时间序列</text>
+        <text class="year-label">年份选择</text>
         <text class="current-year">{{currentYear}} 年</text>
         <button size="mini" bindtap="jumpToYear">快速跳转</button>
       </view>
       
-      <slider
-        min="{{minYear}}"
-        max="{{maxYear}}"
-        step="1"
-        value="{{currentYear}}"
-        activeColor="#52c41a"
-        backgroundColor="#e8e8e8"
-        block-color="#1890ff"
-        block-size="24"
-        bindchanging="onYearSliderChanging"
-        bindchange="onYearSliderChange"
-        show-value
-      />
+      <view class="year-tabs">
+        <block wx:for="{{yearTabs}}" wx:key="index">
+          <view 
+            class="year-tab {{currentYear === item ? 'active' : ''}}" 
+            bindtap="switchYear" 
+            data-year="{{item}}"
+          >
+            {{item}}年
+          </view>
+        </block>
+      </view>
       
       <view class="year-range">
         <text>{{minYear}}</text>
-        <text class="range-label">拖动滑块查看不同年份</text>
+        <text class="range-label">点击选项卡切换年份</text>
         <text>{{maxYear}}</text>
       </view>
     </view>
     
-    <!-- 预加载状态 -->
-    <view wx:if="{{preloadedYears.length > 0}}" class="preload-status">
-      <text>已预加载 {{preloadedYears.length}} 个年份影像</text>
-      <view class="progress-bar">
-        <view class="progress-fill" style="width: {{loadProgress + '%'}}"></view>
-      </view>
-    </view>
+
   </view>
 
     <!-- 数据图表 -->
@@ -101,6 +60,7 @@
         <view class="chart-buttons">
           <button size="mini" bindtap="navigateToCarbonChart">碳汇统计</button>
           <button size="mini" bindtap="navigateToCurveStatistics">曲线统计</button>
+          <button size="mini" bindtap="navigateToCountyStats">区县统计</button>
           <button size="mini" bindtap="showSystemInfo">系统信息</button>
         </view>
       </view>

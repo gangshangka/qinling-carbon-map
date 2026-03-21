@@ -2,19 +2,20 @@ import monthlyData from '../../data/monthly_data.js';  // 引入月度数据
 
 Page({
   data: {
-    currentImageUrl: '',
-    currentYear: 2020,
-    minYear: 2000,
+    currentImageUrl: '', // 初始为空，切换年份时设置
+    placeholderImageUrl: '/images/nep201201.png', // 2012年1月图片作为占位图（绝对路径）
+    currentYear: 2012,
+    minYear: 2012,
     maxYear: 2022,
+    yearTabs: [2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], // 年份选项卡（2012-2022）
     imageLoaded: false,
-    isLoading: true,
+    imageError: false,
     imageInfo: { width: 0, height: 0, ratio: '0%' },
     monthlyRealData: monthlyData,          // 所有月度数据
     currentMonthlyData: [],                // 当前年份的月度数据
     imageScale: 1.0,
     imageOpacity: 1.0,
     scalePercent: 100,
-    showInfoOverlay: true,
     preloadedYears: [],
     loadProgress: 0
   },
@@ -25,6 +26,17 @@ Page({
     this.preloadAllImages();
     this.getSystemInfo();
     this.updateMonthlyData(this.data.currentYear);   // 初始化月度图表
+  },
+
+  // 切换年份（选项卡点击）
+  switchYear(e) {
+    const year = Number(e.currentTarget.dataset.year);
+    if (!year || year === this.data.currentYear) return;
+    
+    console.log('切换年份:', year);
+    this.setData({ currentYear: year });
+    this.loadImageForYear(year);
+    this.updateMonthlyData(year);
   },
 
   onYearSliderChange(e) {
@@ -46,23 +58,22 @@ Page({
   },
 
   loadImageForYear(year) {
-    this.setData({ isLoading: true, imageLoaded: false, currentImageUrl: '' });
+    this.setData({ imageLoaded: false, imageError: false });
     const imagePath = this.detectImagePath(year);
-    setTimeout(() => {
-      this.setData({ currentImageUrl: imagePath, imageScale: 1.0, scalePercent: 100 });
-    }, 100);
+    this.setData({ currentImageUrl: imagePath, imageScale: 1.0, scalePercent: 100 });
   },
 
   detectImagePath(year) {
-    return `../../images/${year}.png`;
+    // 使用1月份的图片作为年度代表图（例如：nep201201.png）
+    return `/images/nep${year}01.png`;
   },
 
   onImageLoad(e) {
     const info = e.detail || { width: 800, height: 600 };
     const ratio = info.height && info.width ? ((info.height / info.width) * 100).toFixed(1) + '%' : '未知';
     this.setData({
-      isLoading: false,
       imageLoaded: true,
+      imageError: false,
       imageInfo: { width: info.width || 800, height: info.height || 600, ratio: ratio }
     });
     this.updateMonthlyData(this.data.currentYear);
@@ -75,12 +86,10 @@ Page({
 
   useOnlinePlaceholder() {
     const year = this.data.currentYear;
-    const fallbackUrl = `https://via.placeholder.com/1200x800/4CAF50/FFFFFF?text=秦岭${year}年碳汇分布`;
     this.setData({
-      isLoading: false,
-      imageLoaded: true,
-      currentImageUrl: fallbackUrl,
-      imageInfo: { width: 1200, height: 800, ratio: '66.7%' }
+      imageLoaded: false,
+      imageError: true,
+      imageInfo: { width: 0, height: 0, ratio: '0%' }
     });
     this.updateMonthlyData(year);
   },
@@ -570,7 +579,7 @@ Page({
     let loadedCount = 0;
     const preloadedYears = [];
     years.forEach(year => {
-      const imagePath = `../../images/${year}.png`;
+      const imagePath = `../../images/nep${year}01.png`;
       wx.getImageInfo({
         src: imagePath,
         success: () => {
@@ -587,7 +596,12 @@ Page({
   },
 
   switchToImage(year) {
-    this.setData({ currentImageUrl: this.detectImagePath(year), imageScale: 1.0, scalePercent: 100 });
+    this.setData({ 
+      currentImageUrl: this.detectImagePath(year), 
+      imageLoaded: false,
+      imageScale: 1.0, 
+      scalePercent: 100 
+    });
   },
 
   zoomIn() {
@@ -614,7 +628,7 @@ Page({
   },
 
   jumpToYear() {
-    const years = ['2015','2016','2017','2018','2019','2020','2021','2022'];
+    const years = this.data.yearTabs.map(year => year.toString());
     wx.showActionSheet({
       itemList: years,
       success: (res) => {
@@ -659,6 +673,13 @@ Page({
   navigateToCarbonChart() {
     wx.navigateTo({
       url: '/pages/carbon-chart/carbon-chart'
+    });
+  },
+
+  // 跳转区县统计页面（含图片轮播）
+  navigateToCountyStats() {
+    wx.navigateTo({
+      url: '/pages/county-stats/county-stats'
     });
   }
 });

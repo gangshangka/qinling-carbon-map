@@ -1,6 +1,6 @@
 .container {
   padding: 20rpx;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
   min-height: 100vh;
 }
 
@@ -38,7 +38,7 @@
 
 .mode-tab.active {
   background: white;
-  color: #667eea;
+  color: #4CAF50;
   font-weight: bold;
   box-shadow: 0 5rpx 15rpx rgba(0,0,0,0.1);
 }
@@ -94,6 +94,37 @@
 }
 
 
+
+/* 年份选择 */
+.year-switch {
+  margin-bottom: 30rpx;
+}
+
+.year-tabs {
+  display: flex;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50rpx;
+  padding: 8rpx;
+  margin: 0 40rpx;
+  backdrop-filter: blur(10px);
+}
+
+.year-tab {
+  flex: 1;
+  text-align: center;
+  padding: 20rpx 0;
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.7);
+  border-radius: 40rpx;
+  transition: all 0.3s ease;
+}
+
+.year-tab.active {
+  background: white;
+  color: #4CAF50;
+  font-weight: bold;
+  box-shadow: 0 5rpx 15rpx rgba(0,0,0,0.1);
+}
 
 .description {
   margin-top: 40rpx;

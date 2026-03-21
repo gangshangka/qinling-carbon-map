@@ -1,0 +1,326 @@
+<!-- 管理员数据上传页面 -->
+<view class="admin-container">
+  <!-- 登录界面 -->
+  <view wx:if="{{!isLoggedIn}}" class="login-section">
+    <view class="login-card">
+      <view class="login-header">
+        <text class="login-title">管理员登录</text>
+        <text class="login-subtitle">秦岭碳收支遥感监测系统</text>
+      </view>
+      
+      <view class="login-form">
+        <view class="form-item">
+          <text class="form-label">用户名</text>
+          <input 
+            class="form-input" 
+            type="text" 
+            placeholder="请输入用户名" 
+            value="{{username}}"
+            bindinput="e => setData({username: e.detail.value})"
+          />
+        </view>
+        
+        <view class="form-item">
+          <text class="form-label">密码</text>
+          <input 
+            class="form-input" 
+            type="password" 
+            placeholder="请输入密码" 
+            value="{{password}}"
+            bindinput="e => setData({password: e.detail.value})"
+          />
+        </view>
+        
+        <view wx:if="{{loginError}}" class="error-message">
+          <text>{{loginError}}</text>
+        </view>
+        
+        <button class="login-btn" type="primary" bindtap="handleLogin">
+          登录
+        </button>
+        
+        <view class="login-tip">
+          <text>默认账号: admin / admin123</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 管理界面 -->
+  <view wx:else class="management-section">
+    <!-- 顶部栏 -->
+    <view class="top-bar">
+      <view class="user-info">
+        <text class="welcome-text">欢迎，管理员</text>
+      </view>
+      <button class="logout-btn" size="mini" bindtap="handleLogout">
+        退出登录
+      </button>
+    </view>
+
+    <!-- 年份月份选择 -->
+    <view class="selection-section">
+      <view class="section-title">
+        <text>选择年份和月份</text>
+      </view>
+      <view class="selection-row">
+        <view class="picker-container">
+          <text class="picker-label">年份:</text>
+          <picker 
+            class="picker" 
+            range="{{years}}" 
+            value="{{years.indexOf(selectedYear)}}" 
+            bindchange="bindYearChange"
+          >
+            <view class="picker-text">{{selectedYear}}年</view>
+          </picker>
+        </view>
+        
+        <view class="picker-container">
+          <text class="picker-label">月份:</text>
+          <picker 
+            class="picker" 
+            range="{{months}}" 
+            value="{{selectedMonth - 1}}" 
+            bindchange="bindMonthChange"
+          >
+            <view class="picker-text">{{selectedMonth}}月</view>
+          </picker>
+        </view>
+      </view>
+    </view>
+
+    <!-- 图片轮播 -->
+    <view class="swiper-section">
+      <view class="section-title">
+        <text>图片预览 ({{selectedYear}}年)</text>
+      </view>
+      <swiper 
+        class="image-swiper" 
+        indicator-dots="{{true}}" 
+        indicator-color="rgba(0,0,0,.3)" 
+        indicator-active-color="#2E7D32"
+        autoplay="{{false}}"
+        interval="3000"
+        duration="500"
+        bindchange="bindSwiperChange"
+      >
+        <block wx:for="{{swiperImages}}" wx:key="id">
+          <swiper-item>
+            <view class="swiper-item">
+              <image 
+                class="swiper-image" 
+                src="{{item.url}}" 
+                mode="aspectFit"
+                lazy-load="{{true}}"
+              />
+              <view class="image-info">
+                <text class="image-title">{{item.title}}</text>
+              </view>
+            </view>
+          </swiper-item>
+        </block>
+      </swiper>
+      <view class="swiper-indicator">
+        <text>{{currentImageIndex + 1}}/{{swiperImages.length}}</text>
+      </view>
+    </view>
+
+    <!-- 文件上传区域 -->
+    <view class="upload-section">
+      <view class="section-title">
+        <text>文件上传</text>
+      </view>
+      
+      <!-- PNG上传 -->
+      <view class="upload-card">
+        <view class="upload-header">
+          <text class="upload-title">PNG图片上传</text>
+          <text class="upload-subtitle">遥感影像图片 ({{selectedYear}}年{{selectedMonth}}月)</text>
+        </view>
+        
+        <view class="upload-content">
+          <view class="upload-status">
+            <text class="status-label">状态:</text>
+            <text class="status-value {{uploadStatus.png === '上传成功' ? 'success' : uploadStatus.png === '上传失败' ? 'error' : ''}}">
+              {{uploadStatus.png}}
+            </text>
+          </view>
+          
+          <view class="upload-progress" wx:if="{{uploadStatus.png === '上传中...'}}">
+            <progress 
+              percent="{{uploadProgress.png}}" 
+              stroke-width="6" 
+              active-color="#2E7D32"
+            />
+            <text class="progress-text">{{uploadProgress.png}}%</text>
+          </view>
+          
+          <view class="upload-buttons">
+            <button 
+              class="upload-btn" 
+              type="primary" 
+              size="mini" 
+              bindtap="choosePngFile"
+            >
+              选择PNG文件
+            </button>
+            <button 
+              class="upload-btn" 
+              type="primary" 
+              size="mini" 
+              bindtap="uploadPngFile"
+              disabled="{{!selectedPngFile || uploadStatus.png === '上传中...'}}"
+            >
+              上传PNG
+            </button>
+          </view>
+        </view>
+      </view>
+
+      <!-- JSON上传 -->
+      <view class="upload-card">
+        <view class="upload-header">
+          <text class="upload-title">JSON数据上传</text>
+          <text class="upload-subtitle">碳汇统计数据 ({{selectedYear}}年{{selectedMonth}}月)</text>
+        </view>
+        
+        <view class="upload-content">
+          <view class="upload-status">
+            <text class="status-label">状态:</text>
+            <text class="status-value {{uploadStatus.json === '上传成功' ? 'success' : uploadStatus.json === '上传失败' ? 'error' : ''}}">
+              {{uploadStatus.json}}
+            </text>
+          </view>
+          
+          <view class="upload-progress" wx:if="{{uploadStatus.json === '上传中...'}}">
+            <progress 
+              percent="{{uploadProgress.json}}" 
+              stroke-width="6" 
+              active-color="#2E7D32"
+            />
+            <text class="progress-text">{{uploadProgress.json}}%</text>
+          </view>
+          
+          <view class="upload-buttons">
+            <button 
+              class="upload-btn" 
+              type="primary" 
+              size="mini" 
+              bindtap="chooseJsonFile"
+            >
+              选择JSON文件
+            </button>
+            <button 
+              class="upload-btn" 
+              type="primary" 
+              size="mini" 
+              bindtap="uploadJsonFile"
+              disabled="{{!selectedJsonFile || uploadStatus.json === '上传中...'}}"
+            >
+              上传JSON
+            </button>
+          </view>
+        </view>
+      </view>
+
+      <!-- 批量上传 -->
+      <view class="batch-upload">
+        <button 
+          class="batch-upload-btn" 
+          type="warn" 
+          bindtap="batchUpload"
+          disabled="{{!selectedPngFile || !selectedJsonFile}}"
+        >
+          批量上传 (PNG + JSON)
+        </button>
+      </view>
+    </view>
+
+    <!-- 上传记录 -->
+    <view class="records-section">
+      <view class="section-header">
+        <view class="section-title">
+          <text>上传记录</text>
+        </view>
+        <button 
+          class="clear-btn" 
+          size="mini" 
+          bindtap="clearUploadRecords"
+          disabled="{{uploadRecords.length === 0}}"
+        >
+          清空记录
+        </button>
+      </view>
+      
+      <view class="records-list" wx:if="{{uploadRecords.length > 0}}">
+        <block wx:for="{{uploadRecords}}" wx:key="index">
+          <view class="record-item">
+            <view class="record-header">
+              <text class="record-type {{item.type}}">{{item.type.toUpperCase()}}</text>
+              <text class="record-time">{{item.uploadTime}}</text>
+            </view>
+            <view class="record-content">
+              <text class="record-filename">{{item.fileName}}</text>
+              <text class="record-yearmonth">{{item.year}}年{{item.month}}月</text>
+            </view>
+            <view class="record-id">
+              <text class="record-id-text">ID: {{item.fileId.substring(0, 8)}}...</text>
+            </view>
+          </view>
+        </block>
+      </view>
+      
+      <view class="empty-records" wx:else>
+        <text class="empty-text">暂无上传记录</text>
+      </view>
+    </view>
+
+    <!-- 云存储文件管理 -->
+    <view class="cloud-section">
+      <view class="section-title">
+        <text>云存储文件管理</text>
+      </view>
+      
+      <view class="cloud-files" wx:if="{{cloudFiles.length > 0}}">
+        <block wx:for="{{cloudFiles}}" wx:key="fileID">
+          <view class="cloud-file-item">
+            <view class="file-info">
+              <text class="file-name">{{item.fileName}}</text>
+              <text class="file-size">{{item.formattedSize}}</text>
+            </view>
+            <view class="file-actions">
+              <button 
+                class="file-action-btn" 
+                size="mini" 
+                bindtap="viewFileDetail" 
+                data-fileid="{{item.fileID}}"
+              >
+                详情
+              </button>
+              <button 
+                class="file-action-btn delete" 
+                size="mini" 
+                bindtap="deleteCloudFile" 
+                data-fileid="{{item.fileID}}"
+              >
+                删除
+              </button>
+            </view>
+          </view>
+        </block>
+      </view>
+      
+      <view class="empty-cloud" wx:else>
+        <text class="empty-text">云存储暂无文件</text>
+        <button 
+          class="refresh-btn" 
+          size="mini" 
+          bindtap="loadCloudFiles"
+        >
+          刷新文件列表
+        </button>
+      </view>
+    </view>
+  </view>
+</view>
