@@ -87,6 +87,7 @@ Page({
     this.setData({
       'ec.onInit': (canvas, width, height, dpr) => {
         console.log('Canvas初始化回调:', { width, height, dpr });
+        console.log('echarts变量是否可用:', typeof echarts);
         
         if (!canvas) {
           console.error('Canvas对象为空');
@@ -205,21 +206,23 @@ Page({
               splitLine: { show: true }
             },
             grid3D: {
-              boxWidth: 100,
-              boxDepth: 100,
-              boxHeight: 50,
+              boxWidth: 10,
+              boxDepth: 10,
+              boxHeight: 20,
               viewControl: {
                 projection: 'perspective',
                 autoRotate: false,
-                alpha: 30,
-                beta: 30,
-                distance: 150,
-                minDistance: 50,
-                maxDistance: 300
+                alpha: 20,
+                beta: 60,
+                distance: 50,
+                minDistance: 20,
+                maxDistance: 100,
+                rotateSensitivity: 0,
+                zoomSensitivity: 0
               },
               light: {
-                main: { intensity: 1.2, shadow: false },
-                ambient: { intensity: 0.5 }
+                main: { intensity: 1.5, shadow: false },
+                ambient: { intensity: 0.8 }
               }
             },
             series: [{
@@ -247,7 +250,7 @@ Page({
                 itemStyle: { color: '#ff9800' }
               },
               itemStyle: { opacity: 0.9 },
-              barSize: 4
+              barSize: 2
             }]
           };
           
@@ -399,21 +402,23 @@ Page({
         splitLine: { show: true }
       },
       grid3D: {
-        boxWidth: 100,
-        boxDepth: 100,
-        boxHeight: 50,
+        boxWidth: 10,
+        boxDepth: 10,
+        boxHeight: 20,
         viewControl: {
           projection: 'perspective',
           autoRotate: false,
-          alpha: 30,
-          beta: 30,
-          distance: 150,
-          minDistance: 50,
-          maxDistance: 300
+          alpha: 20,
+          beta: 60,
+          distance: 50,
+          minDistance: 20,
+          maxDistance: 100,
+          rotateSensitivity: 0,
+          zoomSensitivity: 0
         },
         light: {
-          main: { intensity: 1.2, shadow: false },
-          ambient: { intensity: 0.5 }
+          main: { intensity: 1.5, shadow: false },
+          ambient: { intensity: 0.8 }
         }
       },
       series: [{
@@ -436,7 +441,7 @@ Page({
           itemStyle: { color: '#ff9800' }
         },
         itemStyle: { opacity: 0.9 },
-        barSize: 4
+        barSize: 2
       }]
     };
 
