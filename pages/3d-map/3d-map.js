@@ -194,12 +194,12 @@ Page({
             },
             tooltip: {
               formatter: function(params) {
-                return `${params.name}<br/>碳汇值: ${params.value[3].toFixed(2)} tC`;
+                return `${params.name}<br/>碳汇值: ${params.value[2].toFixed(2)} tC`;
               }
             },
             visualMap: {
               show: true,
-              dimension: 3,
+              dimension: 2,
               min: -5,
               max: 15,
               inRange: {
@@ -207,7 +207,7 @@ Page({
               },
               textStyle: { color: '#333' }
             },
-            xAxis3D: {
+            xAxis: {
               type: 'value',
               name: 'X坐标',
               min: 0,
@@ -216,7 +216,7 @@ Page({
               axisLine: { show: true },
               splitLine: { show: true }
             },
-            yAxis3D: {
+            yAxis: {
               type: 'value',
               name: 'Y坐标',
               min: 0,
@@ -225,42 +225,26 @@ Page({
               axisLine: { show: true },
               splitLine: { show: true }
             },
-            zAxis3D: {
-              type: 'value',
-              name: '碳汇值 (tC)',
-              axisLabel: { show: true },
-              axisLine: { show: true },
-              splitLine: { show: true }
-            },
-            grid3D: {
-              boxWidth: 5,
-              boxDepth: 5,
-              boxHeight: 20,
-              viewControl: {
-                projection: 'perspective',
-                autoRotate: false,
-                alpha: 20,
-                beta: 60,
-                distance: 30,
-                minDistance: 10,
-                maxDistance: 80,
-                rotateSensitivity: 0,
-                zoomSensitivity: 0
-              },
-              light: {
-                main: { intensity: 1.5, shadow: false },
-                ambient: { intensity: 0.8 }
-              }
+            grid: {
+              left: '10%',
+              right: '10%',
+              bottom: '15%',
+              top: '15%',
+              containLabel: true
             },
             series: [{
-              type: 'bar3D',
+              type: 'scatter',
               data: [
-                { name: '测试县1', value: [0.5, 0.5, 10, 5.5] },
-                { name: '测试县2', value: [1.5, 0.5, 15, 8.2] },
-                { name: '测试县3', value: [0.5, 1.5, 8, 3.7] },
-                { name: '测试县4', value: [1.5, 1.5, 12, 6.9] }
+                { name: '测试县1', value: [0.5, 0.5, 5.5] },
+                { name: '测试县2', value: [1.5, 0.5, 8.2] },
+                { name: '测试县3', value: [0.5, 1.5, 3.7] },
+                { name: '测试县4', value: [1.5, 1.5, 6.9] }
               ],
-              shading: 'color',
+              symbolSize: function(data) {
+                // 根据碳汇值的绝对值计算点大小
+                const value = Math.abs(data[2]);
+                return Math.max(10, value * 5); // 基础大小10，按比例放大
+              },
               label: { show: false },
               emphasis: {
                 label: {
@@ -276,8 +260,11 @@ Page({
                 },
                 itemStyle: { color: '#ff9800' }
               },
-              itemStyle: { opacity: 0.9 },
-              barSize: 2
+              itemStyle: { 
+                opacity: 0.9,
+                borderColor: '#fff',
+                borderWidth: 1
+              }
             }]
           };
           
@@ -344,10 +331,10 @@ Page({
     
     // 测试数据 - 确保图表能显示
     const testData = [
-      { name: '测试县1', value: [0.5, 0.5, 10, 5.5] },
-      { name: '测试县2', value: [1.5, 0.5, 15, 8.2] },
-      { name: '测试县3', value: [0.5, 1.5, 8, 3.7] },
-      { name: '测试县4', value: [1.5, 1.5, 12, 6.9] }
+      { name: '测试县1', value: [0.5, 0.5, 5.5] },
+      { name: '测试县2', value: [1.5, 0.5, 8.2] },
+      { name: '测试县3', value: [0.5, 1.5, 3.7] },
+      { name: '测试县4', value: [1.5, 1.5, 6.9] }
     ];
 
     // 尝试加载真实数据
@@ -370,8 +357,7 @@ Page({
               value: [
                 coords.x,
                 coords.y,
-                Math.abs(value) * (heightScale / 100),
-                value
+                value  // 原始碳汇值，用于颜色映射
               ]
             };
           });
@@ -394,12 +380,12 @@ Page({
       },
       tooltip: {
         formatter: function(params) {
-          return `${params.name}<br/>碳汇值: ${params.value[3].toFixed(2)} tC`;
+          return `${params.name}<br/>碳汇值: ${params.value[2].toFixed(2)} tC`;
         }
       },
       visualMap: {
         show: true,
-        dimension: 3,
+        dimension: 2,
         min: -5,
         max: 15,
         inRange: {
@@ -407,7 +393,7 @@ Page({
         },
         textStyle: { color: '#333' }
       },
-      xAxis3D: {
+      xAxis: {
         type: 'value',
         name: 'X坐标',
         min: 0,
@@ -416,7 +402,7 @@ Page({
         axisLine: { show: true },
         splitLine: { show: true }
       },
-      yAxis3D: {
+      yAxis: {
         type: 'value',
         name: 'Y坐标',
         min: 0,
@@ -425,37 +411,22 @@ Page({
         axisLine: { show: true },
         splitLine: { show: true }
       },
-      zAxis3D: {
-        type: 'value',
-        name: '碳汇值 (tC)',
-        axisLabel: { show: true },
-        axisLine: { show: true },
-        splitLine: { show: true }
-      },
-      grid3D: {
-        boxWidth: 5,
-        boxDepth: 5,
-        boxHeight: 20,
-        viewControl: {
-          projection: 'perspective',
-          autoRotate: false,
-          alpha: 20,
-          beta: 60,
-          distance: 30,
-          minDistance: 10,
-          maxDistance: 80,
-          rotateSensitivity: 0,
-          zoomSensitivity: 0
-        },
-        light: {
-          main: { intensity: 1.5, shadow: false },
-          ambient: { intensity: 0.8 }
-        }
+      grid: {
+        left: '10%',
+        right: '10%',
+        bottom: '15%',
+        top: '15%',
+        containLabel: true
       },
       series: [{
-        type: 'bar3D',
+        type: 'scatter',
         data: data,
-        shading: 'color',
+        symbolSize: function(data) {
+          // data是value数组: [x, y, value]
+          const value = Math.abs(data[2]);
+          const size = Math.max(8, value * (heightScale / 100) * 3);
+          return size;
+        },
         label: { show: false },
         emphasis: {
           label: {
@@ -471,8 +442,11 @@ Page({
           },
           itemStyle: { color: '#ff9800' }
         },
-        itemStyle: { opacity: 0.9 },
-        barSize: 2
+        itemStyle: { 
+          opacity: 0.9,
+          borderColor: '#fff',
+          borderWidth: 1
+        }
       }]
     };
 
