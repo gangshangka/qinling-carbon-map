@@ -52,7 +52,7 @@
     <ec-canvas 
       id="chart" 
       canvas-id="chart" 
-      echarts="{{ {} }}"
+      echarts="{{ echarts }}"
       ec="{{ ec }}" 
       class="chart"
     ></ec-canvas>
