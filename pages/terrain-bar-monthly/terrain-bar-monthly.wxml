@@ -1,0 +1,15 @@
+<!--pages/terrain-bar-monthly/terrain-bar-monthly.wxml-->
+<view class="container">
+  <!-- web-view组件，加载秦岭地形图与月度碳汇3D柱状图网页 -->
+  <web-view 
+    src="{{webViewUrl}}" 
+    bindload="onWebViewLoad" 
+    binderror="onWebViewError"
+    style="width: 100%; height: 100vh;">
+  </web-view>
+  
+  <!-- 加载提示 -->
+  <view class="loading-tip" wx:if="{{!webViewUrl}}">
+    <view class="loading-text">正在准备地形图与3D柱状图...</view>
+  </view>
+</view>

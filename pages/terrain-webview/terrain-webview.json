@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "秦岭碳汇地图",
+  "usingComponents": {},
+  "enablePullDownRefresh": false,
+  "navigationBarBackgroundColor": "#0a1931",
+  "navigationBarTextStyle": "white"
+}

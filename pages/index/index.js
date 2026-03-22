@@ -845,10 +845,24 @@ Page({
     });
   },
 
+  // 跳转碳汇地图页面（2D平面地图）
+  navigateToCarbonMap() {
+    wx.navigateTo({
+      url: '/pages/terrain-webview/terrain-webview'
+    });
+  },
+
   // 跳转管理员页面
   navigateToAdmin() {
     wx.navigateTo({
       url: '/pages/admin-upload/admin-upload'
+    });
+  },
+
+  // 跳转3D行政区划柱状图页面
+  navigateTo3DBarChart() {
+    wx.navigateTo({
+      url: '/pages/3d-bar-chart/3d-bar-chart'
     });
   },
 

@@ -136,25 +136,13 @@
       <text class="nav-icon">📊</text>
       <text class="nav-text">碳汇统计</text>
     </view>
-    <view class="nav-item" bindtap="navigateToCurveStatistics">
-      <text class="nav-icon">📈</text>
-      <text class="nav-text">曲线统计</text>
-    </view>
-    <view class="nav-item" bindtap="navigateToCountyStats">
-      <text class="nav-icon">🗺️</text>
-      <text class="nav-text">区县统计</text>
-    </view>
-    <view class="nav-item" bindtap="navigateTo3DMap">
-      <text class="nav-icon">🏔️</text>
-      <text class="nav-text">3D地图</text>
+    <view class="nav-item" bindtap="navigateTo3DBarChart">
+      <text class="nav-icon">📊</text>
+      <text class="nav-text">3D柱状图</text>
     </view>
     <view class="nav-item" bindtap="navigateToAdmin">
       <text class="nav-icon">👨‍💼</text>
       <text class="nav-text">管理员</text>
-    </view>
-    <view class="nav-item" bindtap="showSystemInfo">
-      <text class="nav-icon">ℹ️</text>
-      <text class="nav-text">系统信息</text>
     </view>
   </view>
 </view>

@@ -1,0 +1,26 @@
+/* pages/terrain-webview/terrain-webview.wxss */
+.container {
+  width: 100%;
+  height: 100vh;
+  position: relative;
+}
+
+.loading-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0a1931, #1a3c79);
+  z-index: 1;
+}
+
+.loading-text {
+  color: #00dbde;
+  font-size: 18px;
+  font-weight: bold;
+  text-align: center;
+}
