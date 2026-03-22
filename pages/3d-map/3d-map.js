@@ -1,11 +1,10 @@
 // pages/3d-map/3d-map.js
-import * as echarts from '../../miniprogram_npm/echarts/index';
+import echarts from '../../miniprogram_npm/echarts/index';
 // 碳汇数据（分县区、分月份）
 const carbonData = require('../../data/carbonData2.js');
 
 Page({
   data: {
-    echarts: echarts, // 必须传入echarts对象
     ec: {
       lazyLoad: false // ec-canvas配置
     },
@@ -18,7 +17,6 @@ Page({
     selectedValue: 0,
     selectedYear: 0,
     selectedMonth: 0,
-    chartInstance: null,
     countyCoords: {}, // 县区坐标映射
     mapLoaded: false, // 地图是否已加载
     chartInitialized: false // 图表是否已初始化
@@ -26,6 +24,7 @@ Page({
 
   onLoad() {
     console.log('3D地图页面加载');
+    this.echarts = echarts;
     
     // 初始化县区坐标（简化版，使用虚拟坐标）
     this.initCountyCoords();
@@ -157,7 +156,6 @@ Page({
           // 保存chart实例到Page对象
           self.chart = chart;
           self.setData({
-            chartInstance: chart,
             chartInitialized: true
           });
           
