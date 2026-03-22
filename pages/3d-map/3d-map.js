@@ -54,9 +54,13 @@ Page({
       // 为每个县区分配虚拟坐标（在2D平面上均匀分布）
       const countyCoords = {};
       const gridSize = Math.ceil(Math.sqrt(counties.length));
+      // 将坐标归一化到0-5范围内
       counties.forEach((county, index) => {
-        const x = index % gridSize;
-        const y = Math.floor(index / gridSize);
+        const gridX = index % gridSize;
+        const gridY = Math.floor(index / gridSize);
+        // 将坐标映射到0-5范围内
+        const x = (gridX / gridSize) * 5;
+        const y = (gridY / gridSize) * 5;
         countyCoords[county] = { x, y };
       });
       
@@ -67,10 +71,10 @@ Page({
       console.error('初始化县区坐标时出错:', error);
       // 如果出错，使用随机坐标
       const fallbackCoords = {
-        '测试县1': { x: 0, y: 0 },
-        '测试县2': { x: 1, y: 0 },
-        '测试县3': { x: 0, y: 1 },
-        '测试县4': { x: 1, y: 1 }
+        '测试县1': { x: 0.5, y: 0.5 },
+        '测试县2': { x: 1.5, y: 0.5 },
+        '测试县3': { x: 0.5, y: 1.5 },
+        '测试县4': { x: 1.5, y: 1.5 }
       };
       this.setData({ countyCoords: fallbackCoords });
     }
@@ -105,6 +109,25 @@ Page({
               // 在小程序环境中，事件处理由组件本身处理
               // 这里只需要返回一个空函数避免错误
               return function() {};
+            };
+          }
+          
+          // 补丁：确保事件对象有preventDefault方法，避免TypeError
+          // 这是ECharts在小程序环境中的兼容性问题
+          if (canvas && typeof canvas.addEventListener !== 'undefined') {
+            // 保存原始的addEventListener
+            const originalAddEventListener = canvas.addEventListener;
+            canvas.addEventListener = function(eventName, handler) {
+              // 包装事件处理器
+              const wrappedHandler = function(e) {
+                if (e && typeof e.preventDefault === 'undefined') {
+                  e.preventDefault = function() {
+                    // 空函数，避免TypeError
+                  };
+                }
+                return handler(e);
+              };
+              return originalAddEventListener.call(this, eventName, wrappedHandler);
             };
           }
           
@@ -187,6 +210,8 @@ Page({
             xAxis3D: {
               type: 'value',
               name: 'X坐标',
+              min: 0,
+              max: 5,
               axisLabel: { show: true },
               axisLine: { show: true },
               splitLine: { show: true }
@@ -194,6 +219,8 @@ Page({
             yAxis3D: {
               type: 'value',
               name: 'Y坐标',
+              min: 0,
+              max: 5,
               axisLabel: { show: true },
               axisLine: { show: true },
               splitLine: { show: true }
@@ -206,17 +233,17 @@ Page({
               splitLine: { show: true }
             },
             grid3D: {
-              boxWidth: 10,
-              boxDepth: 10,
+              boxWidth: 5,
+              boxDepth: 5,
               boxHeight: 20,
               viewControl: {
                 projection: 'perspective',
                 autoRotate: false,
                 alpha: 20,
                 beta: 60,
-                distance: 50,
-                minDistance: 20,
-                maxDistance: 100,
+                distance: 30,
+                minDistance: 10,
+                maxDistance: 80,
                 rotateSensitivity: 0,
                 zoomSensitivity: 0
               },
@@ -228,10 +255,10 @@ Page({
             series: [{
               type: 'bar3D',
               data: [
-                { name: '测试县1', value: [0, 0, 10, 5.5] },
-                { name: '测试县2', value: [1, 0, 15, 8.2] },
-                { name: '测试县3', value: [0, 1, 8, 3.7] },
-                { name: '测试县4', value: [1, 1, 12, 6.9] }
+                { name: '测试县1', value: [0.5, 0.5, 10, 5.5] },
+                { name: '测试县2', value: [1.5, 0.5, 15, 8.2] },
+                { name: '测试县3', value: [0.5, 1.5, 8, 3.7] },
+                { name: '测试县4', value: [1.5, 1.5, 12, 6.9] }
               ],
               shading: 'color',
               label: { show: false },
@@ -317,10 +344,10 @@ Page({
     
     // 测试数据 - 确保图表能显示
     const testData = [
-      { name: '测试县1', value: [0, 0, 10, 5.5] },
-      { name: '测试县2', value: [1, 0, 15, 8.2] },
-      { name: '测试县3', value: [0, 1, 8, 3.7] },
-      { name: '测试县4', value: [1, 1, 12, 6.9] }
+      { name: '测试县1', value: [0.5, 0.5, 10, 5.5] },
+      { name: '测试县2', value: [1.5, 0.5, 15, 8.2] },
+      { name: '测试县3', value: [0.5, 1.5, 8, 3.7] },
+      { name: '测试县4', value: [1.5, 1.5, 12, 6.9] }
     ];
 
     // 尝试加载真实数据
@@ -383,6 +410,8 @@ Page({
       xAxis3D: {
         type: 'value',
         name: 'X坐标',
+        min: 0,
+        max: 5,
         axisLabel: { show: true },
         axisLine: { show: true },
         splitLine: { show: true }
@@ -390,6 +419,8 @@ Page({
       yAxis3D: {
         type: 'value',
         name: 'Y坐标',
+        min: 0,
+        max: 5,
         axisLabel: { show: true },
         axisLine: { show: true },
         splitLine: { show: true }
@@ -402,17 +433,17 @@ Page({
         splitLine: { show: true }
       },
       grid3D: {
-        boxWidth: 10,
-        boxDepth: 10,
+        boxWidth: 5,
+        boxDepth: 5,
         boxHeight: 20,
         viewControl: {
           projection: 'perspective',
           autoRotate: false,
           alpha: 20,
           beta: 60,
-          distance: 50,
-          minDistance: 20,
-          maxDistance: 100,
+          distance: 30,
+          minDistance: 10,
+          maxDistance: 80,
           rotateSensitivity: 0,
           zoomSensitivity: 0
         },
