@@ -1,5 +1,12 @@
 {
-  "pages": ["pages/index/index", "pages/carbon-chart/carbon-chart", "pages/admin-upload/admin-upload", "pages/county-stats/county-stats"],
+  "pages": [
+    "pages/index/index",
+    "pages/carbon-chart/carbon-chart",
+    "pages/admin-upload/admin-upload",
+    "pages/county-stats/county-stats",
+    "data/shape",
+    "pages/3d-map/3d-map"
+  ],
   "window": {
     "navigationBarTitleText": "秦岭碳收支遥感监测系统",
     "navigationBarTextStyle": "white",

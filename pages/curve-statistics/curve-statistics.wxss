@@ -12,87 +12,89 @@
   font-weight: bold;
 }
 
-/* 年份选择器 */
-.year-selector {
+/* 年份选择器 - 简约设计 */
+.compact-year-selector {
   background: rgba(255, 255, 255, 0.1);
-  border-radius: 20rpx;
-  padding: 30rpx;
-  margin-bottom: 30rpx;
+  border-radius: 16rpx;
+  padding: 20rpx;
+  margin-bottom: 25rpx;
   backdrop-filter: blur(10px);
-  box-shadow: 0 10rpx 30rpx rgba(0,0,0,0.1);
+  box-shadow: 0 5rpx 20rpx rgba(0,0,0,0.1);
 }
 
-.year-nav {
+.compact-year-nav {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 40rpx;
-  margin-bottom: 20rpx;
+  justify-content: space-between;
+  gap: 20rpx;
 }
 
-.nav-btn {
-  width: 80rpx;
-  height: 80rpx;
+.compact-nav-btn {
+  width: 60rpx;
+  height: 60rpx;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.2);
-  border: 2rpx solid white;
+  border: 1.5rpx solid white;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
+  flex-shrink: 0;
 }
 
-.nav-btn::after {
+.compact-nav-btn::after {
   border: none;
 }
 
-.nav-btn[disabled] {
-  opacity: 0.5;
+.compact-nav-btn[disabled] {
+  opacity: 0.4;
 }
 
-.nav-icon {
+.compact-nav-icon {
   color: white;
-  font-size: 36rpx;
+  font-size: 28rpx;
   font-weight: bold;
 }
 
-.year-picker {
-  background: white;
-  border-radius: 50rpx;
-  padding: 20rpx 40rpx;
-  min-width: 200rpx;
-  text-align: center;
-  box-shadow: 0 5rpx 15rpx rgba(0,0,0,0.1);
+.compact-year-display {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
 }
 
-.picker-content {
+.compact-year-picker {
+  background: white;
+  border-radius: 40rpx;
+  padding: 15rpx 30rpx;
+  width: 100%;
+  max-width: 250rpx;
+  text-align: center;
+  box-shadow: 0 3rpx 10rpx rgba(0,0,0,0.1);
+}
+
+.compact-picker-content {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10rpx;
+  gap: 8rpx;
 }
 
-.current-year {
-  font-size: 42rpx;
+.compact-current-year {
+  font-size: 34rpx;
   font-weight: bold;
   color: #667eea;
 }
 
-.picker-label {
-  font-size: 28rpx;
+.compact-picker-label {
+  font-size: 24rpx;
   color: #666;
 }
 
-.picker-icon {
-  font-size: 20rpx;
-  color: #999;
-  margin-left: 10rpx;
-}
-
-.year-info {
-  text-align: center;
+.compact-year-info {
   color: rgba(255, 255, 255, 0.9);
-  font-size: 26rpx;
+  font-size: 22rpx;
 }
 
 /* 图表容器 */

@@ -1,0 +1,87 @@
+<!-- pages/3d-map/3d-map.wxml -->
+<view class="container">
+  <!-- 标题和说明 -->
+  <view class="header">
+    <text class="title">秦岭碳汇3D地图</text>
+    <text class="subtitle">分县区、分月份碳汇数据立体化展示</text>
+  </view>
+
+  <!-- 控制面板 -->
+  <view class="control-panel">
+    <view class="control-row">
+      <view class="control-item">
+        <text class="control-label">选择年份:</text>
+        <picker 
+          class="picker" 
+          range="{{years}}" 
+          value="{{yearIndex}}" 
+          bindchange="onYearChange"
+        >
+          <view class="picker-view">{{years[yearIndex]}}年</view>
+        </picker>
+      </view>
+      <view class="control-item">
+        <text class="control-label">选择月份:</text>
+        <picker 
+          class="picker" 
+          range="{{months}}" 
+          value="{{monthIndex}}" 
+          bindchange="onMonthChange"
+        >
+          <view class="picker-view">{{months[monthIndex]}}月</view>
+        </picker>
+      </view>
+    </view>
+    <view class="control-row">
+      <view class="control-item">
+        <text class="control-label">柱状图高度比例:</text>
+        <slider 
+          value="{{heightScale}}" 
+          min="10" 
+          max="200" 
+          step="10" 
+          bindchange="onScaleChange"
+          show-value
+        />
+      </view>
+    </view>
+  </view>
+
+  <!-- 图表容器 -->
+  <view class="chart-container">
+    <ec-canvas 
+      id="chart" 
+      canvas-id="chart" 
+      echarts="{{ echarts }}"
+      ec="{{ ec }}" 
+      class="chart"
+    ></ec-canvas>
+  </view>
+
+  <!-- 图例和说明 -->
+  <view class="legend">
+    <view class="legend-item">
+      <view class="legend-color" style="background-color: #5470c6;"></view>
+      <text class="legend-text">碳汇值 (正值为碳吸收)</text>
+    </view>
+    <view class="legend-item">
+      <view class="legend-color" style="background-color: #91cc75;"></view>
+      <text class="legend-text">碳汇值较高</text>
+    </view>
+    <view class="legend-item">
+      <view class="legend-color" style="background-color: #fac858;"></view>
+      <text class="legend-text">碳汇值中等</text>
+    </view>
+    <view class="legend-item">
+      <view class="legend-color" style="background-color: #ee6666;"></view>
+      <text class="legend-text">碳汇值较低/碳排放</text>
+    </view>
+  </view>
+
+  <!-- 数据提示 -->
+  <view class="data-tip" wx:if="{{selectedCounty}}">
+    <text class="tip-title">当前选中: {{selectedCounty}}</text>
+    <text class="tip-value">碳汇值: {{selectedValue}} tC</text>
+    <text class="tip-detail">年份: {{selectedYear}} 月份: {{selectedMonth}}</text>
+  </view>
+</view>

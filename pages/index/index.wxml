@@ -21,35 +21,92 @@
     />
   </view>
 
-  <!-- 控制面板 -->
+  <!-- 控制面板 - 简约设计 -->
   <view class="control-panel">
-    <!-- 年份选项卡 -->
-    <view class="slider-section">
-      <view class="year-header">
-        <text class="year-label">年份选择</text>
-        <text class="current-year">{{currentYear}} 年</text>
-        <button size="mini" bindtap="jumpToYear">快速跳转</button>
+    <!-- 年份和月份选择 -->
+    <view class="selection-header">
+      <view class="selection-header-left">
+        <text class="selection-title">时间选择</text>
+        <text class="current-selection">{{currentYear}}年{{currentMonth}}月</text>
       </view>
-      
-      <view class="year-tabs">
-        <block wx:for="{{yearTabs}}" wx:key="index">
-          <view 
-            class="year-tab {{currentYear === item ? 'active' : ''}}" 
-            bindtap="switchYear" 
-            data-year="{{item}}"
-          >
-            {{item}}年
-          </view>
-        </block>
-      </view>
-      
-      <view class="year-range">
-        <text>{{minYear}}</text>
-        <text class="range-label">点击选项卡切换年份</text>
-        <text>{{maxYear}}</text>
+      <view class="selection-header-right">
+        <button 
+          class="auto-play-btn {{autoPlay ? 'active' : ''}}" 
+          bindtap="toggleAutoPlay"
+          size="mini"
+        >
+          {{autoPlay ? '停止播放' : '开始播放'}}
+        </button>
+        <text class="auto-play-status">{{autoPlayStatus}}</text>
       </view>
     </view>
     
+    <!-- 时间选择行：年份和月份并排 -->
+    <view class="time-selection-row">
+      <!-- 年份选择器 -->
+      <view class="time-selector year-selector-container">
+        <view class="time-selector-header" bindtap="toggleYearPicker">
+          <text class="time-label">年份</text>
+          <view class="time-value">
+            <text class="current-time">{{currentYear}}</text>
+            <text class="time-dropdown-icon">{{showYearPicker ? '▲' : '▼'}}</text>
+          </view>
+        </view>
+        
+        <!-- 年份选择面板 -->
+        <view class="time-picker-panel {{showYearPicker ? 'show' : 'hide'}}" catchtap="stopPropagation">
+          <view class="time-picker-header">
+            <text class="time-picker-title">选择年份</text>
+            <text class="time-picker-close" bindtap="closeYearPicker">×</text>
+          </view>
+          <view class="time-picker-options">
+            <block wx:for="{{yearTabs}}" wx:key="index">
+              <view 
+                class="time-option {{currentYear === item ? 'selected' : ''}}" 
+                bindtap="selectYear" 
+                data-year="{{item}}"
+              >
+                <text class="time-option-text">{{item}}</text>
+                <text class="time-option-checkmark" wx:if="{{currentYear === item}}">✓</text>
+              </view>
+            </block>
+          </view>
+        </view>
+      </view>
+      
+      <!-- 月份选择器 -->
+      <view class="time-selector month-selector-container">
+        <view class="time-selector-header" bindtap="toggleMonthPicker">
+          <text class="time-label">月份</text>
+          <view class="time-value">
+            <text class="current-time">{{currentMonth}}</text>
+            <text class="time-dropdown-icon">{{showMonthPicker ? '▲' : '▼'}}</text>
+          </view>
+        </view>
+        
+        <!-- 月份选择面板 -->
+        <view class="time-picker-panel {{showMonthPicker ? 'show' : 'hide'}}" catchtap="stopPropagation">
+          <view class="time-picker-header">
+            <text class="time-picker-title">选择月份</text>
+            <text class="time-picker-close" bindtap="closeMonthPicker">×</text>
+          </view>
+          <view class="time-picker-options">
+            <block wx:for="{{monthTabs}}" wx:key="index">
+              <view 
+                class="time-option {{currentMonth === item ? 'selected' : ''}}" 
+                bindtap="selectMonth" 
+                data-month="{{item}}"
+              >
+                <text class="time-option-text">{{item}}</text>
+                <text class="time-option-checkmark" wx:if="{{currentMonth === item}}">✓</text>
+              </view>
+            </block>
+          </view>
+        </view>
+      </view>
+    </view>
+
+
 
   </view>
 
@@ -57,12 +114,6 @@
     <view class="chart-panel">
       <view class="chart-header">
         <text>碳汇月度统计</text>
-        <view class="chart-buttons">
-          <button size="mini" bindtap="navigateToCarbonChart">碳汇统计</button>
-          <button size="mini" bindtap="navigateToCurveStatistics">曲线统计</button>
-          <button size="mini" bindtap="navigateToCountyStats">区县统计</button>
-          <button size="mini" bindtap="showSystemInfo">系统信息</button>
-        </view>
       </view>
     
     <view class="chart-container">
@@ -76,6 +127,34 @@
     
     <view class="chart-footer">
       <text>注: 当前为模拟数据，可替换为真实碳汇数据</text>
+    </view>
+  </view>
+
+  <!-- 底部导航栏 -->
+  <view class="bottom-navbar">
+    <view class="nav-item" bindtap="navigateToCarbonChart">
+      <text class="nav-icon">📊</text>
+      <text class="nav-text">碳汇统计</text>
+    </view>
+    <view class="nav-item" bindtap="navigateToCurveStatistics">
+      <text class="nav-icon">📈</text>
+      <text class="nav-text">曲线统计</text>
+    </view>
+    <view class="nav-item" bindtap="navigateToCountyStats">
+      <text class="nav-icon">🗺️</text>
+      <text class="nav-text">区县统计</text>
+    </view>
+    <view class="nav-item" bindtap="navigateTo3DMap">
+      <text class="nav-icon">🏔️</text>
+      <text class="nav-text">3D地图</text>
+    </view>
+    <view class="nav-item" bindtap="navigateToAdmin">
+      <text class="nav-icon">👨‍💼</text>
+      <text class="nav-text">管理员</text>
+    </view>
+    <view class="nav-item" bindtap="showSystemInfo">
+      <text class="nav-icon">ℹ️</text>
+      <text class="nav-text">系统信息</text>
     </view>
   </view>
 </view>

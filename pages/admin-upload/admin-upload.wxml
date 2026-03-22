@@ -16,7 +16,7 @@
             type="text" 
             placeholder="请输入用户名" 
             value="{{username}}"
-            bindinput="e => setData({username: e.detail.value})"
+            bindinput="onUsernameInput"
           />
         </view>
         
@@ -27,7 +27,7 @@
             type="password" 
             placeholder="请输入密码" 
             value="{{password}}"
-            bindinput="e => setData({password: e.detail.value})"
+            bindinput="onPasswordInput"
           />
         </view>
         

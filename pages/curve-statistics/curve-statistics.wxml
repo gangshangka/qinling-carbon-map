@@ -2,33 +2,31 @@
   <!-- 标题 -->
   <view class="title">碳汇月度曲线统计</view>
   
-  <!-- 年份选择器 -->
-  <view class="year-selector">
-    <view class="year-nav">
-      <button class="nav-btn" bindtap="prevYear" disabled="{{years.length == 0}}">
-        <text class="nav-icon">◀</text>
+  <!-- 年份选择器 - 简约设计 -->
+  <view class="compact-year-selector">
+    <view class="compact-year-nav">
+      <button class="compact-nav-btn" bindtap="prevYear" disabled="{{years.length == 0}}">
+        <text class="compact-nav-icon">◀</text>
       </button>
       
-      <picker 
-        class="year-picker" 
-        value="{{currentYear}}" 
-        range="{{years}}" 
-        bindchange="onYearChange"
-      >
-        <view class="picker-content">
-          <text class="current-year">{{currentYear}}</text>
-          <text class="picker-label">年</text>
-          <text class="picker-icon">▼</text>
-        </view>
-      </picker>
+      <view class="compact-year-display">
+        <picker 
+          class="compact-year-picker" 
+          value="{{currentYear}}" 
+          range="{{years}}" 
+          bindchange="onYearChange"
+        >
+          <view class="compact-picker-content">
+            <text class="compact-current-year">{{currentYear}}</text>
+            <text class="compact-picker-label">年</text>
+          </view>
+        </picker>
+        <text class="compact-year-info">共 {{years.length}} 年数据</text>
+      </view>
       
-      <button class="nav-btn" bindtap="nextYear" disabled="{{years.length == 0}}">
-        <text class="nav-icon">▶</text>
+      <button class="compact-nav-btn" bindtap="nextYear" disabled="{{years.length == 0}}">
+        <text class="compact-nav-icon">▶</text>
       </button>
-    </view>
-    
-    <view class="year-info">
-      <text>共 {{years.length}} 年数据</text>
     </view>
   </view>
   

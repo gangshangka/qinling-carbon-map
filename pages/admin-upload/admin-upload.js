@@ -83,9 +83,19 @@ Page({
     }
   },
 
+  // 输入框处理
+  onUsernameInput(e) {
+    this.setData({ username: e.detail.value });
+  },
+
+  onPasswordInput(e) {
+    this.setData({ password: e.detail.value });
+  },
+
   // 登录处理
   handleLogin() {
     const { username, password } = this.data;
+    console.log('登录尝试:', username, password);
     
     if (!username || !password) {
       this.setData({ loginError: '请输入用户名和密码' });

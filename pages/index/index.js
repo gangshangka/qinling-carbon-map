@@ -5,9 +5,11 @@ Page({
     currentImageUrl: '', // 初始为空，切换年份时设置
     placeholderImageUrl: '/images/nep201201.png', // 2012年1月图片作为占位图（绝对路径）
     currentYear: 2012,
+    currentMonth: 1, // 当前月份，默认1月
     minYear: 2012,
     maxYear: 2022,
     yearTabs: [2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022], // 年份选项卡（2012-2022）
+    monthTabs: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], // 月份选项卡（1-12月）
     imageLoaded: false,
     imageError: false,
     imageInfo: { width: 0, height: 0, ratio: '0%' },
@@ -17,16 +19,32 @@ Page({
     imageOpacity: 1.0,
     scalePercent: 100,
     preloadedYears: [],
-    loadProgress: 0
+    loadProgress: 0,
+    // 图片映射表：存储已上传的图片路径，格式: {年份: {月份: 图片路径}}
+    imageMap: {},
+    
+    // 自动播放相关
+    autoPlay: false,
+    autoPlayStatus: '停止',
+    autoPlayTimer: null,
+    autoPlayInterval: 2000, // 播放间隔2秒
+    showYearPicker: false,
+    showMonthPicker: false,
   },
+
+
 
   onLoad() {
     console.log('=== 秦岭碳汇遥感影像查看器 ===');
-    this.loadImageForYear(this.data.currentYear);
+    this.loadImage();
     this.preloadAllImages();
     this.getSystemInfo();
     this.updateMonthlyData(this.data.currentYear);   // 初始化月度图表
+    // 初始化imageMap（可以从本地存储或云存储加载）
+    this.initImageMap();
   },
+
+
 
   // 切换年份（选项卡点击）
   switchYear(e) {
@@ -35,16 +53,30 @@ Page({
     
     console.log('切换年份:', year);
     this.setData({ currentYear: year });
-    this.loadImageForYear(year);
+    this.loadImage(year, this.data.currentMonth);
     this.updateMonthlyData(year);
   },
+  
+  // 切换月份（选项卡点击）
+  switchMonth(e) {
+    const month = Number(e.currentTarget.dataset.month);
+    if (!month || month === this.data.currentMonth) return;
+    
+    console.log('切换月份:', month);
+    this.setData({ currentMonth: month });
+    this.loadImage(this.data.currentYear, month);
+  },
+
+
 
   onYearSliderChange(e) {
     const year = e.detail.value;
     this.setData({ currentYear: year });
-    this.loadImageForYear(year);
+    this.loadImage(year, this.data.currentMonth);
     this.updateMonthlyData(year);   // 切换年份时更新图表
   },
+
+
 
   onYearSliderChanging(e) {
     const year = Math.round(e.detail.value);
@@ -52,21 +84,38 @@ Page({
       this.setData({ currentYear: year });
       this.updateMonthlyData(year);   // 实时预览年份
       if (this.data.preloadedYears.includes(year)) {
-        this.switchToImage(year);
+        this.switchToImage(year, this.data.currentMonth);
       }
     }
   },
 
-  loadImageForYear(year) {
+
+
+  loadImage(year = this.data.currentYear, month = this.data.currentMonth) {
     this.setData({ imageLoaded: false, imageError: false });
-    const imagePath = this.detectImagePath(year);
+    const imagePath = this.detectImagePath(year, month);
     this.setData({ currentImageUrl: imagePath, imageScale: 1.0, scalePercent: 100 });
   },
-
-  detectImagePath(year) {
-    // 使用1月份的图片作为年度代表图（例如：nep201201.png）
-    return `/images/nep${year}01.png`;
+  
+  // 保持向后兼容
+  loadImageForYear(year) {
+    this.loadImage(year, this.data.currentMonth);
   },
+
+
+
+  detectImagePath(year, month = this.data.currentMonth) {
+    // 优先从imageMap中获取图片路径
+    const imageMap = this.data.imageMap;
+    if (imageMap[year] && imageMap[year][month]) {
+      return imageMap[year][month];
+    }
+    // 默认使用命名规则: /images/nep{年份}{月份:02d}.png
+    const monthStr = month < 10 ? '0' + month : month.toString();
+    return `/images/nep${year}${monthStr}.png`;
+  },
+
+
 
   onImageLoad(e) {
     const info = e.detail || { width: 800, height: 600 };
@@ -79,10 +128,14 @@ Page({
     this.updateMonthlyData(this.data.currentYear);
   },
 
+
+
   onImageError(e) {
     console.error('❌ 影像加载失败', e.detail);
     this.useOnlinePlaceholder();
   },
+
+
 
   useOnlinePlaceholder() {
     const year = this.data.currentYear;
@@ -94,6 +147,8 @@ Page({
     this.updateMonthlyData(year);
   },
 
+
+
   // 新增：从真实月度数据中筛选当前年份数据
   updateMonthlyData(year) {
     const yearData = this.data.monthlyRealData.filter(item => item.year === year);
@@ -102,22 +157,31 @@ Page({
     this.drawChart(year, yearData);
   },
 
+
+
   getColorForValue(value) {
-    // 处理负值：使用红色系
-    if (value < -1000) return '#a8071a';
-    if (value < -500) return '#cf1322';
-    if (value < -100) return '#ff4d4f';
-    if (value < 0) return '#ffa39e';
+    // 处理负值：使用多彩的冷色系（更美观多样）
+    if (value < -1500) return '#283593'; // 深靛蓝
+    if (value < -1000) return '#4527a0'; // 深紫色
+    if (value < -500) return '#5e35b1';  // 紫色
+    if (value < -200) return '#7e57c2';  // 中紫色
+    if (value < -100) return '#9575cd';  // 浅紫色
+    if (value < 0) return '#b39ddb';     // 淡紫色
     
-    // 处理正值：使用绿色系
-    if (value > 2000) return '#237804';
-    if (value > 1000) return '#52c41a';
-    if (value > 500) return '#95de64';
-    if (value > 100) return '#ffe58f';
+    // 处理正值：使用多彩的暖色系（更美观多样）
+    if (value > 3000) return '#004d40';  // 深青色
+    if (value > 2000) return '#00695c';  // 青色
+    if (value > 1500) return '#2e7d32';  // 深绿色
+    if (value > 1000) return '#43a047';  // 绿色
+    if (value > 500) return '#66bb6a';   // 浅绿色
+    if (value > 200) return '#a5d6a7';   // 淡绿色
+    if (value > 100) return '#fff59d';   // 淡黄色
     
-    // 0到100之间的值
-    return '#ffccc7';
+    // 0到100之间的值：温和的橙色
+    return '#ffcc80';
   },
+
+
 
   // 计算颜色亮度，返回true表示颜色较深，适合白色文字
   isDarkColor(color) {
@@ -142,6 +206,8 @@ Page({
     }
     return true; // 默认视为深色
   },
+
+
 
   // 高分辨率绘图方法，支持负值，文字清晰
   drawChart(year, data) {
@@ -389,6 +455,8 @@ Page({
     });
   },
 
+
+
   // 降级绘图方法（兼容旧设备）
   drawChartLegacy(year, data) {
     if (!data || data.length === 0) return;
@@ -573,6 +641,8 @@ Page({
     ctx.draw();
   },
 
+
+
   preloadAllImages() {
     const years = [];
     for (let y = this.data.minYear; y <= this.data.maxYear; y++) years.push(y);
@@ -590,42 +660,58 @@ Page({
             loadProgress: Math.round((loadedCount / years.length) * 100)
           });
         },
+
+
         fail: () => loadedCount++
       });
     });
   },
 
-  switchToImage(year) {
+
+
+  switchToImage(year, month = this.data.currentMonth) {
     this.setData({ 
-      currentImageUrl: this.detectImagePath(year), 
+      currentImageUrl: this.detectImagePath(year, month), 
       imageLoaded: false,
       imageScale: 1.0, 
       scalePercent: 100 
     });
   },
 
+
+
   zoomIn() {
     const newScale = Math.min(3.0, this.data.imageScale + 0.2);
     this.setData({ imageScale: newScale, scalePercent: Math.round(newScale * 100) });
   },
+
+
 
   zoomOut() {
     const newScale = Math.max(0.3, this.data.imageScale - 0.2);
     this.setData({ imageScale: newScale, scalePercent: Math.round(newScale * 100) });
   },
 
+
+
   resetZoom() {
     this.setData({ imageScale: 1.0, scalePercent: 100 });
   },
+
+
 
   toggleOpacity() {
     const newOpacity = this.data.imageOpacity === 1 ? 0.7 : 1;
     this.setData({ imageOpacity: newOpacity });
   },
 
+
+
   toggleInfoOverlay() {
     this.setData({ showInfoOverlay: !this.data.showInfoOverlay });
   },
+
+
 
   jumpToYear() {
     const years = this.data.yearTabs.map(year => year.toString());
@@ -634,11 +720,13 @@ Page({
       success: (res) => {
         const year = parseInt(years[res.tapIndex]);
         this.setData({ currentYear: year });
-        this.loadImageForYear(year);
+        this.loadImage(year, this.data.currentMonth);
         this.updateMonthlyData(year);
       }
     });
   },
+
+
 
   getSystemInfo() {
     try {
@@ -649,6 +737,8 @@ Page({
     }
   },
 
+
+
   // 跳转到曲线统计页面
   navigateToCurveStatistics() {
     wx.navigateTo({
@@ -656,18 +746,23 @@ Page({
     });
   },
 
+
+
   showSystemInfo() {
     const info = `
 系统状态:
-当前年份: ${this.data.currentYear}
+当前日期: ${this.data.currentYear}年${this.data.currentMonth}月
 影像尺寸: ${this.data.imageInfo.width} × ${this.data.imageInfo.height}
 缩放比例: ${this.data.scalePercent}%
 透明度: ${Math.round(this.data.imageOpacity * 100)}%
 预加载: ${this.data.preloadedYears.length} 个年份
 数据状态: ${this.data.currentMonthlyData.length} 个月度数据点
+图片映射: ${Object.keys(this.data.imageMap).length} 个年份
     `.trim();
     wx.showModal({ title: '系统信息', content: info, showCancel: false });
   },
+
+
 
   // 跳转到碳汇统计页面（包含县城统计数据）
   navigateToCarbonChart() {
@@ -676,10 +771,228 @@ Page({
     });
   },
 
+
+
+  // 初始化图片映射表（从本地存储加载管理员上传的图片信息）
+  initImageMap() {
+    // 从本地存储加载图片映射表
+    const imageMap = wx.getStorageSync('carbon_image_map') || {};
+    console.log('加载图片映射表:', Object.keys(imageMap).length, '个年份');
+    
+    // 检查每个年份是否有图片文件存在
+    // 这里可以添加云存储检查逻辑
+    this.setData({ imageMap });
+    
+    // 如果没有图片映射表，初始化默认结构
+    if (Object.keys(imageMap).length === 0) {
+      this.initDefaultImageMap();
+    }
+  },
+  
+  // 初始化默认图片映射表（基于现有图片文件）
+  initDefaultImageMap() {
+    const imageMap = {};
+    const years = this.data.yearTabs;
+    const months = this.data.monthTabs;
+    
+    // 假设图片命名规则为: nep{年份}{月份:02d}.png
+    for (const year of years) {
+      imageMap[year] = {};
+      for (const month of months) {
+        const monthStr = month < 10 ? '0' + month : month.toString();
+        const imagePath = `/images/nep${year}${monthStr}.png`;
+        // 这里可以添加图片存在性检查
+        imageMap[year][month] = imagePath;
+      }
+    }
+    
+    this.setData({ imageMap });
+    // 保存到本地存储
+    wx.setStorageSync('carbon_image_map', imageMap);
+    console.log('初始化默认图片映射表完成');
+  },
+  
+  // 添加图片到映射表（管理员上传新图片后调用）
+  addImageToMap(year, month, imagePath) {
+    const imageMap = this.data.imageMap;
+    if (!imageMap[year]) {
+      imageMap[year] = {};
+    }
+    imageMap[year][month] = imagePath;
+    
+    this.setData({ imageMap });
+    // 保存到本地存储
+    wx.setStorageSync('carbon_image_map', imageMap);
+    console.log('添加图片到映射表:', year, '年', month, '月', imagePath);
+    
+    // 如果当前显示的是这个年份月份，重新加载图片
+    if (this.data.currentYear === year && this.data.currentMonth === month) {
+      this.loadImage(year, month);
+    }
+  },
+
   // 跳转区县统计页面（含图片轮播）
   navigateToCountyStats() {
     wx.navigateTo({
       url: '/pages/county-stats/county-stats'
     });
+  },
+
+  // 跳转3D地图页面
+  navigateTo3DMap() {
+    wx.navigateTo({
+      url: '/pages/3d-map/3d-map'
+    });
+  },
+
+  // 跳转管理员页面
+  navigateToAdmin() {
+    wx.navigateTo({
+      url: '/pages/admin-upload/admin-upload'
+    });
+  },
+
+  // 切换自动播放
+  toggleAutoPlay() {
+    if (this.data.autoPlay) {
+      this.stopAutoPlay();
+    } else {
+      this.startAutoPlay();
+    }
+  },
+
+  // 开始自动播放
+  startAutoPlay() {
+    const that = this;
+    this.setData({
+      autoPlay: true,
+      autoPlayStatus: '播放中...'
+    });
+    
+    // 设置定时器
+    const timer = setInterval(() => {
+      that.autoPlayNext();
+    }, this.data.autoPlayInterval);
+    
+    this.setData({ autoPlayTimer: timer });
+    console.log('自动播放开始，间隔:', this.data.autoPlayInterval, 'ms');
+  },
+
+  // 停止自动播放
+  stopAutoPlay() {
+    if (this.data.autoPlayTimer) {
+      clearInterval(this.data.autoPlayTimer);
+    }
+    this.setData({
+      autoPlay: false,
+      autoPlayStatus: '停止',
+      autoPlayTimer: null
+    });
+    console.log('自动播放停止');
+  },
+
+  // 播放下一张图片
+  autoPlayNext() {
+    let { currentYear, currentMonth, maxYear } = this.data;
+    
+    // 先尝试增加月份
+    if (currentMonth < 12) {
+      currentMonth++;
+    } else {
+      // 月份到12月，增加到下一年1月
+      currentMonth = 1;
+      if (currentYear < maxYear) {
+        currentYear++;
+      } else {
+        // 已经到最大年份的12月，停止播放
+        this.stopAutoPlay();
+        wx.showToast({
+          title: '已播放到最后一张',
+          icon: 'none'
+        });
+        return;
+      }
+    }
+    
+    console.log('自动播放下一张:', currentYear, '年', currentMonth, '月');
+    this.setData({
+      currentYear,
+      currentMonth
+    });
+    this.loadImage(currentYear, currentMonth);
+    this.updateMonthlyData(currentYear);
+  },
+
+  // 切换年份选择器显示
+  toggleYearPicker() {
+    this.setData({
+      showYearPicker: !this.data.showYearPicker
+    });
+  },
+
+  // 关闭年份选择器
+  closeYearPicker() {
+    this.setData({
+      showYearPicker: false
+    });
+  },
+
+  // 选择年份
+  selectYear(e) {
+    const year = Number(e.currentTarget.dataset.year);
+    if (!year || year === this.data.currentYear) {
+      this.closeYearPicker();
+      return;
+    }
+    
+    this.setData({
+      currentYear: year,
+      showYearPicker: false
+    });
+    
+    // 加载对应年份的图片和数据
+    this.loadImage(year, this.data.currentMonth);
+    this.updateMonthlyData(year);
+    
+    console.log('切换到年份:', year);
+  },
+
+  // 切换月份选择器显示
+  toggleMonthPicker() {
+    this.setData({
+      showMonthPicker: !this.data.showMonthPicker
+    });
+  },
+
+  // 关闭月份选择器
+  closeMonthPicker() {
+    this.setData({
+      showMonthPicker: false
+    });
+  },
+
+  // 选择月份
+  selectMonth(e) {
+    const month = Number(e.currentTarget.dataset.month);
+    if (!month || month === this.data.currentMonth) {
+      this.closeMonthPicker();
+      return;
+    }
+    
+    this.setData({
+      currentMonth: month,
+      showMonthPicker: false
+    });
+    
+    // 加载对应月份的图片
+    this.loadImage(this.data.currentYear, month);
+    
+    console.log('切换到月份:', month);
+  },
+
+  // 阻止事件冒泡
+  stopPropagation(e) {
+    // 阻止事件冒泡，防止点击面板内部时触发外层点击事件
+    return;
   }
 });

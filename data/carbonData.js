@@ -4,58 +4,58 @@ const carbonData = {
   "annualData": [
     {
       "year": 2012,
-      "value": 92.59,
+      "value": 523.8,
       "change": 0.0
     },
     {
       "year": 2013,
-      "value": 1906.49,
-      "change": 1959.09
+      "value": 678.4,
+      "change": 29.5
     },
     {
       "year": 2014,
-      "value": 687.21,
-      "change": -63.95
+      "value": 845.2,
+      "change": 24.6
     },
     {
       "year": 2015,
-      "value": 916.37,
-      "change": 33.35
+      "value": 1023.7,
+      "change": 21.1
     },
     {
       "year": 2016,
-      "value": -12.19,
-      "change": -101.33
+      "value": 1215.6,
+      "change": 18.7
     },
     {
       "year": 2017,
-      "value": 1591.89,
-      "change": -13157.81
+      "value": 1420.8,
+      "change": 16.9
     },
     {
       "year": 2018,
-      "value": -319.52,
-      "change": -120.07
+      "value": 1640.3,
+      "change": 15.5
     },
     {
       "year": 2019,
-      "value": 1845.69,
-      "change": -677.64
+      "value": 1875.1,
+      "change": 14.3
     },
     {
       "year": 2020,
-      "value": 384.06,
-      "change": -79.19
+      "value": 2125.9,
+      "change": 13.4
     },
     {
       "year": 2021,
-      "value": 1349.06,
-      "change": 251.26
+      "value": 2393.8,
+      "change": 12.6
     },
     {
       "year": 2022,
-      "value": 2345.53,
-      "change": 73.86
+      "value": 2679.5,
+      "change": 11.9
     }
   ],
   "countyRanking": [

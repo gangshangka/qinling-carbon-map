@@ -2,5 +2,6 @@
   "usingComponents": {
     "ec-canvas": "../../miniprogram_npm/echarts-for-weixin/index"
   },
-  "disableScroll": true
+  "navigationBarTitleText": "3D碳汇地图",
+  "enablePullDownRefresh": false
 }

@@ -118,5 +118,9 @@ export default class WxCanvas {
   
   detachEvent() {
     // noop
+  },
+  
+  setChart(chart) {
+    this.chart = chart;
   }
 }

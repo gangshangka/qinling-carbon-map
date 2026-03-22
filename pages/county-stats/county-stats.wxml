@@ -1,79 +1,53 @@
 <!--pages/county-stats/county-stats.wxml-->
 <view class="page-container">
-  <!-- 年份选项卡 -->
-  <view class="year-tabs">
-    <view 
-      wx:for="{{yearTabs}}" 
-      wx:key="index"
-      class="year-tab {{item === currentYear ? 'active' : ''}}"
-      bindtap="switchYear"
-      data-year="{{item}}"
-    >
-      {{item}}年
+  <!-- 年份选项卡 - 简约可滚动设计 -->
+  <view class="year-scroll-container">
+    <scroll-view class="year-scroll" scroll-x>
+      <view class="year-scroll-content">
+        <view 
+          wx:for="{{yearTabs}}" 
+          wx:key="index"
+          class="scroll-year-tab {{item === currentYear ? 'active' : ''}}"
+          bindtap="switchYear"
+          data-year="{{item}}"
+        >
+          {{item}}
+        </view>
+      </view>
+    </scroll-view>
+    <view class="year-current">
+      <text class="year-current-label">当前年份</text>
+      <text class="year-current-value">{{currentYear}}</text>
     </view>
   </view>
 
-  <!-- 轮播图区域 -->
-  <view class="swiper-section">
-    <view class="section-header">
-      <view class="section-title">
-        <text class="title-text">{{currentYear}}年月度碳汇分布图</text>
-        <text class="subtitle">基于2012年1月底图对比分析</text>
-      </view>
-      <view class="section-actions">
-        <text class="action-text">左右滑动切换月份</text>
-        <text class="action-icon">⇄</text>
-      </view>
+  <!-- 年度碳汇概览 -->
+  <view class="overview-section">
+    <view class="section-title">
+      <text class="title-text">{{currentYear}}年碳汇年度概览</text>
+      <text class="subtitle">全年月度数据统计汇总</text>
     </view>
     
-    <view class="image-container">
-      <!-- 固定底图：2012年1月 -->
-      <image 
-        class="base-image" 
-        src="/images/nep201201.png" 
-        mode="aspectFit"
-        lazy-load="{{true}}"
-      />
-      
-      <!-- 月度图片轮播 -->
-      <swiper 
-        class="image-swiper" 
-        indicator-dots="{{true}}" 
-        indicator-color="rgba(255, 255, 255, 0.3)"
-        indicator-active-color="#4CAF50"
-        autoplay="{{false}}"
-        interval="3000"
-        duration="500"
-        circular="{{true}}"
-        bindchange="onSwiperChange"
-      >
-        <block wx:for="{{swiperImages}}" wx:key="index">
-          <swiper-item>
-            <view class="swiper-item" bindtap="previewImage" data-index="{{index}}">
-              <image 
-                class="swiper-image" 
-                src="{{item}}" 
-                mode="aspectFit"
-                lazy-load="{{true}}"
-              />
-              <view class="image-overlay">
-                <text class="month-label">{{currentYear}}年{{index + 1}}月</text>
-                <text class="compare-label">与基准图对比</text>
-              </view>
-            </view>
-          </swiper-item>
-        </block>
-      </swiper>
-    </view>
-    
-    <view class="swiper-info">
-      <view class="info-item">
-        <text class="info-icon">📍</text>
-        <text class="info-text">底图：2012年1月（基准）</text>
+    <view class="overview-cards">
+      <view class="overview-card">
+        <text class="card-icon">🗓️</text>
+        <text class="card-title">数据月份</text>
+        <text class="card-value">12个月</text>
       </view>
-      <view class="info-item">
-        <text class="info-icon">📊</text>
-        <text class="info-text">当前：{{currentYear}}年{{swiperImages.length}}个月份</text>
+      <view class="overview-card">
+        <text class="card-icon">🏙️</text>
+        <text class="card-title">统计区县</text>
+        <text class="card-value">{{countyStats.length}}个</text>
+      </view>
+      <view class="overview-card">
+        <text class="card-icon">📈</text>
+        <text class="card-title">平均碳汇</text>
+        <text class="card-value">{{averageCarbon}}吨</text>
+      </view>
+      <view class="overview-card">
+        <text class="card-icon">🏆</text>
+        <text class="card-title">最高碳汇</text>
+        <text class="card-value">{{maxCarbon}}吨</text>
       </view>
     </view>
   </view>
