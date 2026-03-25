@@ -160,13 +160,20 @@ Page({
 
 
   useOnlinePlaceholder() {
-    const year = this.data.currentYear;
+    const { currentYear, currentMonth } = this.data;
+    const monthStr = currentMonth < 10 ? '0' + currentMonth : currentMonth.toString();
+    
+    // 设置一个在线占位图URL（使用placeholder.com服务）
+    const placeholderUrl = `https://via.placeholder.com/800x600/4CAF50/FFFFFF?text=${currentYear}年${currentMonth}月碳汇分布图`;
+    
+    console.log('使用在线占位图:', placeholderUrl);
     this.setData({
       imageLoaded: false,
       imageError: true,
-      imageInfo: { width: 0, height: 0, ratio: '0%' }
+      imageInfo: { width: 800, height: 600, ratio: '75%' },
+      currentImageUrl: placeholderUrl
     });
-    this.updateMonthlyData(year);
+    this.updateMonthlyData(currentYear);
   },
 
 

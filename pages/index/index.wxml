@@ -27,112 +27,113 @@
     />
   </view>
 
-  <!-- 控制面板 - 简约设计 -->
-  <view class="control-panel">
-    <!-- 年份和月份选择 -->
-    <view class="selection-header">
-      <view class="selection-header-left">
-        <text class="selection-title">时间选择</text>
-        <text class="current-selection">{{currentYear}}年{{currentMonth}}月</text>
-      </view>
-      <view class="selection-header-right">
-        <button 
-          class="auto-play-btn {{autoPlay ? 'active' : ''}}" 
-          bindtap="toggleAutoPlay"
-          size="mini"
-        >
-          {{autoPlay ? '停止播放' : '开始播放'}}
-        </button>
-        <text class="auto-play-status">{{autoPlayStatus}}</text>
-      </view>
-    </view>
-    
-    <!-- 时间选择行：年份和月份并排 -->
-    <view class="time-selection-row">
-      <!-- 年份选择器 -->
-      <view class="time-selector year-selector-container">
-        <view class="time-selector-header" bindtap="toggleYearPicker">
-          <text class="time-label">年份</text>
-          <view class="time-value">
-            <text class="current-time">{{currentYear}}</text>
-            <text class="time-dropdown-icon">{{showYearPicker ? '▲' : '▼'}}</text>
-          </view>
+  <!-- 控制面板与图表整合 -->
+  <view class="control-chart-container">
+    <!-- 控制面板 - 简约设计 -->
+    <view class="control-panel">
+      <!-- 年份和月份选择 -->
+      <view class="selection-header">
+        <view class="selection-header-left">
+          <text class="selection-title">时间选择</text>
+          <text class="current-selection">{{currentYear}}年{{currentMonth}}月</text>
         </view>
-        
-        <!-- 年份选择面板 -->
-        <view class="time-picker-panel {{showYearPicker ? 'show' : 'hide'}}" catchtap="stopPropagation">
-          <view class="time-picker-header">
-            <text class="time-picker-title">选择年份</text>
-            <text class="time-picker-close" bindtap="closeYearPicker">×</text>
-          </view>
-          <view class="time-picker-options">
-            <block wx:for="{{yearTabs}}" wx:key="index">
-              <view 
-                class="time-option {{currentYear === item ? 'selected' : ''}}" 
-                bindtap="selectYear" 
-                data-year="{{item}}"
-              >
-                <text class="time-option-text">{{item}}</text>
-                <text class="time-option-checkmark" wx:if="{{currentYear === item}}">✓</text>
-              </view>
-            </block>
-          </view>
+        <view class="selection-header-right">
+          <button 
+            class="auto-play-btn {{autoPlay ? 'active' : ''}}" 
+            bindtap="toggleAutoPlay"
+            size="mini"
+          >
+            {{autoPlay ? '停止播放' : '开始播放'}}
+          </button>
+          <text class="auto-play-status">{{autoPlayStatus}}</text>
         </view>
       </view>
       
-      <!-- 月份选择器 -->
-      <view class="time-selector month-selector-container">
-        <view class="time-selector-header" bindtap="toggleMonthPicker">
-          <text class="time-label">月份</text>
-          <view class="time-value">
-            <text class="current-time">{{currentMonth}}</text>
-            <text class="time-dropdown-icon">{{showMonthPicker ? '▲' : '▼'}}</text>
+      <!-- 时间选择行：年份和月份并排 -->
+      <view class="time-selection-row">
+        <!-- 年份选择器 -->
+        <view class="time-selector year-selector-container">
+          <view class="time-selector-header" bindtap="toggleYearPicker">
+            <text class="time-label">年份</text>
+            <view class="time-value">
+              <text class="current-time">{{currentYear}}</text>
+              <text class="time-dropdown-icon">{{showYearPicker ? '▲' : '▼'}}</text>
+            </view>
+          </view>
+          
+          <!-- 年份选择面板 -->
+          <view class="time-picker-panel {{showYearPicker ? 'show' : 'hide'}}" catchtap="stopPropagation">
+            <view class="time-picker-header">
+              <text class="time-picker-title">选择年份</text>
+              <text class="time-picker-close" bindtap="closeYearPicker">×</text>
+            </view>
+            <view class="time-picker-options">
+              <block wx:for="{{yearTabs}}" wx:key="index">
+                <view 
+                  class="time-option {{currentYear === item ? 'selected' : ''}}" 
+                  bindtap="selectYear" 
+                  data-year="{{item}}"
+                >
+                  <text class="time-option-text">{{item}}</text>
+                  <text class="time-option-checkmark" wx:if="{{currentYear === item}}">✓</text>
+                </view>
+              </block>
+            </view>
           </view>
         </view>
         
-        <!-- 月份选择面板 -->
-        <view class="time-picker-panel {{showMonthPicker ? 'show' : 'hide'}}" catchtap="stopPropagation">
-          <view class="time-picker-header">
-            <text class="time-picker-title">选择月份</text>
-            <text class="time-picker-close" bindtap="closeMonthPicker">×</text>
+        <!-- 月份选择器 -->
+        <view class="time-selector month-selector-container">
+          <view class="time-selector-header" bindtap="toggleMonthPicker">
+            <text class="time-label">月份</text>
+            <view class="time-value">
+              <text class="current-time">{{currentMonth}}</text>
+              <text class="time-dropdown-icon">{{showMonthPicker ? '▲' : '▼'}}</text>
+            </view>
           </view>
-          <view class="time-picker-options">
-            <block wx:for="{{monthTabs}}" wx:key="index">
-              <view 
-                class="time-option {{currentMonth === item ? 'selected' : ''}}" 
-                bindtap="selectMonth" 
-                data-month="{{item}}"
-              >
-                <text class="time-option-text">{{item}}</text>
-                <text class="time-option-checkmark" wx:if="{{currentMonth === item}}">✓</text>
-              </view>
-            </block>
+          
+          <!-- 月份选择面板 -->
+          <view class="time-picker-panel {{showMonthPicker ? 'show' : 'hide'}}" catchtap="stopPropagation">
+            <view class="time-picker-header">
+              <text class="time-picker-title">选择月份</text>
+              <text class="time-picker-close" bindtap="closeMonthPicker">×</text>
+            </view>
+            <view class="time-picker-options">
+              <block wx:for="{{monthTabs}}" wx:key="index">
+                <view 
+                  class="time-option {{currentMonth === item ? 'selected' : ''}}" 
+                  bindtap="selectMonth" 
+                  data-month="{{item}}"
+                >
+                  <text class="time-option-text">{{item}}</text>
+                  <text class="time-option-checkmark" wx:if="{{currentMonth === item}}">✓</text>
+                </view>
+              </block>
+            </view>
           </view>
         </view>
       </view>
     </view>
 
-
-
-  </view>
-
-    <!-- 数据图表 -->
+    <!-- 数据图表 - 与控制面板同一层级 -->
     <view class="chart-panel">
       <view class="chart-header">
         <text>碳汇月度统计</text>
+        <text class="chart-year-display">{{currentYear}}年</text>
       </view>
-    
-    <view class="chart-container">
-  <canvas 
-    id="monthlyChart"
-    canvas-id="monthlyChart" 
-    type="2d"
-    style="width: 100%; height: 100%;"
-  ></canvas>
-</view>
-    
-    <view class="chart-footer">
-      <text>注: 当前为模拟数据，可替换为真实碳汇数据</text>
+      
+      <view class="chart-container">
+        <canvas 
+          id="monthlyChart"
+          canvas-id="monthlyChart" 
+          type="2d"
+          style="width: 100%; height: 100%;"
+        ></canvas>
+      </view>
+      
+      <view class="chart-footer">
+        <text>注: 当前为模拟数据，可替换为真实碳汇数据</text>
+      </view>
     </view>
   </view>
 
