@@ -21,6 +21,52 @@
     </view>
   </view>
 
+  <!-- 播放控制 -->
+  <view class="play-control-container">
+    <view class="play-control-buttons">
+      <button class="play-control-btn prev-btn" bindtap="prevYear">
+        <text class="btn-icon">◀</text>
+        <text class="btn-text">上一年</text>
+      </button>
+      
+      <button class="play-control-btn play-btn {{isPlaying ? 'playing' : ''}}" bindtap="togglePlay">
+        <text class="btn-icon">{{isPlaying ? '❚❚' : '▶'}}</text>
+        <text class="btn-text">{{isPlaying ? '暂停' : '播放'}}</text>
+      </button>
+      
+      <button class="play-control-btn next-btn" bindtap="nextYear">
+        <text class="btn-text">下一年</text>
+        <text class="btn-icon">▶</text>
+      </button>
+    </view>
+    
+    <view class="play-speed-control">
+      <text class="speed-label">播放速度:</text>
+      <view class="speed-options">
+        <view 
+          class="speed-option {{playSpeed === 500 ? 'active' : ''}}" 
+          bindtap="changePlaySpeed" 
+          data-speed="500"
+        >快</view>
+        <view 
+          class="speed-option {{playSpeed === 1000 ? 'active' : ''}}" 
+          bindtap="changePlaySpeed" 
+          data-speed="1000"
+        >中</view>
+        <view 
+          class="speed-option {{playSpeed === 2000 ? 'active' : ''}}" 
+          bindtap="changePlaySpeed" 
+          data-speed="2000"
+        >慢</view>
+      </view>
+    </view>
+    
+    <view class="current-play-info">
+      <text>当前播放年份: {{currentYear}}</text>
+      <text wx:if="{{isPlaying}}" class="playing-indicator">● 播放中</text>
+    </view>
+  </view>
+
   <!-- 年度碳汇概览 -->
   <view class="overview-section">
     <view class="section-title">

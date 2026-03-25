@@ -7,8 +7,7 @@
     "data/shape",
     "pages/3d-map/3d-map",
     "pages/3d-bar-chart/3d-bar-chart",
-    "pages/terrain-webview/terrain-webview",
-    "pages/terrain-bar-monthly/terrain-bar-monthly"
+    "pages/terrain-webview/terrain-webview"
   ],
   "window": {
     "navigationBarTitleText": "秦岭碳收支遥感监测系统",

@@ -90,41 +90,7 @@
       </view>
     </view>
 
-    <!-- 图片轮播 -->
-    <view class="swiper-section">
-      <view class="section-title">
-        <text>图片预览 ({{selectedYear}}年)</text>
-      </view>
-      <swiper 
-        class="image-swiper" 
-        indicator-dots="{{true}}" 
-        indicator-color="rgba(0,0,0,.3)" 
-        indicator-active-color="#2E7D32"
-        autoplay="{{false}}"
-        interval="3000"
-        duration="500"
-        bindchange="bindSwiperChange"
-      >
-        <block wx:for="{{swiperImages}}" wx:key="id">
-          <swiper-item>
-            <view class="swiper-item">
-              <image 
-                class="swiper-image" 
-                src="{{item.url}}" 
-                mode="aspectFit"
-                lazy-load="{{true}}"
-              />
-              <view class="image-info">
-                <text class="image-title">{{item.title}}</text>
-              </view>
-            </view>
-          </swiper-item>
-        </block>
-      </swiper>
-      <view class="swiper-indicator">
-        <text>{{currentImageIndex + 1}}/{{swiperImages.length}}</text>
-      </view>
-    </view>
+
 
     <!-- 文件上传区域 -->
     <view class="upload-section">
@@ -174,6 +140,68 @@
             >
               上传PNG
             </button>
+          </view>
+        </view>
+      </view>
+
+      <!-- TIF上传 -->
+      <view class="upload-card">
+        <view class="upload-header">
+          <text class="upload-title">TIF文件上传</text>
+          <text class="upload-subtitle">遥感影像原始数据 ({{selectedYear}}年{{selectedMonth}}月)</text>
+        </view>
+        
+        <view class="upload-content">
+          <!-- 文件名显示 -->
+          <view class="file-name-display" wx:if="{{selectedTifFileName}}">
+            <text class="file-name-label">已选择文件:</text>
+            <text class="file-name-value {{isTifFileNameValid() ? 'valid' : 'invalid'}}">
+              {{selectedTifFileName}}
+            </text>
+            <text class="file-name-status {{isTifFileNameValid() ? 'status-valid' : 'status-invalid'}}">
+              {{isTifFileNameValid() ? '✓ 格式正确' : '✗ 格式错误'}}
+            </text>
+          </view>
+          
+          <view class="upload-status">
+            <text class="status-label">状态:</text>
+            <text class="status-value {{uploadStatus.tif.indexOf('处理完成') !== -1 ? 'success' : uploadStatus.tif.indexOf('失败') !== -1 ? 'error' : ''}}">
+              {{uploadStatus.tif}}
+            </text>
+          </view>
+          
+          <view class="upload-progress" wx:if="{{uploadStatus.tif.indexOf('处理') !== -1 && uploadStatus.tif.indexOf('完成') === -1}}">
+            <progress 
+              percent="{{uploadProgress.tif}}" 
+              stroke-width="6" 
+              active-color="#2E7D32"
+            />
+            <text class="progress-text">{{uploadProgress.tif}}%</text>
+          </view>
+          
+          <view class="upload-buttons">
+            <button 
+              class="upload-btn" 
+              type="primary" 
+              size="mini" 
+              bindtap="chooseTifFile"
+            >
+              选择TIF文件
+            </button>
+            <button 
+              class="upload-btn" 
+              type="primary" 
+              size="mini" 
+              bindtap="uploadTifFile"
+              disabled="{{!selectedTifFile || uploadStatus.tif.indexOf('处理') !== -1 && uploadStatus.tif.indexOf('完成') === -1 || !isTifFileNameValid()}}"
+            >
+              处理TIF
+            </button>
+          </view>
+          <view class="upload-tip">
+            <text class="tip-text"><text class="tip-important">重要：</text>TIF文件名必须符合格式：<text class="tip-code">nep20xxxx.tif</text> 或 <text class="tip-code">nep20xxxx.tiff</text></text>
+            <text class="tip-example">示例：nep202301.tif（表示2023年1月）、nep202212.tiff（表示2022年12月）</text>
+            <text class="tip-process">文件将使用Python脚本处理，生成带图例的PNG图片并添加到主页展示。</text>
           </view>
         </view>
       </view>

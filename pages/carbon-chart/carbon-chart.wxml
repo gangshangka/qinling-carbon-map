@@ -1,8 +1,7 @@
 <view class="container">
-  <!-- 标题 -->
-  <view class="title">秦岭碳汇统计</view>
+
   
-  <!-- 模式切换 -->
+  <!-- 精简模式切换 -->
   <view class="mode-switch">
     <view class="mode-tabs">
       <view 
@@ -19,50 +18,50 @@
       >
         县级排名
       </view>
-      <view 
-        class="mode-tab {{chartMode === 'monthly' ? 'active' : ''}}" 
-        bindtap="switchChartMode" 
-        data-mode="monthly"
-      >
-        月度统计
-      </view>
-    </view>
-    <view wx:if="{{chartMode === 'monthly'}}" class="current-item">
-      <text class="current-value">{{ currentYear }}</text>
-      <text class="value-text">年</text>
-      <view class="item-details">
-        <text>月度数据: {{ monthlyDataCount }} 个</text>
-        <text>年度总量: {{ getYearTotal() }} 吨</text>
-      </view>
     </view>
   </view>
   
-  <!-- 年份选择 - 简约设计 -->
-  <view class="compact-year-switch" wx:if="{{chartMode === 'monthly'}}">
-    <view class="compact-year-label">选择年份</view>
-    <view class="compact-year-tabs">
-      <view 
-        class="compact-year-tab {{currentYear === 2020 ? 'active' : ''}}" 
-        bindtap="switchYear" 
-        data-year="2020"
-      >
-        2020
+  <!-- 紧凑播放控制 - 仅在县级排名模式下显示 -->
+  <view class="compact-play-control" wx:if="{{chartMode === 'county'}}">
+    <view class="compact-control-row">
+      <!-- 播放控制按钮 -->
+      <view class="compact-buttons">
+        <button class="compact-btn prev-btn" bindtap="prevYear">
+          <text class="compact-btn-icon">◀</text>
+        </button>
+        
+        <button class="compact-btn play-btn {{isPlaying ? 'playing' : ''}}" bindtap="togglePlay">
+          <text class="compact-btn-icon">{{isPlaying ? '❚❚' : '▶'}}</text>
+        </button>
+        
+        <button class="compact-btn next-btn" bindtap="nextYear">
+          <text class="compact-btn-icon">▶</text>
+        </button>
       </view>
-      <view 
-        class="compact-year-tab {{currentYear === 2021 ? 'active' : ''}}" 
-        bindtap="switchYear" 
-        data-year="2021"
-      >
-        2021
-      </view>
-      <view 
-        class="compact-year-tab {{currentYear === 2022 ? 'active' : ''}}" 
-        bindtap="switchYear" 
-        data-year="2022"
-      >
-        2022
+      
+      <!-- 速度控制 -->
+      <view class="compact-speed-control">
+        <text class="compact-speed-label">速度</text>
+        <view class="compact-speed-options">
+          <view 
+            class="compact-speed-option {{playSpeed === 1000 ? 'active' : ''}}" 
+            bindtap="changePlaySpeed" 
+            data-speed="1000"
+          >快</view>
+          <view 
+            class="compact-speed-option {{playSpeed === 2000 ? 'active' : ''}}" 
+            bindtap="changePlaySpeed" 
+            data-speed="2000"
+          >中</view>
+          <view 
+            class="compact-speed-option {{playSpeed === 3000 ? 'active' : ''}}" 
+            bindtap="changePlaySpeed" 
+            data-speed="3000"
+          >慢</view>
+        </view>
       </view>
     </view>
+    
   </view>
   
   <!-- 图表容器 -->
@@ -95,14 +94,7 @@
       </view>
     </view>
 
-    <view wx:if="{{chartMode === 'monthly'}}" class="current-item">
-      <text class="current-value">{{ currentYear }}</text>
-      <text class="value-text">年</text>
-      <view class="item-details">
-        <text>月度数据: {{ monthlyDataCount }} 个</text>
-        <text>年度总量: {{ getYearTotal() }} 吨</text>
-      </view>
-    </view>
+
   </view>
   
 

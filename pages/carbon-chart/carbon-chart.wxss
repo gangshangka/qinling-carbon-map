@@ -1,5 +1,5 @@
 .container {
-  padding: 20rpx;
+  padding: 0 20rpx 20rpx 20rpx;
   background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
   min-height: 100vh;
 }
@@ -14,15 +14,16 @@
 
 /* 模式切换 */
 .mode-switch {
-  margin-bottom: 30rpx;
+  margin-bottom: 0rpx;
+  padding-top: 12rpx;
 }
 
 .mode-tabs {
   display: flex;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 50rpx;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 45rpx;
   padding: 8rpx;
-  margin: 0 40rpx;
+  margin: 0 25rpx;
   backdrop-filter: blur(10px);
 }
 
@@ -30,8 +31,8 @@
   flex: 1;
   text-align: center;
   padding: 20rpx 0;
-  font-size: 28rpx;
-  color: rgba(255, 255, 255, 0.7);
+  font-size: 32rpx;
+  color: rgba(255, 255, 255, 0.8);
   border-radius: 40rpx;
   transition: all 0.3s ease;
 }
@@ -40,22 +41,22 @@
   background: white;
   color: #4CAF50;
   font-weight: bold;
-  box-shadow: 0 5rpx 15rpx rgba(0,0,0,0.1);
+  box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.1);
 }
 
 .chart-container {
   width: 100%;
-  height: 750rpx;
+  height: 1200rpx;
   background: white;
-  border-radius: 20rpx;
-  padding: 20rpx;
-  box-shadow: 0 10rpx 30rpx rgba(0,0,0,0.2);
+  border-radius: 24rpx;
+  padding: 0 15rpx 15rpx 15rpx;
+  box-shadow: 0 12rpx 35rpx rgba(0,0,0,0.25);
 }
 
 /* 数据项显示 */
 .data-display {
   text-align: center;
-  margin: 40rpx 0;
+  margin: 25rpx 0;
 }
 
 .current-item {
@@ -65,16 +66,16 @@
 }
 
 .current-value {
-  font-size: 80rpx;
+  font-size: 90rpx;
   color: white;
   font-weight: bold;
-  text-shadow: 0 5rpx 15rpx rgba(0,0,0,0.3);
+  text-shadow: 0 6rpx 18rpx rgba(0,0,0,0.3);
 }
 
 .value-text {
-  font-size: 36rpx;
+  font-size: 42rpx;
   color: white;
-  margin-left: 10rpx;
+  margin-left: 12rpx;
 }
 
 .item-details {
@@ -85,65 +86,152 @@
 }
 
 .item-details .detail-text {
-  font-size: 26rpx;
-  color: rgba(255, 255, 255, 0.9);
-  background: rgba(255, 255, 255, 0.1);
-  padding: 10rpx 20rpx;
-  border-radius: 20rpx;
+  font-size: 30rpx;
+  color: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.12);
+  padding: 12rpx 24rpx;
+  border-radius: 22rpx;
   backdrop-filter: blur(10px);
 }
 
 
 
-/* 年份选择 - 简约设计 */
-.compact-year-switch {
-  margin-bottom: 25rpx;
+
+
+.description {
+  margin-top: 25rpx;
+  text-align: center;
+  color: rgba(255,255,255,0.85);
+  font-size: 28rpx;
+  line-height: 1.6;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 15rpx;
+  gap: 12rpx;
 }
 
-.compact-year-label {
-  font-size: 26rpx;
-  color: rgba(255, 255, 255, 0.9);
-  font-weight: 500;
-}
-
-.compact-year-tabs {
-  display: flex;
+/* 紧凑播放控制样式 */
+.compact-play-control {
+  margin: 0 0 0 0;
   background: rgba(255, 255, 255, 0.1);
-  border-radius: 40rpx;
-  padding: 6rpx;
+  border-radius: 22rpx;
+  padding: 22rpx;
   backdrop-filter: blur(10px);
-  width: 100%;
-  max-width: 400rpx;
+  border: 1.5rpx solid rgba(255, 255, 255, 0.15);
 }
 
-.compact-year-tab {
-  flex: 1;
-  text-align: center;
-  padding: 15rpx 0;
-  font-size: 26rpx;
-  color: rgba(255, 255, 255, 0.7);
-  border-radius: 35rpx;
+.compact-control-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20rpx;
+}
+
+.compact-buttons {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.compact-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.15);
+  border: 2rpx solid rgba(255, 255, 255, 0.2);
+  border-radius: 20rpx;
+  padding: 20rpx;
+  width: 100rpx;
+  height: 100rpx;
   transition: all 0.2s ease;
 }
 
-.compact-year-tab.active {
-  background: white;
-  color: #4CAF50;
-  font-weight: bold;
-  box-shadow: 0 3rpx 10rpx rgba(0,0,0,0.1);
+.compact-btn:active {
+  background: rgba(255, 255, 255, 0.25);
+  transform: scale(0.95);
 }
 
-.description {
-  margin-top: 40rpx;
-  text-align: center;
-  color: rgba(255,255,255,0.8);
-  font-size: 24rpx;
-  line-height: 1.5;
+.compact-btn.play-btn.playing {
+  background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+  border-color: transparent;
+  box-shadow: 0 4rpx 12rpx rgba(46, 125, 50, 0.4);
+}
+
+.compact-btn.prev-btn,
+.compact-btn.next-btn {
+  background: rgba(76, 175, 80, 0.1);
+  border-color: rgba(76, 175, 80, 0.3);
+}
+
+.compact-btn-icon {
+  font-size: 40rpx;
+  color: white;
+}
+
+.compact-speed-control {
   display: flex;
-  flex-direction: column;
-  gap: 10rpx;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.compact-speed-label {
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 600;
+}
+
+.compact-speed-options {
+  display: flex;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 35rpx;
+  padding: 6rpx;
+  border: 1.5rpx solid rgba(255, 255, 255, 0.15);
+}
+
+.compact-speed-option {
+  padding: 15rpx 25rpx;
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.7);
+  border-radius: 30rpx;
+  transition: all 0.2s ease;
+}
+
+.compact-speed-option.active {
+  background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+  color: white;
+  font-weight: bold;
+  box-shadow: 0 3rpx 8rpx rgba(46, 125, 50, 0.3);
+}
+
+.compact-speed-option:not(.active):active {
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(0.98);
+}
+
+.compact-play-info {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 16rpx 20rpx;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 18rpx;
+  border: 1.5rpx solid rgba(255, 255, 255, 0.08);
+  gap: 24rpx;
+}
+
+.compact-play-label {
+  font-size: 30rpx;
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 600;
+}
+
+.compact-playing-indicator {
+  font-size: 26rpx;
+  color: #4CAF50;
+  font-weight: bold;
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }

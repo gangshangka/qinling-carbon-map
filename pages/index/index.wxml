@@ -2,6 +2,12 @@
 <view class="container">
   <!-- 影像显示区域 -->
   <view class="image-viewer">
+    <!-- 上传图片状态提示 -->
+    <view class="upload-status-tip {{showUploadedTip ? 'show' : 'hide'}}">
+      <text class="upload-status-icon">📸</text>
+      <text class="upload-status-text">{{uploadedImageTip}}</text>
+    </view>
+    
     <!-- 占位图 - 始终显示2012年1月图片 -->
     <image
       src="{{placeholderImageUrl}}"

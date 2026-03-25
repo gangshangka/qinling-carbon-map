@@ -30,6 +30,10 @@ Page({
     autoPlayInterval: 2000, // 播放间隔2秒
     showYearPicker: false,
     showMonthPicker: false,
+    // TIF上传图片状态提示
+    uploadedImageTip: '',
+    showUploadedTip: false,
+    uploadedImageTipTimer: null,
   },
 
 
@@ -42,6 +46,24 @@ Page({
     this.updateMonthlyData(this.data.currentYear);   // 初始化月度图表
     // 初始化imageMap（可以从本地存储或云存储加载）
     this.initImageMap();
+    
+    // 监听本地存储变化，当图片映射表更新时重新加载
+    if (wx.onStorageChange) {
+      wx.onStorageChange((res) => {
+        if (res.key === 'carbon_image_map') {
+          console.log('检测到图片映射表更新，重新加载');
+          this.initImageMap();
+          // 如果当前显示的年份月份有更新，重新加载图片
+          const { currentYear, currentMonth } = this.data;
+          const imageMap = wx.getStorageSync('carbon_image_map') || {};
+          if (imageMap[currentYear] && imageMap[currentYear][currentMonth]) {
+            this.loadImage(currentYear, currentMonth);
+            // 显示上传图片提示
+            this.showUploadedImageTip(currentYear, currentMonth);
+          }
+        }
+      });
+    }
   },
 
 
@@ -783,9 +805,37 @@ Page({
     // 这里可以添加云存储检查逻辑
     this.setData({ imageMap });
     
+    // 更新年份选项卡，基于imageMap中的年份
+    this.updateYearTabsFromImageMap(imageMap);
+    
     // 如果没有图片映射表，初始化默认结构
     if (Object.keys(imageMap).length === 0) {
       this.initDefaultImageMap();
+    }
+  },
+  
+  // 根据图片映射表更新年份选项卡
+  updateYearTabsFromImageMap(imageMap) {
+    let years = Object.keys(imageMap).map(year => parseInt(year)).sort((a, b) => a - b);
+    
+    // 如果年份列表为空，使用默认年份（2012-2022）
+    if (years.length === 0) {
+      years = [];
+      for (let y = 2012; y <= 2022; y++) {
+        years.push(y);
+      }
+    }
+    
+    console.log('更新年份选项卡:', years);
+    this.setData({ yearTabs: years });
+    
+    // 如果当前年份不在新的年份列表中，调整到第一个年份
+    if (years.length > 0 && !years.includes(this.data.currentYear)) {
+      const newYear = years[0];
+      console.log('当前年份不在列表中，切换到:', newYear);
+      this.setData({ currentYear: newYear });
+      this.loadImage(newYear, this.data.currentMonth);
+      this.updateMonthlyData(newYear);
     }
   },
   
@@ -824,6 +874,9 @@ Page({
     // 保存到本地存储
     wx.setStorageSync('carbon_image_map', imageMap);
     console.log('添加图片到映射表:', year, '年', month, '月', imagePath);
+    
+    // 更新年份选项卡
+    this.updateYearTabsFromImageMap(imageMap);
     
     // 如果当前显示的是这个年份月份，重新加载图片
     if (this.data.currentYear === year && this.data.currentMonth === month) {
@@ -1004,6 +1057,64 @@ Page({
     console.log('切换到月份:', month);
   },
 
+  // 显示上传图片提示
+  showUploadedImageTip(year, month) {
+    // 清除之前的定时器
+    if (this.data.uploadedImageTipTimer) {
+      clearTimeout(this.data.uploadedImageTipTimer);
+    }
+    
+    // 设置提示信息
+    const tip = `📸 已加载上传图片 (${year}年${month}月)`;
+    this.setData({
+      uploadedImageTip: tip,
+      showUploadedTip: true
+    });
+    
+    // 5秒后自动隐藏提示
+    const timer = setTimeout(() => {
+      this.setData({
+        showUploadedTip: false
+      });
+    }, 5000);
+    
+    this.setData({ uploadedImageTipTimer: timer });
+  },
+  
+  // 检查当前图片是否为上传图片
+  checkImageSource(year, month) {
+    const imageMap = this.data.imageMap;
+    if (imageMap[year] && imageMap[year][month]) {
+      const imagePath = imageMap[year][month];
+      // 检查是否为上传图片（不是默认路径）
+      if (!imagePath.includes('/images/nep')) {
+        return 'uploaded';
+      }
+      return 'default';
+    }
+    return 'default';
+  },
+  
+  // 优化detectImagePath函数，添加图片来源标记
+  detectImagePath(year, month = this.data.currentMonth) {
+    // 优先从imageMap中获取图片路径
+    const imageMap = this.data.imageMap;
+    if (imageMap[year] && imageMap[year][month]) {
+      const imagePath = imageMap[year][month];
+      // 如果找到的是上传图片路径，显示提示
+      if (!imagePath.includes('/images/nep')) {
+        // 延迟显示提示，确保图片加载后显示
+        setTimeout(() => {
+          this.showUploadedImageTip(year, month);
+        }, 300);
+      }
+      return imageMap[year][month];
+    }
+    // 默认使用命名规则: /images/nep{年份}{月份:02d}.png
+    const monthStr = month < 10 ? '0' + month : month.toString();
+    return `/images/nep${year}${monthStr}.png`;
+  },
+  
   // 阻止事件冒泡
   stopPropagation(e) {
     // 阻止事件冒泡，防止点击面板内部时触发外层点击事件
