@@ -72,6 +72,7 @@ Page({
     },
     selectedTifFile: null,
     selectedTifFileName: '',
+    isTifFileNameValid: false,
     // 年份月份选择
     selectedYear: 2020,
     selectedMonth: 1,
@@ -152,7 +153,8 @@ Page({
     this.setData({ 
       isLoggedIn: false,
       username: '',
-      password: ''
+      password: '',
+      isTifFileNameValid: false
     });
     wx.showToast({
       title: '已退出登录',
@@ -234,7 +236,9 @@ Page({
         // 验证文件名格式：nep20xxxx.tif 或 nep20xxxx.tiff
         // 格式要求：以nep开头，后跟6位数字，然后.tif或.tiff扩展名
         const pattern = /^nep20\d{4}\.(tif|tiff)$/i;
+        console.log('chooseTifFile: validating fileName:', fileName);
         const isValid = pattern.test(fileName);
+        console.log('chooseTifFile: validation result:', isValid);
         
         if (!isValid) {
           wx.showToast({
@@ -258,12 +262,14 @@ Page({
           const fileMonth = parseInt(yearMonthMatch[2]); // 提取月份，如01
           
           // 自动设置年份和月份
+          console.log('chooseTifFile: setting selectedTifFileName to:', fileName);
           this.setData({
             selectedYear: fileYear,
             selectedMonth: fileMonth,
             'uploadStatus.tif': `已选择文件 (${fileYear}年${fileMonth}月)`,
             selectedTifFile: tempFilePath,
-            selectedTifFileName: fileName
+            selectedTifFileName: fileName,
+            isTifFileNameValid: true
           });
           
           wx.showToast({
@@ -272,10 +278,12 @@ Page({
             duration: 2000
           });
         } else {
+          console.log('chooseTifFile: setting selectedTifFileName (no year/month match):', fileName);
           this.setData({
             'uploadStatus.tif': '已选择文件',
             selectedTifFile: tempFilePath,
-            selectedTifFileName: fileName
+            selectedTifFileName: fileName,
+            isTifFileNameValid: true
           });
           wx.showToast({
             title: '已选择TIF文件',
@@ -298,9 +306,15 @@ Page({
   // 验证TIF文件名格式
   isTifFileNameValid() {
     const fileName = this.data.selectedTifFileName;
-    if (!fileName) return false;
+    if (!fileName) {
+      console.log('isTifFileNameValid: fileName is empty');
+      return false;
+    }
+    console.log('isTifFileNameValid: checking fileName:', fileName);
     const pattern = /^nep20\d{4}\.(tif|tiff)$/i;
-    return pattern.test(fileName);
+    const result = pattern.test(fileName);
+    console.log('isTifFileNameValid: pattern test result:', result);
+    return result;
   },
 
   // 选择JSON文件

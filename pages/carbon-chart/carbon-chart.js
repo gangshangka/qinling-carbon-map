@@ -31,7 +31,11 @@ Page({
     playIntervalId: null, // 播放定时器ID
     yearMonthList: [], // 年份月份列表，用于播放
     currentYearMonth: '', // 当前播放的年月，格式如"2022-01"
-    currentChartMode: 'year' // 播放模式：'year' 按年份播放，'month' 按月份播放
+    currentChartMode: 'year', // 播放模式：'year' 按年份播放，'month' 按月份播放
+    // 性能优化相关
+    loading: true, // 数据加载状态
+    dataProcessed: false, // 数据是否已处理完成
+    dataCacheKey: 'carbon_chart_data_cache' // 缓存key
   },
 
   // 处理原始数据，生成年度、县级和月度数据
@@ -169,8 +173,8 @@ Page({
       return monthA - monthB;
     });
     
-    // 更新页面数据
-    this.setData({
+    // 返回处理结果，不直接更新UI
+    const result = {
       annualData: annualData,
       countyData: countyArray,
       monthlyData: monthlyData,
@@ -184,7 +188,7 @@ Page({
       availableYears: years, // 所有可用年份，用于播放
       yearMonthList: yearMonthList,
       currentYearMonth: yearMonthList.length > 0 ? yearMonthList[0] : ''
-    });
+    };
     
     console.log('数据处理完成:');
     console.log('- 年度数据条数:', annualData.length);
@@ -192,19 +196,116 @@ Page({
     console.log('- 月度数据条数:', monthlyData.length);
     console.log('- 最新年份:', latestYear);
     console.log('- 县区总数:', counties.length);
+    
+    return result;
   },
 
   onLoad() {
     console.log('碳汇统计页面加载 - 使用完整分县区数据');
     
-    // 处理原始数据
-    this.processRawData();
+    // 先显示加载状态
+    this.setData({ loading: true });
     
-    // 初始化月度数据计数
-    this.updateMonthlyDataCount();
+    // 尝试从缓存加载数据（异步）
+    this.loadDataWithCache();
+  },
+  
+  // 带缓存的异步数据加载
+  loadDataWithCache() {
+    const cacheKey = this.data.dataCacheKey;
+    const now = Date.now();
+    const cacheExpireTime = 5 * 60 * 1000; // 5分钟缓存
     
-    // 提取可用的年份列表
-    this.extractAvailableYears();
+    try {
+      // 尝试从缓存读取
+      const cachedData = wx.getStorageSync(cacheKey);
+      if (cachedData && cachedData.timestamp && (now - cachedData.timestamp < cacheExpireTime)) {
+        console.log('从缓存加载数据，缓存时间:', new Date(cachedData.timestamp).toLocaleString());
+        
+        // 从缓存恢复数据
+        this.setData({
+          annualData: cachedData.annualData || [],
+          countyData: cachedData.countyData || [],
+          monthlyData: cachedData.monthlyData || [],
+          countyDataByYear: cachedData.countyDataByYear || {},
+          countyDataByYearMonth: cachedData.countyDataByYearMonth || {},
+          latestYear: cachedData.latestYear || 2022,
+          totalCounties: cachedData.totalCounties || 0,
+          currentYear: cachedData.currentYear || 2022,
+          availableYears: cachedData.availableYears || [],
+          yearTabs: cachedData.yearTabs || [2020, 2021, 2022],
+          yearMonthList: cachedData.yearMonthList || [],
+          currentYearMonth: cachedData.currentYearMonth || '',
+          loading: false,
+          dataProcessed: true
+        });
+        
+        console.log('缓存数据加载完成');
+        return;
+      }
+    } catch (err) {
+      console.log('缓存读取失败，重新处理数据:', err);
+    }
+    
+    // 无缓存或缓存过期，异步处理数据
+    console.log('开始异步处理原始数据...');
+    
+    // 使用setTimeout避免阻塞UI渲染
+    setTimeout(() => {
+      try {
+        // 调用processRawData获取处理结果
+        const processedData = this.processRawData();
+        
+        // 使用处理结果更新页面数据
+        this.setData({
+          annualData: processedData.annualData,
+          countyData: processedData.countyData,
+          monthlyData: processedData.monthlyData,
+          countyDataByYear: processedData.countyDataByYear,
+          countyDataByYearMonth: processedData.countyDataByYearMonth,
+          latestYear: processedData.latestYear,
+          totalCounties: processedData.totalCounties,
+          currentYear: processedData.currentYear,
+          availableYears: processedData.availableYears,
+          yearTabs: processedData.yearTabs,
+          yearMonthList: processedData.yearMonthList,
+          currentYearMonth: processedData.currentYearMonth,
+          updateTime: processedData.updateTime
+        });
+        
+        // 处理完成后保存到缓存
+        const cacheData = {
+          annualData: processedData.annualData,
+          countyData: processedData.countyData,
+          monthlyData: processedData.monthlyData,
+          countyDataByYear: processedData.countyDataByYear,
+          countyDataByYearMonth: processedData.countyDataByYearMonth,
+          latestYear: processedData.latestYear,
+          totalCounties: processedData.totalCounties,
+          currentYear: processedData.currentYear,
+          availableYears: processedData.availableYears,
+          yearTabs: processedData.yearTabs,
+          yearMonthList: processedData.yearMonthList,
+          currentYearMonth: processedData.currentYearMonth,
+          timestamp: now
+        };
+        
+        wx.setStorageSync(cacheKey, cacheData);
+        console.log('数据处理完成并已缓存');
+        
+        // 更新加载状态
+        this.setData({ 
+          loading: false,
+          dataProcessed: true 
+        });
+      } catch (error) {
+        console.error('数据处理失败:', error);
+        this.setData({ 
+          loading: false,
+          dataProcessed: false 
+        });
+      }
+    }, 0); // 无延迟异步执行
   },
   
   extractAvailableYears() {
@@ -228,11 +329,9 @@ Page({
   },
   
   onShow() {
-    // 页面显示时重新初始化图表，确保显示正确
+    // 页面显示时立即重新初始化图表，无需延迟
     if (this.chart) {
-      setTimeout(() => {
-        this.chart.resize();
-      }, 50);
+      this.chart.resize();
     }
   },
 
@@ -329,7 +428,7 @@ Page({
             } catch (err) {
               console.log('图表更新失败:', err);
             }
-          }, 100);
+          }, 0); // 无延迟异步执行
           
           return chart;
         } catch (error) {

@@ -1,14 +1,28 @@
-<!-- pages/index/index.wxml -->
+<!-- 
+  整个页面分为：图片展示区、控制面板+图表区、底部导航栏
+-->
+
+<!-- 最外层容器，用于整体布局 -->
 <view class="container">
-  <!-- 影像显示区域 -->
+  
+  <!-- ========= 1. 影像显示区域 ========= -->
+  <!-- 一个容器，用来放置图片 -->
   <view class="image-viewer">
-    <!-- 上传图片状态提示 -->
+    
+    <!-- 上传图片状态提示：一个小横幅，提示图片加载状态 -->
+    <!-- class 里用 {{showUploadedTip ? 'show' : 'hide'}} 动态控制显示或隐藏 -->
+    <!-- showUploadedTip 是 JS 中定义的变量，为 true 时显示，false 时隐藏 -->
     <view class="upload-status-tip {{showUploadedTip ? 'show' : 'hide'}}">
+      <!-- 显示一个相机表情作为图标 -->
       <text class="upload-status-icon">📸</text>
+      <!-- 显示提示文字，文字内容由 JS 中的 uploadedImageTip 变量提供 -->
       <text class="upload-status-text">{{uploadedImageTip}}</text>
     </view>
     
-    <!-- 占位图 - 始终显示2012年1月图片 -->
+    <!-- 占位图：始终显示的背景图（比如默认图片） -->
+    <!-- src 是图片地址，从 JS 中的 placeholderImageUrl 变量获取 -->
+    <!-- mode="aspectFit" 表示图片等比缩放，完整显示在区域内 -->
+    <!-- class 定义了样式，后面 style 动态设置缩放、旋转中心、透明度 -->
     <image
       src="{{placeholderImageUrl}}"
       mode="aspectFit"
@@ -16,7 +30,10 @@
       style="transform: scale({{imageScale}}); transform-origin: center center; opacity: {{imageOpacity}};"
     />
     
-    <!-- 目标图 - 加载完成后显示 -->
+    <!-- 目标图：真正要显示的图片（用户选择的年份月份对应的图） -->
+    <!-- 一开始可能隐藏，等图片加载完成后才显示，通过 class 中的 visible/hidden 控制 -->
+    <!-- bindload="onImageLoad" 表示图片加载成功时，调用 JS 中的 onImageLoad 函数 -->
+    <!-- binderror="onImageError" 表示图片加载失败时，调用 JS 中的 onImageError 函数 -->
     <image
       src="{{currentImageUrl}}"
       mode="aspectFit"
@@ -27,86 +44,117 @@
     />
   </view>
 
-  <!-- 控制面板与图表整合 -->
+  <!-- ========= 2. 控制面板与图表整合区 ========= -->
+  <!-- 一个容器，将控制按钮和图表放在一起 -->
   <view class="control-chart-container">
-    <!-- 控制面板 - 简约设计 -->
+    
+    <!-- 控制面板：包含时间选择和播放按钮 -->
     <view class="control-panel">
-      <!-- 年份和月份选择 -->
+      
+      <!-- 控制面板头部：左侧显示标题和当前选择的时间，右侧是自动播放按钮 -->
       <view class="selection-header">
         <view class="selection-header-left">
           <text class="selection-title">时间选择</text>
+          <!-- 显示当前选中的年份和月份，数据来自 JS 中的 currentYear 和 currentMonth -->
           <text class="current-selection">{{currentYear}}年{{currentMonth}}月</text>
         </view>
         <view class="selection-header-right">
+          <!-- 自动播放按钮，点击后触发 toggleAutoPlay 函数 -->
+          <!-- class 中根据 autoPlay 是否为 true 来添加 active 样式（高亮） -->
           <button 
             class="auto-play-btn {{autoPlay ? 'active' : ''}}" 
             bindtap="toggleAutoPlay"
             size="mini"
           >
+            <!-- 按钮文字根据 autoPlay 状态显示不同文字 -->
             {{autoPlay ? '停止播放' : '开始播放'}}
           </button>
+          <!-- 显示自动播放的状态文字，如“播放中”或“已停止”，数据来自 autoPlayStatus -->
           <text class="auto-play-status">{{autoPlayStatus}}</text>
         </view>
       </view>
       
-      <!-- 时间选择行：年份和月份并排 -->
+      <!-- 时间选择行：年份和月份选择器并排显示 -->
       <view class="time-selection-row">
-        <!-- 年份选择器 -->
-        <view class="time-selector year-selector-container">
-          <view class="time-selector-header" bindtap="toggleYearPicker">
-            <text class="time-label">年份</text>
-            <view class="time-value">
-              <text class="current-time">{{currentYear}}</text>
-              <text class="time-dropdown-icon">{{showYearPicker ? '▲' : '▼'}}</text>
+        
+        <!-- 年份选择器容器，点击后触发 toggleYearPicker 函数（显示/隐藏年份选择弹窗） -->
+        <view class="time-selector year-selector-container" bindtap="toggleYearPicker">
+          <view class="section-label month-section-label">
+            <text>年份选择</text>
+            <!-- 下拉箭头，根据 showYearPicker 状态添加 active 类（旋转箭头） -->
+            <view class="month-dropdown-btn {{showYearPicker ? 'active' : ''}}">
+              <text class="month-dropdown-icon">▼</text>
             </view>
           </view>
-          
-          <!-- 年份选择面板 -->
-          <view class="time-picker-panel {{showYearPicker ? 'show' : 'hide'}}" catchtap="stopPropagation">
-            <view class="time-picker-header">
-              <text class="time-picker-title">选择年份</text>
-              <text class="time-picker-close" bindtap="closeYearPicker">×</text>
+          <view class="selected-value-display">
+            <!-- 显示当前选中的年份 -->
+            <text class="selected-value-text">{{currentYear}}年</text>
+          </view>
+        </view>
+        
+        <!-- 月份选择器容器，点击后触发 toggleMonthPicker 函数 -->
+        <view class="time-selector month-selector-container" bindtap="toggleMonthPicker">
+          <view class="section-label month-section-label">
+            <text>月份选择</text>
+            <!-- 下拉箭头，根据 showMonthPicker 状态旋转 -->
+            <view class="month-dropdown-btn {{showMonthPicker ? 'active' : ''}}">
+              <text class="month-dropdown-icon">▼</text>
             </view>
-            <view class="time-picker-options">
-              <block wx:for="{{yearTabs}}" wx:key="index">
+          </view>
+          <view class="selected-value-display">
+            <!-- 显示当前选中的月份 -->
+            <text class="selected-value-text">{{currentMonth}}月</text>
+          </view>
+        </view>
+        
+        <!-- 月份选择器弹窗：点击月份选择器后弹出的面板 -->
+        <!-- class 根据 showMonthPicker 为 true 时显示，false 时隐藏 -->
+        <!-- catchtap="closeMonthPicker" 表示点击弹窗背景时关闭弹窗，catchtap 阻止事件冒泡（防止触发父元素的点击） -->
+        <view class="month-picker-panel {{showMonthPicker ? 'show' : 'hide'}}" catchtap="closeMonthPicker">
+          <!-- 弹窗内容，catchtap="stopPropagation" 阻止点击内容区域时关闭弹窗（防止冒泡） -->
+          <view class="month-picker-content" catchtap="stopPropagation">
+            <view class="month-picker-header">
+              <text class="month-picker-title">选择月份</text>
+              <!-- 关闭按钮，点击关闭弹窗 -->
+              <text class="month-picker-close" catchtap="closeMonthPicker">×</text>
+            </view>
+            <view class="month-picker-options">
+              <!-- wx:for 循环，遍历 monthTabs 数组（JS 中定义的月份列表，如 [1,2,...,12]） -->
+              <!-- wx:key="index" 提高列表渲染性能，用索引作为唯一标识 -->
+              <block wx:for="{{monthTabs}}" wx:key="index">
+                <!-- 每个月份的选项，点击时调用 selectMonth 函数，并传递当前月份数据 data-month="{{item}}" -->
+                <!-- class 中根据当前选中的月份（currentMonth）与 item 是否相等，添加 selected 样式 -->
                 <view 
-                  class="time-option {{currentYear === item ? 'selected' : ''}}" 
-                  bindtap="selectYear" 
-                  data-year="{{item}}"
+                  class="month-option {{currentMonth === item ? 'selected' : ''}}" 
+                  catchtap="selectMonth" 
+                  data-month="{{item}}"
                 >
-                  <text class="time-option-text">{{item}}</text>
-                  <text class="time-option-checkmark" wx:if="{{currentYear === item}}">✓</text>
+                  <text class="month-option-text">{{item}}月</text>
+                  <!-- 如果当前月份是选中的，显示一个对勾图标 -->
+                  <text wx:if="{{currentMonth === item}}" class="month-option-checkmark">✓</text>
                 </view>
               </block>
             </view>
           </view>
         </view>
         
-        <!-- 月份选择器 -->
-        <view class="time-selector month-selector-container">
-          <view class="time-selector-header" bindtap="toggleMonthPicker">
-            <text class="time-label">月份</text>
-            <view class="time-value">
-              <text class="current-time">{{currentMonth}}</text>
-              <text class="time-dropdown-icon">{{showMonthPicker ? '▲' : '▼'}}</text>
+        <!-- 年份选择器弹窗，结构和月份弹窗类似 -->
+        <view class="month-picker-panel {{showYearPicker ? 'show' : 'hide'}}" catchtap="closeYearPicker">
+          <view class="month-picker-content" catchtap="stopPropagation">
+            <view class="month-picker-header">
+              <text class="month-picker-title">选择年份</text>
+              <text class="month-picker-close" catchtap="closeYearPicker">×</text>
             </view>
-          </view>
-          
-          <!-- 月份选择面板 -->
-          <view class="time-picker-panel {{showMonthPicker ? 'show' : 'hide'}}" catchtap="stopPropagation">
-            <view class="time-picker-header">
-              <text class="time-picker-title">选择月份</text>
-              <text class="time-picker-close" bindtap="closeMonthPicker">×</text>
-            </view>
-            <view class="time-picker-options">
-              <block wx:for="{{monthTabs}}" wx:key="index">
+            <view class="month-picker-options">
+              <!-- 遍历 yearTabs 数组（JS 中定义的可用年份列表） -->
+              <block wx:for="{{yearTabs}}" wx:key="index">
                 <view 
-                  class="time-option {{currentMonth === item ? 'selected' : ''}}" 
-                  bindtap="selectMonth" 
-                  data-month="{{item}}"
+                  class="month-option {{currentYear === item ? 'selected' : ''}}" 
+                  catchtap="selectYear" 
+                  data-year="{{item}}"
                 >
-                  <text class="time-option-text">{{item}}</text>
-                  <text class="time-option-checkmark" wx:if="{{currentMonth === item}}">✓</text>
+                  <text class="month-option-text">{{item}}年</text>
+                  <text wx:if="{{currentYear === item}}" class="month-option-checkmark">✓</text>
                 </view>
               </block>
             </view>
@@ -115,14 +163,20 @@
       </view>
     </view>
 
-    <!-- 数据图表 - 与控制面板同一层级 -->
+    <!-- 数据图表面板：显示碳汇月度统计图表 -->
     <view class="chart-panel">
       <view class="chart-header">
         <text>碳汇月度统计</text>
+        <!-- 显示当前年份，数据来自 currentYear -->
         <text class="chart-year-display">{{currentYear}}年</text>
       </view>
       
-      <view class="chart-container">
+      <!-- 图表容器，class 根据 chartHidden 变量决定是否隐藏 -->
+      <view class="chart-container {{chartHidden ? 'hidden' : ''}}">
+        <!-- canvas 画布，用于绘制图表 -->
+        <!-- id="monthlyChart" 用于在 JS 中通过选择器获取该元素 -->
+        <!-- canvas-id 是旧版小程序的写法，这里同时保留 -->
+        <!-- type="2d" 表示使用新版 2D canvas API -->
         <canvas 
           id="monthlyChart"
           canvas-id="monthlyChart" 
@@ -131,22 +185,26 @@
         ></canvas>
       </view>
       
+      <!-- 图表底部，目前为空，但可以放图例或说明 -->
       <view class="chart-footer">
-        <text>注: 当前为模拟数据，可替换为真实碳汇数据</text>
       </view>
     </view>
   </view>
 
-  <!-- 底部导航栏 -->
+  <!-- ========= 3. 底部导航栏 ========= -->
+  <!-- 固定在底部的导航栏，点击可跳转到其他页面 -->
   <view class="bottom-navbar">
+    <!-- 导航项：碳汇统计页面 -->
     <view class="nav-item" bindtap="navigateToCarbonChart">
       <text class="nav-icon">📊</text>
       <text class="nav-text">碳汇统计</text>
     </view>
+    <!-- 导航项：3D柱状图页面 -->
     <view class="nav-item" bindtap="navigateTo3DBarChart">
       <text class="nav-icon">📊</text>
       <text class="nav-text">3D柱状图</text>
     </view>
+    <!-- 导航项：管理员页面 -->
     <view class="nav-item" bindtap="navigateToAdmin">
       <text class="nav-icon">👨‍💼</text>
       <text class="nav-text">管理员</text>

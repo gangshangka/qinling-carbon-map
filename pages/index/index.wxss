@@ -1,4 +1,4 @@
-/* pages/index/index.wxss */
+/* pages/index/index.wxss - 修复版本 */
 .container {
   height: 100%;
   display: flex;
@@ -26,48 +26,6 @@
   height: 32vh;
   margin-top: 0;
   border: none;
-}
-
-/* 上传图片状态提示 */
-.upload-status-tip {
-  position: absolute;
-  top: 20rpx;
-  right: 20rpx;
-  background: linear-gradient(135deg, rgba(76, 175, 80, 0.9) 0%, rgba(46, 125, 50, 0.9) 100%);
-  color: white;
-  padding: 12rpx 20rpx;
-  border-radius: 8rpx;
-  display: flex;
-  align-items: center;
-  gap: 8rpx;
-  z-index: 50;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.2);
-  opacity: 0;
-  transform: translateY(-20rpx);
-  visibility: hidden;
-  transition: all 0.3s ease;
-}
-
-.upload-status-tip.show {
-  opacity: 1;
-  transform: translateY(0);
-  visibility: visible;
-}
-
-.upload-status-tip.hide {
-  opacity: 0;
-  transform: translateY(-20rpx);
-  visibility: hidden;
-}
-
-.upload-status-icon {
-  font-size: 24rpx;
-}
-
-.upload-status-text {
-  font-size: 24rpx;
-  font-weight: 500;
-  white-space: nowrap;
 }
 
 .placeholder-image,
@@ -106,122 +64,22 @@
   opacity: 0;
 }
 
-/* 加载状态 */
-.loading-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+/* 控制面板与图表整合容器 */
+.control-chart-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+  margin: 12rpx;
+}
+
+/* 控制面板调整 */
+.control-panel {
   background: rgba(255, 255, 255, 0.95);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  z-index: 100;
-}
-
-.loading-spinner {
-  width: 60rpx;
-  height: 60rpx;
-  border: 6rpx solid #e0e0e0;
-  border-top: 6rpx solid #4CAF50;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: 30rpx;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-.loading-overlay text {
-  color: #333;
-  font-size: 28rpx;
-  margin-bottom: 15rpx;
-  display: block;
-  text-align: center;
-}
-
-.progress-text {
-  color: #4CAF50;
-  font-size: 24rpx;
-  margin-top: 10rpx;
-}
-
-/* 信息覆盖层 */
-.info-overlay {
-  position: absolute;
-  top: 30rpx;
-  left: 30rpx;
-  right: 30rpx;
-  z-index: 10;
-}
-
-.info-card {
-  background: rgba(0, 0, 0, 0.75);
+  padding: 16rpx;
+  backdrop-filter: blur(10px);
   border-radius: 16rpx;
-  padding: 30rpx;
-  color: white;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
 }
-
-.info-title {
-  display: block;
-  font-size: 32rpx;
-  font-weight: bold;
-  margin-bottom: 10rpx;
-}
-
-.info-subtitle {
-  display: block;
-  font-size: 26rpx;
-  color: #52c41a;
-  margin-bottom: 20rpx;
-}
-
-.info-details text {
-  display: block;
-  font-size: 24rpx;
-  color: #cccccc;
-  margin-bottom: 8rpx;
-}
-
-/* 控制按钮 */
-.control-buttons {
-  position: absolute;
-  bottom: 30rpx;
-  right: 30rpx;
-  display: flex;
-  flex-direction: column;
-  gap: 15rpx;
-  z-index: 10;
-}
-
-.control-btn {
-  width: 80rpx;
-  height: 80rpx;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.7);
-  color: white;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border: none;
-  padding: 0;
-  margin: 0;
-}
-
-.control-btn::after {
-  border: none;
-}
-
-.control-btn text {
-  font-size: 32rpx;
-  font-weight: bold;
-}
-
-
 
 .selection-header {
   display: flex;
@@ -256,283 +114,6 @@
   color: #4CAF50;
 }
 
-/* 年份选择器 - 压缩高分辨率设计 */
-.compact-year-section {
-  margin-bottom: 12rpx;
-  position: relative;
-}
-
-/* 年份选择器主体 */
-.year-selector {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 249, 250, 0.95) 100%);
-  border-radius: 12rpx;
-  border: 2rpx solid rgba(76, 175, 80, 0.15);
-  padding: 16rpx 20rpx;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.year-selector:active {
-  background: linear-gradient(135deg, rgba(248, 249, 250, 0.95) 0%, rgba(233, 236, 239, 0.95) 100%);
-  transform: translateY(1rpx);
-  box-shadow: 0 1rpx 4rpx rgba(0, 0, 0, 0.1);
-}
-
-.year-selector-main {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.year-label {
-  font-size: 28rpx;
-  color: #333;
-  font-weight: 700;
-  letter-spacing: 0.5rpx;
-}
-
-.year-value {
-  display: flex;
-  align-items: center;
-  gap: 12rpx;
-}
-
-.current-year {
-  font-size: 32rpx;
-  font-weight: 800;
-  color: #4CAF50;
-  text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.1);
-}
-
-.year-dropdown-icon {
-  font-size: 24rpx;
-  color: #666;
-  font-weight: 700;
-  transition: transform 0.3s ease;
-}
-
-/* 年份选择面板 */
-.year-picker-panel {
-  position: absolute;
-  top: calc(100% + 8rpx);
-  left: 0;
-  right: 0;
-  background: white;
-  border-radius: 12rpx;
-  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.15);
-  z-index: 1000;
-  overflow: hidden;
-  opacity: 0;
-  transform: translateY(-10rpx);
-  visibility: hidden;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.year-picker-panel.show {
-  opacity: 1;
-  transform: translateY(0);
-  visibility: visible;
-}
-
-.year-picker-panel.hide {
-  opacity: 0;
-  transform: translateY(-10rpx);
-  visibility: hidden;
-}
-
-.year-picker-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20rpx 24rpx;
-  background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
-  color: white;
-}
-
-.year-picker-title {
-  font-size: 28rpx;
-  font-weight: 700;
-}
-
-.year-picker-close {
-  font-size: 36rpx;
-  font-weight: 300;
-  line-height: 1;
-  color: white;
-  opacity: 0.9;
-}
-
-.year-picker-close:active {
-  opacity: 0.7;
-}
-
-.year-picker-options {
-  max-height: 500rpx;
-  overflow-y: auto;
-  padding: 12rpx;
-}
-
-.year-option {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20rpx 24rpx;
-  border-radius: 8rpx;
-  margin-bottom: 8rpx;
-  background: #f8f9fa;
-  transition: all 0.2s ease;
-}
-
-.year-option:active {
-  background: #e9ecef;
-}
-
-.year-option.selected {
-  background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
-  color: white;
-  box-shadow: 0 4rpx 12rpx rgba(76, 175, 80, 0.3);
-}
-
-.year-option-text {
-  font-size: 30rpx;
-  font-weight: 600;
-  letter-spacing: 0.5rpx;
-}
-
-.year-option.selected .year-option-text {
-  font-weight: 700;
-  color: white;
-}
-
-.year-option-checkmark {
-  font-size: 28rpx;
-  font-weight: 700;
-  color: white;
-}
-
-/* 月份选择器 */
-.compact-month-section {
-  margin-bottom: 12rpx;
-}
-
-.section-label {
-  font-size: 24rpx;
-  color: #333;
-  margin-bottom: 8rpx;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 6rpx;
-}
-
-.section-label::before {
-  content: '';
-  display: inline-block;
-  width: 6rpx;
-  height: 20rpx;
-  background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
-  border-radius: 3rpx;
-}
-
-.year-tabs-container {
-  position: relative;
-}
-
-.compact-tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6rpx;
-  margin-bottom: 3rpx;
-}
-
-.compact-tab {
-  padding: 12rpx 14rpx;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 249, 250, 0.95) 100%);
-  border-radius: 10rpx;
-  font-size: 24rpx;
-  color: #333;
-  text-align: center;
-  border: 1rpx solid rgba(76, 175, 80, 0.15);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  box-shadow: 0 1rpx 6rpx rgba(0, 0, 0, 0.05);
-  position: relative;
-  overflow: hidden;
-}
-
-.compact-tab::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 100%;
-  background: linear-gradient(135deg, rgba(76, 175, 80, 0.1) 0%, rgba(46, 125, 50, 0.1) 100%);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.compact-tab.active {
-  background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
-  color: white;
-  font-weight: 700;
-  border-color: transparent;
-  box-shadow: 0 4rpx 12rpx rgba(76, 175, 80, 0.4);
-  transform: translateY(-1rpx);
-  border-width: 1rpx;
-}
-
-.compact-tab.active::before {
-  opacity: 1;
-}
-
-.compact-tab:not(.active):active {
-  background: linear-gradient(135deg, rgba(248, 249, 250, 0.95) 0%, rgba(233, 236, 239, 0.95) 100%);
-  transform: translateY(0);
-  box-shadow: 0 1rpx 4rpx rgba(0, 0, 0, 0.1);
-}
-
-
-
-
-
-.auto-play-btn {
-  font-size: 24rpx;
-  padding: 10rpx 20rpx;
-  line-height: 1.3;
-  border-radius: 6rpx;
-  background: #f0f2f5;
-  color: #333;
-  border: none;
-  flex-shrink: 0;
-  font-weight: 500;
-}
-
-.auto-play-btn.active {
-  background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
-  color: white;
-  font-weight: bold;
-  border-color: transparent;
-  box-shadow: 0 3rpx 8rpx rgba(76, 175, 80, 0.3);
-}
-
-.auto-play-btn::after {
-  border: none;
-}
-
-.auto-play-status {
-  font-size: 22rpx;
-  color: #666;
-  flex: 1;
-  text-align: right;
-  font-weight: 500;
-}
-
 /* 时间选择行样式 - 年份和月份并排 */
 .time-selection-row {
   display: flex;
@@ -557,251 +138,167 @@
   box-shadow: 0 1rpx 4rpx rgba(0, 0, 0, 0.1);
 }
 
-.time-selector-header {
+/* 月份选择器标签带下拉按钮 */
+.month-section-label {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 8rpx;
 }
 
-.time-label {
-  font-size: 24rpx;
-  color: #333;
-  font-weight: 600;
-  letter-spacing: 0.5rpx;
-}
-
-.time-value {
+.month-dropdown-btn {
+  padding: 6rpx 12rpx;
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.1) 0%, rgba(46, 125, 50, 0.1) 100%);
+  border-radius: 6rpx;
+  border: 1rpx solid rgba(76, 175, 80, 0.2);
   display: flex;
   align-items: center;
-  gap: 8rpx;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.current-time {
-  font-size: 26rpx;
+.month-dropdown-btn:active {
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.2) 0%, rgba(46, 125, 50, 0.2) 100%);
+  transform: translateY(1rpx);
+  box-shadow: 0 1rpx 4rpx rgba(0, 0, 0, 0.1);
+}
+
+.month-dropdown-icon {
+  font-size: 18rpx;
+  color: #4CAF50;
+  font-weight: bold;
+  transition: transform 0.3s ease;
+}
+
+.month-dropdown-btn.active .month-dropdown-icon {
+  transform: rotate(180deg);
+}
+
+/* 选中值显示样式 */
+.selected-value-display {
+  margin-top: 8rpx;
+  padding: 12rpx 16rpx;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 8rpx;
+  border: 1rpx solid rgba(76, 175, 80, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.selected-value-text {
+  font-size: 30rpx;
   font-weight: 700;
   color: #4CAF50;
   text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.1);
 }
 
-.time-dropdown-icon {
-  font-size: 20rpx;
-  color: #666;
-  font-weight: 600;
-  transition: transform 0.3s ease;
-}
-
-/* 时间选择面板 - 复用年份面板样式，但调整定位 */
-.time-picker-panel {
-  position: absolute;
-  top: calc(100% + 8rpx);
+/* 月份选择器弹窗 */
+.month-picker-panel {
+  position: fixed;
+  top: 0;
   left: 0;
   right: 0;
-  background: white;
-  border-radius: 10rpx;
-  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.15);
-  z-index: 9999;
-  overflow: hidden;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10003;
   opacity: 0;
-  transform: translateY(-10rpx);
   visibility: hidden;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.time-picker-panel.show {
+.month-picker-panel.show {
   opacity: 1;
-  transform: translateY(0);
   visibility: visible;
 }
 
-.time-picker-panel.hide {
+.month-picker-panel.hide {
   opacity: 0;
-  transform: translateY(-10rpx);
   visibility: hidden;
 }
 
-.time-picker-header {
+.month-picker-content {
+  background: white;
+  border-radius: 12rpx;
+  width: 80%;
+  max-width: 600rpx;
+  max-height: 80%;
+  overflow: hidden;
+  box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.3);
+}
+
+.month-picker-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16rpx 20rpx;
+  padding: 24rpx 30rpx;
   background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
   color: white;
 }
 
-.time-picker-title {
-  font-size: 26rpx;
+.month-picker-title {
+  font-size: 28rpx;
   font-weight: 700;
 }
 
-.time-picker-close {
-  font-size: 32rpx;
+.month-picker-close {
+  font-size: 36rpx;
   font-weight: 300;
   line-height: 1;
   color: white;
   opacity: 0.9;
 }
 
-.time-picker-close:active {
+.month-picker-close:active {
   opacity: 0.7;
 }
 
-.time-picker-options {
-  max-height: 500rpx;
+.month-picker-options {
+  max-height: 600rpx;
   overflow-y: auto;
-  padding: 10rpx;
+  padding: 20rpx;
 }
 
-.time-option {
+.month-option {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16rpx 20rpx;
+  padding: 20rpx 24rpx;
   border-radius: 8rpx;
-  margin-bottom: 6rpx;
+  margin-bottom: 10rpx;
   background: #f8f9fa;
   transition: all 0.2s ease;
 }
 
-.time-option:active {
+.month-option:active {
   background: #e9ecef;
 }
 
-.time-option.selected {
+.month-option.selected {
   background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
   color: white;
   box-shadow: 0 4rpx 12rpx rgba(76, 175, 80, 0.3);
 }
 
-.time-option-text {
-  font-size: 26rpx;
+.month-option-text {
+  font-size: 28rpx;
   font-weight: 600;
   letter-spacing: 0.5rpx;
 }
 
-.time-option.selected .time-option-text {
+.month-option.selected .month-option-text {
   font-weight: 700;
   color: white;
 }
 
-.time-option-checkmark {
-  font-size: 24rpx;
-  font-weight: 700;
-  color: white;
-}
-
-/* 预加载状态 */
-.preload-status {
-  margin-top: 15rpx;
-  padding: 15rpx;
-  background: #f0f9ff;
-  border-radius: 10rpx;
-}
-
-.preload-status text {
-  display: block;
-  font-size: 22rpx;
-  color: #1890ff;
-  margin-bottom: 10rpx;
-}
-
-.progress-bar {
-  height: 6rpx;
-  background: #e6f7ff;
-  border-radius: 3rpx;
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #52c41a, #1890ff);
-  transition: width 0.3s ease;
-}
-
-
-
-/* 错误提示样式 */
-.error-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(255, 255, 255, 0.95);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 90;
-}
-
-.error-card {
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 24rpx;
-  padding: 60rpx 40rpx;
-  text-align: center;
-  max-width: 80%;
-  box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.3);
-  border: 2rpx solid #ff4d4f;
-}
-
-.error-icon {
-  font-size: 80rpx;
-  display: block;
-  margin-bottom: 30rpx;
-}
-
-.error-title {
-  display: block;
-  font-size: 36rpx;
-  font-weight: bold;
-  color: #ff4d4f;
-  margin-bottom: 20rpx;
-}
-
-.error-message {
-  display: block;
-  font-size: 30rpx;
-  color: #333;
-  margin-bottom: 15rpx;
-  line-height: 1.4;
-}
-
-.error-hint {
-  display: block;
+.month-option-checkmark {
   font-size: 26rpx;
-  color: #666;
-  font-style: italic;
-}
-
-/* 控制面板与图表整合容器 */
-.control-chart-container {
-  display: flex;
-  flex-direction: column;
-  gap: 16rpx;
-  margin: 12rpx;
-  position: relative;
-  z-index: 10;
-}
-
-/* 图表年份显示 */
-.chart-year-display {
-  font-size: 28rpx;
-  font-weight: 600;
-  color: #4CAF50;
-  background: rgba(76, 175, 80, 0.1);
-  padding: 6rpx 16rpx;
-  border-radius: 20rpx;
-  border: 1rpx solid rgba(76, 175, 80, 0.2);
-}
-
-/* 控制面板调整 */
-.control-panel {
-  background: rgba(255, 255, 255, 0.95);
-  padding: 16rpx;
-  backdrop-filter: blur(10px);
-  border-radius: 16rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
-  position: relative;
-  z-index: 10;
+  font-weight: 700;
+  color: white;
 }
 
 /* 图表面板调整 */
@@ -810,24 +307,8 @@
   padding: 16rpx;
   border-radius: 16rpx;
   box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
-  position: relative;
-  z-index: 10;
 }
 
-/* 图表容器高分辨率优化 */
-.chart-container {
-  width: 100%;
-  height: 400rpx;
-  background: #fafafa;
-  border: 1rpx solid #e0e0e0;
-  border-radius: 12rpx;
-  overflow: hidden;
-  box-sizing: border-box;
-  position: relative;
-  z-index: 1;
-}
-
-/* 图表标题调整 */
 .chart-header {
   display: flex;
   flex-direction: row;
@@ -842,6 +323,34 @@
   font-weight: bold;
   color: #333;
   letter-spacing: 0.5rpx;
+}
+
+.chart-year-display {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #4CAF50;
+  background: rgba(76, 175, 80, 0.1);
+  padding: 6rpx 16rpx;
+  border-radius: 20rpx;
+  border: 1rpx solid rgba(76, 175, 80, 0.2);
+}
+
+/* 图表容器高分辨率优化 */
+.chart-container {
+  width: 100%;
+  height: 400rpx;
+  background: #fafafa;
+  border: 1rpx solid #e0e0e0;
+  border-radius: 12rpx;
+  overflow: hidden;
+  box-sizing: border-box;
+  position: relative;
+  transition: z-index 0.3s ease;
+}
+
+.chart-container.hidden {
+  z-index: -1;
+  /* 保持完全可见，仅降低层级 */
 }
 
 /* 底部导航栏 */
@@ -892,5 +401,77 @@
   white-space: nowrap;
 }
 
+/* 自动播放按钮 */
+.auto-play-btn {
+  font-size: 24rpx;
+  padding: 10rpx 20rpx;
+  line-height: 1.3;
+  border-radius: 6rpx;
+  background: #f0f2f5;
+  color: #333;
+  border: none;
+  flex-shrink: 0;
+  font-weight: 500;
+}
 
+.auto-play-btn.active {
+  background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+  color: white;
+  font-weight: bold;
+  border-color: transparent;
+  box-shadow: 0 3rpx 8rpx rgba(76, 175, 80, 0.3);
+}
 
+.auto-play-btn::after {
+  border: none;
+}
+
+.auto-play-status {
+  font-size: 22rpx;
+  color: #666;
+  flex: 1;
+  text-align: right;
+  font-weight: 500;
+}
+
+/* 上传图片状态提示 */
+.upload-status-tip {
+  position: absolute;
+  top: 20rpx;
+  right: 20rpx;
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.9) 0%, rgba(46, 125, 50, 0.9) 100%);
+  color: white;
+  padding: 12rpx 20rpx;
+  border-radius: 8rpx;
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  z-index: 50;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.2);
+  opacity: 0;
+  transform: translateY(-20rpx);
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+.upload-status-tip.show {
+  opacity: 1;
+  transform: translateY(0);
+  visibility: visible;
+}
+
+.upload-status-tip.hide {
+  opacity: 0;
+  transform: translateY(-20rpx);
+  visibility: hidden;
+}
+
+.upload-status-icon {
+  font-size: 24rpx;
+}
+
+.upload-status-text {
+  font-size: 24rpx;
+  font-weight: 500;
+  white-space: nowrap;
+}
