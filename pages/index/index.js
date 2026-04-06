@@ -114,6 +114,14 @@ Page({
     // 显示图表容器（解除隐藏）
     this.setData({ chartHidden: false });
     
+    // 每次显示页面时检查图片映射表是否有更新（确保新上传的图片能立即显示）
+    // 使用防抖机制，避免频繁调用
+    if (!this._lastImageMapCheck || Date.now() - this._lastImageMapCheck > 1000) {
+      console.log('检查图片映射表更新...');
+      this.initImageMap();
+      this._lastImageMapCheck = Date.now();
+    }
+    
     // 清除之前的延迟绘制任务
     if (this.data.drawTimer) {
       clearTimeout(this.data.drawTimer);
@@ -303,8 +311,107 @@ Page({
     this.setData({ imageLoaded: false, imageError: false });
     // 检测图片路径（优先使用上传图片）
     const imagePath = this.detectImagePath(year, month);
-    // 更新图片路径，并重置缩放比例为1
-    this.setData({ currentImageUrl: imagePath, imageScale: 1.0, scalePercent: 100 });
+    
+    // 检查是否是云存储路径（cloud://开头）
+    if (imagePath && imagePath.startsWith('cloud://')) {
+      // 云存储路径，需要获取临时URL
+      console.log('检测到云存储路径，获取临时URL:', imagePath);
+      this.getCloudImageTempUrl(imagePath, year, month);
+    } else {
+      // 本地路径，直接设置
+      console.log('使用本地图片路径:', imagePath);
+      this.setData({ currentImageUrl: imagePath, imageScale: 1.0, scalePercent: 100 });
+    }
+  },
+  
+  // 获取云存储图片的临时URL
+  getCloudImageTempUrl(cloudPath, year, month) {
+    // 先设置为加载中的占位图，避免空白
+    this.setData({ 
+      currentImageUrl: '/images/nep201201.png',
+      imageScale: 1.0, 
+      scalePercent: 100 
+    });
+    
+    // 使用wx.cloud.getTempFileURL获取临时URL
+    wx.cloud.getTempFileURL({
+      fileList: [{
+        fileID: cloudPath,
+        maxAge: 3600 // 临时链接有效期1小时
+      }],
+      success: res => {
+        if (res.fileList && res.fileList[0] && res.fileList[0].tempFileURL) {
+          const tempUrl = res.fileList[0].tempFileURL;
+          console.log('云存储图片临时URL获取成功:', tempUrl);
+          
+          // 更新图片路径
+          this.setData({ 
+            currentImageUrl: tempUrl,
+            imageScale: 1.0, 
+            scalePercent: 100 
+          });
+          
+          // 如果是上传图片，显示提示
+          const imageMap = this.data.imageMap;
+          if (imageMap[year] && imageMap[year][month]) {
+            this.showUploadedImageTip(year, month);
+          }
+        } else {
+          console.error('获取临时URL失败，返回结果为空:', res);
+          // 获取临时URL失败，尝试使用本地图片
+          this.fallbackToLocalImage(year, month);
+        }
+      },
+      fail: err => {
+        console.error('获取云存储图片临时URL失败:', err);
+        // 获取临时URL失败，尝试使用本地图片
+        this.fallbackToLocalImage(year, month);
+      }
+    });
+  },
+  
+  // 回退到本地图片（当云存储图片获取失败时）
+  fallbackToLocalImage(year, month) {
+    console.log('尝试回退到本地图片');
+    
+    // 检查年份是否超过2022年（原始数据范围）
+    if (year > 2022) {
+      console.log(`年份 ${year} 超过数据范围（2012-2022），使用默认占位图`);
+      // 对于超过2022年的年份，直接返回默认占位图
+      this.setData({
+        currentImageUrl: '/images/nep201201.png',
+        imageScale: 1.0,
+        scalePercent: 100
+      });
+      return;
+    }
+    
+    // 尝试使用本地图片
+    const monthStr = month < 10 ? '0' + month : month.toString();
+    const localPath = `/images/nep${year}${monthStr}.png`;
+    
+    // 检查本地图片是否存在
+    wx.getImageInfo({
+      src: localPath,
+      success: () => {
+        // 本地图片存在，切换到本地图片
+        console.log('本地图片存在，切换到:', localPath);
+        this.setData({
+          currentImageUrl: localPath,
+          imageScale: 1.0,
+          scalePercent: 100
+        });
+      },
+      fail: () => {
+        // 本地图片也不存在，使用本地占位图
+        console.log('本地图片也不存在，使用本地占位图');
+        this.setData({
+          currentImageUrl: '/images/nep201201.png',
+          imageScale: 1.0,
+          scalePercent: 100
+        });
+      }
+    });
   },
 
   // 保持向后兼容的方法（只传年份）
@@ -313,21 +420,7 @@ Page({
     this.loadImage(year, this.data.currentMonth);
   },
 
-  // 检测图片路径（优先使用上传的图片，否则使用默认路径）
-  detectImagePath(year, month = this.data.currentMonth) {
-    // 优先从imageMap中获取图片路径
-    const imageMap = this.data.imageMap;
-    // 如果映射表中有该年份月份对应的图片
-    if (imageMap[year] && imageMap[year][month]) {
-      // 返回映射表中的图片路径
-      return imageMap[year][month];
-    }
-    // 默认使用命名规则: /images/nep{年份}{月份:02d}.png
-    // 格式化月份为两位数字
-    const monthStr = month < 10 ? '0' + month : month.toString();
-    // 返回默认路径
-    return `/images/nep${year}${monthStr}.png`;
-  },
+
 
   // 图片加载成功回调
   onImageLoad(e) {
@@ -347,31 +440,121 @@ Page({
   onImageError(e) {
     // 控制台输出加载失败错误
     console.error('❌ 影像加载失败', e.detail);
-    // 使用在线占位图
-    this.useOnlinePlaceholder();
+    
+    const { currentYear, currentMonth, imageMap } = this.data;
+    
+    // 检查是否是上传的图片（在imageMap中）
+    const isUploadedImage = imageMap[currentYear] && imageMap[currentYear][currentMonth];
+    
+    if (isUploadedImage) {
+      // 是上传的图片（可能在imageMap中是云存储路径）
+      const uploadedPath = imageMap[currentYear][currentMonth];
+      console.log('上传图片加载失败，原始路径:', uploadedPath);
+      
+      // 检查是否是云存储路径
+      if (uploadedPath && uploadedPath.startsWith('cloud://')) {
+        // 云存储图片加载失败，可能是临时URL过期或有问题
+        console.log('云存储图片临时URL加载失败，尝试重新获取临时URL');
+        
+        // 重新获取临时URL
+        this.getCloudImageTempUrl(uploadedPath, currentYear, currentMonth);
+      } else {
+        // 其他类型的上传图片路径加载失败
+        console.log('上传图片（非云存储）加载失败，尝试使用本地回退');
+        this.fallbackToLocalImage(currentYear, currentMonth);
+      }
+    } else {
+      // 不是上传的图片
+      
+      // 检查年份是否超过2022年（原始数据范围）
+      if (currentYear > 2022) {
+        console.log(`年份 ${currentYear} 超过数据范围（2012-2022），显示无数据提示`);
+        wx.showToast({
+          title: `${currentYear}年数据尚未收录`,
+          icon: 'none',
+          duration: 2000
+        });
+        
+        // 年份超过2022且不是上传图片，直接使用本地占位图
+        console.log(`年份 ${currentYear} 超过数据范围（2012-2022），使用本地占位图`);
+        this.useLocalPlaceholder();
+        return;
+      }
+      
+      // 普通本地图片加载失败，使用占位图
+      console.log('本地图片加载失败，使用占位图');
+      this.useLocalPlaceholder();
+    }
   },
 
-  // 使用在线占位图（当本地图片不存在时）
-  useOnlinePlaceholder() {
-    // 获取当前年份和月份
-    const { currentYear, currentMonth } = this.data;
-    // 格式化月份为两位数字
-    const monthStr = currentMonth < 10 ? '0' + currentMonth : currentMonth.toString();
+  // 使用本地占位图（当图片不存在时）
+  useLocalPlaceholder() {
+    // 获取当前年份和图片映射表
+    const { currentYear, imageMap, currentMonth } = this.data;
     
-    // 使用placeholder.com服务生成占位图，显示年份月份文字
-    const placeholderUrl = `https://via.placeholder.com/800x600/4CAF50/FFFFFF?text=${currentYear}年${currentMonth}月碳汇分布图`;
+    // 检查是否是上传的图片（在imageMap中）
+    const isUploadedImage = imageMap[currentYear] && imageMap[currentYear][currentMonth];
     
-    // 控制台输出占位图地址
-    console.log('使用在线占位图:', placeholderUrl);
-    // 更新图片路径和相关状态
-    this.setData({
-      imageLoaded: false,
-      imageError: true,
-      imageInfo: { width: 800, height: 600, ratio: '75%' },
-      currentImageUrl: placeholderUrl
+    // 如果是上传的图片，保持当前路径但显示错误状态
+    if (isUploadedImage) {
+      console.log('上传的图片加载失败，保持当前路径但显示错误状态');
+      this.setData({
+        imageLoaded: false,
+        imageError: true,
+        imageInfo: { width: 800, height: 600, ratio: '75%' }
+        // 不改变currentImageUrl，保持原来的上传图片路径
+      });
+      return;
+    }
+    
+    // 检查年份是否超过2022年（原始数据范围）且不是上传图片
+    if (currentYear > 2022) {
+      // 年份超过2022，直接使用默认占位图
+      console.log(`年份 ${currentYear} 超过数据范围（2012-2022），使用默认占位图`);
+      const defaultPlaceholderUrl = '/images/nep201201.png';
+      this.setData({
+        imageLoaded: false,
+        imageError: true,
+        imageInfo: { width: 800, height: 600, ratio: '75%' },
+        currentImageUrl: defaultPlaceholderUrl
+      });
+      // 更新月度数据（图表）
+      this.updateMonthlyData(2012); // 使用2012年的数据
+      return;
+    }
+    
+    // 尝试使用当前年份1月的本地图片作为占位图
+    const yearFirstMonthPath = `/images/nep${currentYear}01.png`;
+    const defaultPlaceholderUrl = '/images/nep201201.png';
+    
+    // 先检查当前年份1月图片是否存在
+    wx.getImageInfo({
+      src: yearFirstMonthPath,
+      success: () => {
+        // 当前年份1月图片存在，使用它
+        console.log('使用当前年份1月图片作为占位图:', yearFirstMonthPath);
+        this.setData({
+          imageLoaded: false,
+          imageError: true,
+          imageInfo: { width: 800, height: 600, ratio: '75%' },
+          currentImageUrl: yearFirstMonthPath
+        });
+        // 更新月度数据（图表）
+        this.updateMonthlyData(currentYear);
+      },
+      fail: () => {
+        // 当前年份1月图片不存在，使用默认的2012年1月图片
+        console.log('使用默认占位图:', defaultPlaceholderUrl);
+        this.setData({
+          imageLoaded: false,
+          imageError: true,
+          imageInfo: { width: 800, height: 600, ratio: '75%' },
+          currentImageUrl: defaultPlaceholderUrl
+        });
+        // 更新月度数据（图表）
+        this.updateMonthlyData(2012); // 使用2012年的数据
+      }
     });
-    // 更新月度数据（图表）
-    this.updateMonthlyData(currentYear);
   },
 
   // 从真实月度数据中筛选当前年份的数据，并触发图表绘制
@@ -969,13 +1152,24 @@ Page({
 
   // 切换到指定年份月份的图片（不改变当前选中的年份月份数据）
   switchToImage(year, month = this.data.currentMonth) {
-    // 更新图片路径，并重置加载状态和缩放比例
-    this.setData({ 
-      currentImageUrl: this.detectImagePath(year, month), 
-      imageLoaded: false,
-      imageScale: 1.0, 
-      scalePercent: 100 
-    });
+    // 检测图片路径（优先使用上传图片）
+    const imagePath = this.detectImagePath(year, month);
+    
+    // 检查是否是云存储路径（cloud://开头）
+    if (imagePath && imagePath.startsWith('cloud://')) {
+      // 云存储路径，需要获取临时URL
+      console.log('switchToImage: 检测到云存储路径，获取临时URL:', imagePath);
+      this.getCloudImageTempUrl(imagePath, year, month);
+    } else {
+      // 本地路径，直接设置
+      console.log('switchToImage: 使用本地图片路径:', imagePath);
+      this.setData({ 
+        currentImageUrl: imagePath, 
+        imageLoaded: false,
+        imageScale: 1.0, 
+        scalePercent: 100 
+      });
+    }
   },
 
   // 放大图片
@@ -1087,6 +1281,15 @@ Page({
     // 控制台输出加载的年份数量
     console.log('加载图片映射表:', Object.keys(imageMap).length, '个年份');
     
+    // 详细输出每个年份的月份数据
+    for (const year in imageMap) {
+      const months = Object.keys(imageMap[year] || {});
+      console.log(`  年份 ${year}: ${months.length} 个月份, 月份: ${months.join(', ')}`);
+      for (const month in imageMap[year]) {
+        console.log(`    ${year}年${month}月: ${imageMap[year][month]}`);
+      }
+    }
+    
     // 更新数据中的图片映射表
     this.setData({ imageMap });
     
@@ -1102,26 +1305,37 @@ Page({
   // 根据图片映射表更新年份选项卡
   updateYearTabsFromImageMap(imageMap) {
     // 获取映射表中的年份，转为数字并排序
-    let years = Object.keys(imageMap).map(year => parseInt(year)).sort((a, b) => a - b);
+    const imageYears = Object.keys(imageMap).map(year => parseInt(year)).sort((a, b) => a - b);
     
-    // 如果年份列表为空，使用默认年份（2012-2022）
-    if (years.length === 0) {
-      years = [];
-      for (let y = 2012; y <= 2022; y++) {
-        years.push(y);
-      }
+    // 始终包含默认年份（2012-2022）
+    const defaultYears = [];
+    for (let y = 2012; y <= 2022; y++) {
+      defaultYears.push(y);
     }
     
-    // 控制台输出更新后的年份选项卡
-    console.log('更新年份选项卡:', years);
-    // 更新年份选项卡列表
-    this.setData({ yearTabs: years });
+    // 合并两个年份列表，去重排序（不再过滤超过2022年的年份）
+    const allYears = [...new Set([...defaultYears, ...imageYears])]
+      .sort((a, b) => a - b);
     
-    // 如果当前年份不在新的年份列表中，调整到第一个年份
-    if (years.length > 0 && !years.includes(this.data.currentYear)) {
-      const newYear = years[0];
+    // 计算动态的最小年份和最大年份
+    const minYear = allYears.length > 0 ? Math.min(...allYears) : 2012;
+    const maxYear = allYears.length > 0 ? Math.max(...allYears) : 2022;
+    
+    // 控制台输出更新后的年份选项卡
+    console.log('更新年份选项卡:', allYears, '（默认年份:', defaultYears, '，图片年份:', imageYears, '，最小年份:', minYear, '，最大年份:', maxYear, '）');
+    
+    // 更新年份选项卡列表和年份范围
+    this.setData({ 
+      yearTabs: allYears,
+      minYear: minYear,
+      maxYear: maxYear
+    });
+    
+    // 如果当前年份不在新的年份列表中，调整到第一个可用年份
+    if (allYears.length > 0 && !allYears.includes(this.data.currentYear)) {
+      const newYear = allYears[0]; // 使用第一个可用年份
       // 控制台输出年份切换
-      console.log('当前年份不在列表中，切换到:', newYear);
+      console.log('当前年份不在列表中，切换到第一个可用年份:', newYear);
       // 更新当前年份
       this.setData({ currentYear: newYear });
       // 加载图片和更新图表
@@ -1449,24 +1663,40 @@ Page({
 
   // 优化detectImagePath函数，添加图片来源标记
   detectImagePath(year, month = this.data.currentMonth) {
-    // 优先从imageMap中获取图片路径
+    console.log(`detectImagePath: 查找 ${year}年${month}月 的图片路径`);
+    
+    // 优先从imageMap中获取图片路径（包括超过2022年的上传图片）
     const imageMap = this.data.imageMap;
     if (imageMap[year] && imageMap[year][month]) {
       const imagePath = imageMap[year][month];
+      console.log(`detectImagePath: 在imageMap中找到上传图片: ${imagePath}`);
       // 如果找到的是上传图片路径，显示提示
       if (!imagePath.includes('/images/nep')) {
         // 立即显示提示，无需延迟
+        console.log(`detectImagePath: 显示上传图片提示`);
         this.showUploadedImageTip(year, month);
       }
       return imageMap[year][month];
     }
+    
+    console.log(`detectImagePath: imageMap中未找到 ${year}年${month}月 的图片`);
+    
+    // 检查年份是否超过2022年（原始数据范围）
+    if (year > 2022) {
+      console.log(`detectImagePath: 年份 ${year} 超过数据范围（2012-2022），返回默认占位图`);
+      // 对于超过2022年的年份，直接返回默认占位图，避免不必要的加载尝试
+      return '/images/nep201201.png';
+    }
+    
     // 默认使用命名规则: /images/nep{年份}{月份:02d}.png
     const monthStr = month < 10 ? '0' + month : month.toString();
-    return `/images/nep${year}${monthStr}.png`;
+    const defaultPath = `/images/nep${year}${monthStr}.png`;
+    console.log(`detectImagePath: 使用默认路径: ${defaultPath}`);
+    return defaultPath;
   },
 
   // 阻止事件冒泡（用于弹窗内部，防止点击内容时关闭弹窗）
-  stopPropagation(e) {
+  stopPropagation() {
     // 阻止事件冒泡，防止点击面板内部时触发外层点击事件
     return;
   }

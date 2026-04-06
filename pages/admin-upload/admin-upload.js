@@ -70,6 +70,8 @@ Page({
       json: 0,
       tif: 0
     },
+    selectedPngFile: null,
+    selectedJsonFile: null,
     selectedTifFile: null,
     selectedTifFileName: '',
     isTifFileNameValid: false,
@@ -87,7 +89,9 @@ Page({
     // 上传记录
     uploadRecords: [],
     // 云存储文件列表
-    cloudFiles: []
+    cloudFiles: [],
+    // 云开发状态
+    cloudAvailable: false
   },
 
   onLoad() {
@@ -100,8 +104,10 @@ Page({
   checkCloudInit() {
     if (wx.cloud) {
       console.log('云开发已初始化');
+      this.setData({ cloudAvailable: true });
     } else {
       console.warn('云开发未初始化，请检查app.js配置');
+      this.setData({ cloudAvailable: false });
       wx.showToast({
         title: '云开发未初始化',
         icon: 'none',
@@ -400,6 +406,9 @@ Page({
           uploadTime: new Date().toLocaleString()
         });
         
+        // 更新图片映射表，保存云存储路径
+        this.updateImageMap(selectedYear, selectedMonth, res.fileID);
+        
         wx.showToast({
           title: 'PNG上传成功',
           icon: 'success',
@@ -525,8 +534,20 @@ Page({
       }
     }
     
+    // 根据云开发可用性选择处理方式
+    if (this.data.cloudAvailable) {
+      // 云开发可用，尝试使用云函数处理
+      this.uploadAndProcessTifFile(selectedYear, selectedMonth, selectedTifFileName);
+    } else {
+      // 云开发不可用，使用模拟处理
+      this.simulateTifProcessing(selectedYear, selectedMonth, selectedTifFileName);
+    }
+  },
+  
+  // 模拟TIF处理过程
+  simulateTifProcessing(year, month, fileName) {
     // TIF处理过程 - 模拟真实转换
-    this.setData({ 'uploadStatus.tif': '开始处理TIF文件...', 'uploadProgress.tif': 0 });
+    this.setData({ 'uploadStatus.tif': '开始处理TIF文件（模拟）...', 'uploadProgress.tif': 0 });
     
     // 模拟处理步骤
     const processSteps = [
@@ -543,7 +564,7 @@ Page({
     const processInterval = setInterval(() => {
       if (stepIndex >= processSteps.length) {
         clearInterval(processInterval);
-        this.finalizeTifProcessing(selectedYear, selectedMonth, selectedTifFileName);
+        this.finalizeTifProcessing(year, month, fileName);
         return;
       }
       
@@ -555,6 +576,186 @@ Page({
       
       stepIndex++;
     }, 500);
+  },
+  
+  // 上传并处理TIF文件（使用云函数）
+  uploadAndProcessTifFile(year, month, fileName) {
+    const that = this;
+    const filePath = this.data.selectedTifFile;
+    
+    // 开始处理
+    this.setData({ 
+      'uploadStatus.tif': '上传TIF文件到云存储...',
+      'uploadProgress.tif': 0 
+    });
+    
+    // 生成云存储路径
+    const cloudPath = `qinling-carbon-data/tif/${year}_${month}_${Date.now()}.tif`;
+    
+    // 上传TIF文件到云存储
+    wx.cloud.uploadFile({
+      cloudPath: cloudPath,
+      filePath: filePath,
+      success: res => {
+        console.log('TIF文件上传成功:', res);
+        
+        // 更新进度
+        that.setData({
+          'uploadStatus.tif': '调用云函数处理TIF文件...',
+          'uploadProgress.tif': 30
+        });
+        
+        // 调用云函数处理TIF文件
+        wx.cloud.callFunction({
+          name: 'tif-processor-simple-node',
+          data: {
+            fileID: res.fileID,
+            year: year,
+            month: month,
+            fileName: fileName
+          },
+          success: cloudRes => {
+            console.log('云函数调用成功:', cloudRes);
+            
+            if (cloudRes.result && cloudRes.result.success) {
+              // 云函数处理成功
+              const result = cloudRes.result.data;
+              
+              that.setData({
+                'uploadStatus.tif': result.message || '处理完成',
+                'uploadProgress.tif': result.progress || 100
+              });
+              
+              // 更新图片映射表
+              const monthStr = month < 10 ? '0' + month : month.toString();
+              const pngFileName = `nep${year}${monthStr}.png`;
+              
+              // 注意：这里需要根据实际情况调整图片路径
+              // 云函数应该返回生成的PNG文件URL
+              const imagePath = result.pngFileID || `/images/${pngFileName}`;
+              
+              // 提取碳汇统计信息
+              const stats = result.stats || {
+                mean: 0,
+                min: 0,
+                max: 0,
+                sum: 0,
+                std: 0,
+                count: 0
+              };
+              
+              // 添加上传记录（包含统计信息）
+              that.addUploadRecord({
+                type: 'tif',
+                year: year,
+                month: month,
+                fileName: fileName || `${year}_${month}.tif`,
+                fileId: result.pngFileID || 'cloud_processed_' + Date.now(),
+                uploadTime: new Date().toLocaleString(),
+                note: `TIF文件已通过云函数处理，生成PNG图片: ${pngFileName}`,
+                stats: stats,
+                mode: result.mode || 'unknown',
+                width: result.width,
+                height: result.height
+              });
+              
+              // 更新图片映射表
+              that.updateImageMap(year, month, imagePath);
+              
+              // 保存碳汇统计信息到本地存储
+              that.saveCarbonStats(year, month, stats);
+              
+              wx.showToast({
+                title: 'TIF转换完成',
+                icon: 'success',
+                duration: 2000
+              });
+              
+              // 显示转换结果（包含统计信息）
+              setTimeout(() => {
+                const modeText = result.mode === 'real' ? '真实处理' : 
+                               result.mode === 'simulated' ? '模拟处理' : 
+                               result.mode === 'simulated_fallback' ? '模拟降级处理' : '未知模式';
+                
+                const statsText = result.stats ? 
+                  `碳汇统计信息：
+平均值: ${stats.mean.toFixed(2)}
+最小值: ${stats.min.toFixed(2)}
+最大值: ${stats.max.toFixed(2)}
+总和: ${stats.sum.toFixed(2)}
+标准差: ${stats.std.toFixed(2)}
+有效像素数: ${stats.count}` :
+                  '（无统计信息）';
+                
+                wx.showModal({
+                  title: '转换结果',
+                  content: `TIF文件转换成功！\n\n原文件: ${fileName}\n生成文件: ${pngFileName}\n处理模式: ${modeText}\n\n${statsText}`,
+                  showCancel: false,
+                  confirmText: '确定'
+                });
+              }, 800);
+              
+            } else {
+              // 云函数返回错误
+              console.error('云函数处理失败:', cloudRes);
+              that.setData({
+                'uploadStatus.tif': '云函数处理失败',
+                'uploadProgress.tif': 100
+              });
+              
+              wx.showToast({
+                title: '处理失败，使用模拟模式',
+                icon: 'none',
+                duration: 2000
+              });
+              
+              // 回退到模拟处理
+              setTimeout(() => {
+                that.simulateTifProcessing(year, month, fileName);
+              }, 1000);
+            }
+          },
+          fail: err => {
+            console.error('云函数调用失败:', err);
+            
+            that.setData({
+              'uploadStatus.tif': '云函数调用失败',
+              'uploadProgress.tif': 100
+            });
+            
+            wx.showToast({
+              title: '云函数不可用，使用模拟模式',
+              icon: 'none',
+              duration: 2000
+            });
+            
+            // 回退到模拟处理
+            setTimeout(() => {
+              that.simulateTifProcessing(year, month, fileName);
+            }, 1000);
+          }
+        });
+      },
+      fail: err => {
+        console.error('TIF文件上传失败:', err);
+        
+        that.setData({
+          'uploadStatus.tif': '文件上传失败',
+          'uploadProgress.tif': 100
+        });
+        
+        wx.showToast({
+          title: '上传失败，使用模拟模式',
+          icon: 'none',
+          duration: 2000
+        });
+        
+        // 回退到模拟处理
+        setTimeout(() => {
+          that.simulateTifProcessing(year, month, fileName);
+        }, 1000);
+      }
+    });
   },
   
   // TIF处理完成后的最终处理
@@ -860,5 +1061,67 @@ Page({
         }
       }
     });
+  },
+
+  // 保存碳汇统计信息到本地存储
+  saveCarbonStats(year, month, stats) {
+    // 构建统计对象，与现有stats_2012.json等文件格式兼容
+    const statEntry = {
+      month: month,
+      carbon_sink_mean: stats.mean,
+      carbon_sink_max: stats.max,
+      carbon_sink_min: stats.min,
+      carbon_sink_sum: stats.sum,
+      carbon_sink_std: stats.std,
+      pixel_count: stats.count
+    };
+    
+    // 从本地存储加载现有统计信息
+    const statsKey = `carbon_stats_${year}`;
+    let yearStats = wx.getStorageSync(statsKey);
+    
+    if (!yearStats) {
+      // 如果该年份的统计信息不存在，创建新结构
+      yearStats = {
+        year: year,
+        data: []
+      };
+    }
+    
+    // 查找是否已存在该月份的记录
+    const monthIndex = yearStats.data.findIndex(item => item.month === month);
+    if (monthIndex >= 0) {
+      // 更新现有月份记录
+      yearStats.data[monthIndex] = statEntry;
+    } else {
+      // 添加新月份记录
+      yearStats.data.push(statEntry);
+    }
+    
+    // 按月份排序
+    yearStats.data.sort((a, b) => a.month - b.month);
+    
+    // 保存回本地存储
+    wx.setStorageSync(statsKey, yearStats);
+    
+    console.log(`碳汇统计信息已保存: ${year}年${month}月`, statEntry);
+    
+    // 同时更新全局统计缓存
+    this.updateGlobalStatsCache(year, month, statEntry);
+  },
+
+  // 更新全局统计缓存
+  updateGlobalStatsCache(year, month, statEntry) {
+    // 从本地存储加载全局统计缓存
+    const globalStats = wx.getStorageSync('carbon_stats_global') || {};
+    
+    if (!globalStats[year]) {
+      globalStats[year] = {};
+    }
+    
+    globalStats[year][month] = statEntry;
+    
+    // 保存回本地存储
+    wx.setStorageSync('carbon_stats_global', globalStats);
   }
 });

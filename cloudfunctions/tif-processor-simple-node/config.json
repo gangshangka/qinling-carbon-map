@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "openapi": [
+      "cloud.getTempFileURL",
+      "cloud.uploadFile",
+      "cloud.downloadFile"
+    ]
+  },
+  "timeout": 300
+}

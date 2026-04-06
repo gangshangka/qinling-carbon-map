@@ -1,0 +1,15 @@
+{
+  "envId": "cloudbase-8gdof83j7fdc6094",
+  "functionRoot": "./cloudfunctions",
+  "functions": [
+    {
+      "name": "tif-processor-simple-node",
+      "timeout": 300,
+      "runtime": "Nodejs16.13",
+      "memorySize": 1024,
+      "envVariables": {
+        "NODE_ENV": "production"
+      }
+    }
+  ]
+}

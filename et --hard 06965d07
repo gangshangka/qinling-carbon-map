@@ -1,0 +1,78 @@
+[33mcommit 06965d07ebfaf3f753d310f875248a54224742df[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mcarbon-map[m[33m)[m
+Author: Qinling Carbon App Developer <developer@example.com>
+Date:   Thu Mar 26 19:01:45 2026 +0800
+
+    图片上传不能处理，其他一切正常，可以回退
+
+[33mcommit 0e77b655a62bfc9e9cadb31d98b68c67dcdbd4e5[m
+Author: Qinling Carbon App Developer <developer@example.com>
+Date:   Wed Mar 25 13:57:26 2026 +0800
+
+    正在尝试管理员界面
+
+[33mcommit 6c50cae8c9a98a7a8337dfbf62b332000c49b306[m
+Author: Qinling Carbon App Developer <developer@example.com>
+Date:   Wed Mar 25 13:57:02 2026 +0800
+
+    正在尝试管理员界面
+
+[33mcommit 3c290036f94ef5242bfdbb50d0b9b705331c98ab[m[33m ([m[1;32mnewworld1[m[33m, [m[1;32mnewworld[m[33m)[m
+Author: Qinling Carbon App Developer <developer@example.com>
+Date:   Sun Mar 22 23:25:54 2026 +0800
+
+    秦岭碳汇地图统计图网页设置成功
+
+[33mcommit 4ec44e0611dfb6ca45c5abc8ebc059ef26fbb247[m
+Author: Qinling Carbon App Developer <developer@example.com>
+Date:   Sun Mar 22 10:49:23 2026 +0800
+
+    降级3D图表为2D散点图：修复Unknown series bar3D错误，改用scatter系列，坐标轴改为2D，用点大小表示碳汇值高度
+
+[33mcommit ce4ab00867c1456edbd092ce2ceefdaded21fbb5[m
+Author: Qinling Carbon App Developer <developer@example.com>
+Date:   Sun Mar 22 10:37:44 2026 +0800
+
+    修复3D图表显示和事件错误：1) 坐标范围匹配(grid3D 0-5)；2) 事件对象preventDefault补丁；3) 虚拟坐标归一化；4) 调整测试数据坐标
+
+[33mcommit e75fe77ad646810d5b766c277e67f81dace01408[m
+Author: Qinling Carbon App Developer <developer@example.com>
+Date:   Sun Mar 22 10:30:29 2026 +0800
+
+    优化3D图表配置：调整坐标系大小、视角和柱状图尺寸，提高可视化效果
+
+[33mcommit 7de23bd6c35ae83ad8d3db0b49f0bf15602b03b3[m
+Author: Qinling Carbon App Developer <developer@example.com>
+Date:   Sun Mar 22 10:27:23 2026 +0800
+
+    修复WXML编译错误：echarts属性语法错误，恢复为echarts='{{ echarts }}'，使用import * as echarts导入
+
+[33mcommit 573763bac5bfc58d16c8514dd656ac5eea1b4cc1[m
+Author: Qinling Carbon App Developer <developer@example.com>
+Date:   Sun Mar 22 10:21:16 2026 +0800
+
+    修复循环引用问题：移除data中的echarts和chartInstance，修改导入方式
+
+[33mcommit 5451cb960f1266853bc80e769bf58c603d15adbd[m
+Author: Qinling Carbon App Developer <developer@example.com>
+Date:   Sun Mar 22 10:09:33 2026 +0800
+
+    尚未完成3D地图设计
+
+[33mcommit 876201046d4c2fce0fda193d20075b038f2e5fab[m
+Author: Qinling Carbon App Developer <developer@example.com>
+Date:   Sat Mar 21 09:18:45 2026 +0800
+
+    重改后版本
+
+[33mcommit 81d7b53aafa402cf59ab45fe798d2a30d6086b24[m[33m ([m[1;32mmaster[m[33m)[m
+Author: Qinling Carbon App Developer <developer@example.com>
+Date:   Fri Feb 27 22:01:39 2026 +0800
+
+    Initial commit: 秦岭碳汇小程序项目初始化
+    
+    - 添加项目基础结构和配置文件
+    - 集成 ECharts 图表库用于数据可视化
+    - 实现碳汇统计页面，支持年度、县级、月度三种视图
+    - 县级排名显示固定聚合数据（20个县区）
+    - 月度统计支持年份切换功能
+    - 修复 ECharts 在小程序环境中的兼容性问题

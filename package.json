@@ -9,8 +9,11 @@
   "author": "",
   "license": "ISC",
   "description": "",
-  "dependencies": {
-    "echarts": "^5.1.2",
-    "echarts-for-weixin": "^1.0.2"
-  }
+  
+    "dependencies": {
+      "wx-server-sdk": "latest",
+      "geotiff": "^2.0.7",
+      "pngjs": "^7.0.0"
+    }
+  
 }
