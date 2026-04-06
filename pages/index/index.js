@@ -6,9 +6,10 @@ Page({
   // 页面数据（相当于组件的状态）
   data: {
     // 当前显示的图片路径（动态变化）
+    
     currentImageUrl: '',
-    // 占位图路径（固定，2012年1月图片）
-    placeholderImageUrl: '/images/nep201201.png',
+    // 占位图路径（固定，2012年1月图片，使用相对路径）
+    placeholderImageUrl: '/pages/index/images/nep201201.png',
     // 当前选中的年份
     currentYear: 2012,
     // 当前选中的月份
@@ -59,6 +60,11 @@ Page({
     chartDrawn: false,          // 图表是否已绘制
     chartHidden: false,         // 图表是否隐藏（用于页面切换时避免遮挡动画）
     drawTimer: null,            // 延迟绘制的定时器
+      // ...原有字段
+      cloudTempUrlCache: {},      // 云存储临时URL缓存 { cloudPath: { url, expireTime } }
+      allCloudUrlsPreloaded: false, // 是否已完成全部预加载
+      allImagesPreloaded: false,     // 是否所有图片（本地和云端）都已预加载
+
   },
 
   // 页面加载时触发
@@ -73,7 +79,10 @@ Page({
     this.getSystemInfo();
     // 初始化图片映射表（从本地存储读取管理员上传的图片信息）
     this.initImageMap();
-    
+     this.preloadAllCloudImages().then(() => {
+    // 可选：显示预加载完成提示
+    console.log('预加载完成，可开始自动播放');
+  });
     // 监听本地存储变化，当图片映射表更新时重新加载
     if (wx.onStorageChange) {
       // 如果微信支持存储变化监听
@@ -325,51 +334,53 @@ Page({
   },
   
   // 获取云存储图片的临时URL
-  getCloudImageTempUrl(cloudPath, year, month) {
-    // 先设置为加载中的占位图，避免空白
-    this.setData({ 
-      currentImageUrl: '/images/nep201201.png',
-      imageScale: 1.0, 
-      scalePercent: 100 
-    });
-    
-    // 使用wx.cloud.getTempFileURL获取临时URL
-    wx.cloud.getTempFileURL({
-      fileList: [{
-        fileID: cloudPath,
-        maxAge: 3600 // 临时链接有效期1小时
-      }],
-      success: res => {
-        if (res.fileList && res.fileList[0] && res.fileList[0].tempFileURL) {
-          const tempUrl = res.fileList[0].tempFileURL;
-          console.log('云存储图片临时URL获取成功:', tempUrl);
-          
-          // 更新图片路径
-          this.setData({ 
-            currentImageUrl: tempUrl,
-            imageScale: 1.0, 
-            scalePercent: 100 
-          });
-          
-          // 如果是上传图片，显示提示
-          const imageMap = this.data.imageMap;
-          if (imageMap[year] && imageMap[year][month]) {
-            this.showUploadedImageTip(year, month);
-          }
-        } else {
-          console.error('获取临时URL失败，返回结果为空:', res);
-          // 获取临时URL失败，尝试使用本地图片
-          this.fallbackToLocalImage(year, month);
-        }
-      },
-      fail: err => {
-        console.error('获取云存储图片临时URL失败:', err);
-        // 获取临时URL失败，尝试使用本地图片
-        this.fallbackToLocalImage(year, month);
-      }
-    });
-  },
-  
+// 在Page的data中添加缓存对象
+
+
+// 修改getCloudImageTempUrl方法，增加缓存逻辑
+getCloudImageTempUrl(cloudPath, year, month) {
+  const now = Date.now();
+  const cache = this.data.cloudTempUrlCache[cloudPath];
+  if (cache && cache.expireTime && cache.expireTime > now + 30000) {
+    this.setData({ currentImageUrl: cache.url, imageScale: 1.0, scalePercent: 100 });
+    if (this.data.imageMap[year]?.[month]) this.showUploadedImageTip(year, month);
+    return;
+  }
+  // 无缓存或过期：先显示占位图，再请求新URL
+  this.setData({ currentImageUrl: this.data.placeholderImageUrl });
+  wx.cloud.getTempFileURL({
+    fileList: [{ fileID: cloudPath, maxAge: 3600 }],
+    success: res => {
+      if (res.fileList?.[0]?.tempFileURL) {
+        const tempUrl = res.fileList[0].tempFileURL;
+        const expireTime = now + (3600 - 60) * 1000;
+        const newCache = { ...this.data.cloudTempUrlCache, [cloudPath]: { url: tempUrl, expireTime } };
+        this.setData({ cloudTempUrlCache: newCache, currentImageUrl: tempUrl });
+        if (this.data.imageMap[year]?.[month]) this.showUploadedImageTip(year, month);
+      } else this.fallbackToLocalImage(year, month);
+    },
+    fail: () => this.fallbackToLocalImage(year, month)
+  });
+},
+
+// 新增：预加载所有云端图片（获取临时URL并缓存）
+// 在onLoad中调用预加载（在initImageMap之后）
+onLoad() {
+  // ... 原有代码
+  this.initImageMap();
+  // 预加载云端图片（异步，不阻塞页面）
+  this.preloadAllCloudImages();
+  // ... 其他原有代码
+},
+
+// 同时，当管理员上传新图片时，也应触发预加载（可选）
+addImageToMap(year, month, imagePath) {
+  // ... 原有代码
+  // 如果新图片是云存储路径，立即预加载它
+  if (imagePath && imagePath.startsWith('cloud://')) {
+    this.getCloudImageTempUrl(imagePath, year, month); // 会触发缓存
+  }
+},
   // 回退到本地图片（当云存储图片获取失败时）
   fallbackToLocalImage(year, month) {
     console.log('尝试回退到本地图片');
@@ -1118,36 +1129,62 @@ Page({
     ctx.draw();
   },
 
-  // 预加载所有年份的图片（每个年份的第一张图）
+  // 预加载所有年份和月份的所有图片（本地图片）
   preloadAllImages() {
-    // 存储所有年份
-    const years = [];
-    // 从最小年份到最大年份循环
-    for (let y = this.data.minYear; y <= this.data.maxYear; y++) years.push(y);
-    // 已加载数量
+    // 获取年份和月份列表
+    const years = this.data.yearTabs;
+    const months = this.data.monthTabs;
+    
+    // 计算总图片数
+    const totalImages = years.length * months.length;
     let loadedCount = 0;
-    // 已预加载的年份数组
-    const preloadedYears = [];
-    // 遍历每个年份
+    
+    // 遍历每个年份和月份
     years.forEach(year => {
-      // 构建该年份1月份的图片路径
-      const imagePath = `../../images/nep${year}01.png`;
-      // 获取图片信息（用于预加载）
-      wx.getImageInfo({
-        src: imagePath,
-        success: () => {
-          // 加载成功，计数加一，记录年份
-          loadedCount++;
-          preloadedYears.push(year);
-          // 更新预加载进度和年份列表
-          this.setData({
-            preloadedYears,
-            loadProgress: Math.round((loadedCount / years.length) * 100)
-          });
-        },
-        fail: () => loadedCount++ // 加载失败也计数，避免进度卡住
+      months.forEach(month => {
+        // 构建图片路径
+        const monthStr = month < 10 ? '0' + month : month.toString();
+        const imagePath = `/images/nep${year}${monthStr}.png`;
+        
+        // 获取图片信息（用于预加载）
+        wx.getImageInfo({
+          src: imagePath,
+          success: () => {
+            loadedCount++;
+            // 更新预加载进度
+            this.setData({
+              loadProgress: Math.round((loadedCount / totalImages) * 100)
+            });
+            
+            // 当所有本地图片加载完成时，检查是否所有图片都已预加载
+            if (loadedCount >= totalImages) {
+              this.checkAllImagesPreloaded();
+            }
+          },
+          fail: () => {
+            loadedCount++;
+            // 即使失败也更新进度
+            this.setData({
+              loadProgress: Math.round((loadedCount / totalImages) * 100)
+            });
+            
+            // 当所有本地图片加载完成时（无论成功失败），检查是否所有图片都已预加载
+            if (loadedCount >= totalImages) {
+              this.checkAllImagesPreloaded();
+            }
+          }
+        });
       });
     });
+  },
+  
+  // 检查所有图片（本地和云端）是否都已预加载完成
+  checkAllImagesPreloaded() {
+    // 检查本地图片预加载是否完成（通过进度判断）和云端图片预加载是否完成
+    if (this.data.loadProgress >= 100 && this.data.allCloudUrlsPreloaded) {
+      this.setData({ allImagesPreloaded: true });
+      console.log('所有图片（本地和云端）预加载完成');
+    }
   },
 
   // 切换到指定年份月份的图片（不改变当前选中的年份月份数据）
@@ -1273,7 +1310,59 @@ Page({
       url: '/pages/carbon-chart/carbon-chart'
     });
   },
-
+  preloadAllCloudImages() {
+    const imageMap = this.data.imageMap;
+    const cloudPaths = [];
+    for (const year in imageMap) {
+      for (const month in imageMap[year]) {
+        const path = imageMap[year][month];
+        if (path && path.startsWith('cloud://')) cloudPaths.push(path);
+      }
+    }
+    const uniquePaths = [...new Set(cloudPaths)];
+    if (uniquePaths.length === 0) {
+      this.setData({ allCloudUrlsPreloaded: true });
+      return Promise.resolve();
+    }
+    
+    // 分批请求，每批最多50个
+    const batchSize = 50;
+    const batches = [];
+    for (let i = 0; i < uniquePaths.length; i += batchSize) {
+      batches.push(uniquePaths.slice(i, i + batchSize));
+    }
+    
+    const promises = batches.map(batch => {
+      return new Promise((resolve, reject) => {
+        wx.cloud.getTempFileURL({
+          fileList: batch.map(fileID => ({ fileID, maxAge: 3600 })),
+          success: res => {
+            const now = Date.now();
+            const newCache = { ...this.data.cloudTempUrlCache };
+            (res.fileList || []).forEach(item => {
+              if (item.tempFileURL) {
+                newCache[item.fileID] = {
+                  url: item.tempFileURL,
+                  expireTime: now + (3600 - 60) * 1000 // 缓存59分钟
+                };
+              }
+            });
+            this.setData({ cloudTempUrlCache: newCache });
+            resolve();
+          },
+          fail: err => {
+            console.error('预加载批次失败:', err);
+            resolve(); // 即使失败也不阻塞
+          }
+        });
+      });
+    });
+    
+    return Promise.all(promises).then(() => {
+      this.setData({ allCloudUrlsPreloaded: true });
+      console.log('所有云端图片预加载完成');
+    });
+  },
   // 初始化图片映射表（从本地存储加载管理员上传的图片信息）
   initImageMap() {
     // 从本地存储加载图片映射表（同步读取，速度快）
@@ -1453,29 +1542,29 @@ Page({
 
   // 开始自动播放
   startAutoPlay() {
-    // 防御性清除：确保任何现有定时器都被清除
-    if (this.data.autoPlayTimer) {
-      clearInterval(this.data.autoPlayTimer);
-      this.setData({ autoPlayTimer: null });
+    if (!this.data.allImagesPreloaded) {
+      wx.showToast({
+        title: '图片预加载中，请稍后',
+        icon: 'none',
+        duration: 1500
+      });
+      // 等待预加载完成后再自动开始
+      const checkInterval = setInterval(() => {
+        if (this.data.allImagesPreloaded) {
+          clearInterval(checkInterval);
+          this._realStartAutoPlay();
+        }
+      }, 200);
+      return;
     }
-    
-    // 设置自动播放状态为true，状态文本为"播放中..."
-    this.setData({
-      autoPlay: true,
-      autoPlayStatus: '播放中...'
-    });
-    
-    // 保存this引用
-    const that = this;
-    // 设置定时器，每隔 interval 毫秒执行一次
-    const timer = setInterval(() => {
-      that.autoPlayNext();
-    }, this.data.autoPlayInterval);
-    
-    // 保存定时器ID
+    this._realStartAutoPlay();
+  },
+  
+  _realStartAutoPlay() {
+    if (this.data.autoPlayTimer) clearInterval(this.data.autoPlayTimer);
+    this.setData({ autoPlay: true, autoPlayStatus: '播放中...' });
+    const timer = setInterval(() => this.autoPlayNext(), this.data.autoPlayInterval);
     this.setData({ autoPlayTimer: timer });
-    // 控制台输出自动播放开始
-    console.log('自动播放开始，间隔:', this.data.autoPlayInterval, 'ms');
   },
 
   // 停止自动播放
@@ -1662,37 +1751,32 @@ Page({
   },
 
   // 优化detectImagePath函数，添加图片来源标记
-  detectImagePath(year, month = this.data.currentMonth) {
-    console.log(`detectImagePath: 查找 ${year}年${month}月 的图片路径`);
-    
-    // 优先从imageMap中获取图片路径（包括超过2022年的上传图片）
+  detectImagePath(year, month) {
     const imageMap = this.data.imageMap;
+    // 优先从imageMap获取原始云路径
+    let cloudPath = null;
     if (imageMap[year] && imageMap[year][month]) {
-      const imagePath = imageMap[year][month];
-      console.log(`detectImagePath: 在imageMap中找到上传图片: ${imagePath}`);
-      // 如果找到的是上传图片路径，显示提示
-      if (!imagePath.includes('/images/nep')) {
-        // 立即显示提示，无需延迟
-        console.log(`detectImagePath: 显示上传图片提示`);
-        this.showUploadedImageTip(year, month);
+      cloudPath = imageMap[year][month];
+    }
+    
+    if (cloudPath && cloudPath.startsWith('cloud://')) {
+      // 检查缓存中是否有该云路径的有效临时URL
+      const cache = this.data.cloudTempUrlCache[cloudPath];
+      const now = Date.now();
+      if (cache && cache.expireTime && cache.expireTime > now + 30000) {
+        console.log(`detectImagePath: 使用缓存的临时URL: ${cache.url}`);
+        // 直接返回临时URL，跳过后续的getCloudImageTempUrl调用
+        return cache.url;
       }
-      return imageMap[year][month];
+      // 缓存不存在或即将过期，仍然返回云路径，让后续逻辑重新获取
+      console.log(`detectImagePath: 未找到有效缓存，返回云路径: ${cloudPath}`);
+      return cloudPath;
     }
     
-    console.log(`detectImagePath: imageMap中未找到 ${year}年${month}月 的图片`);
-    
-    // 检查年份是否超过2022年（原始数据范围）
-    if (year > 2022) {
-      console.log(`detectImagePath: 年份 ${year} 超过数据范围（2012-2022），返回默认占位图`);
-      // 对于超过2022年的年份，直接返回默认占位图，避免不必要的加载尝试
-      return '/images/nep201201.png';
-    }
-    
-    // 默认使用命名规则: /images/nep{年份}{月份:02d}.png
+    // 非云存储图片，使用默认路径
+    if (year > 2022) return '/images/nep201201.png';
     const monthStr = month < 10 ? '0' + month : month.toString();
-    const defaultPath = `/images/nep${year}${monthStr}.png`;
-    console.log(`detectImagePath: 使用默认路径: ${defaultPath}`);
-    return defaultPath;
+    return `/images/nep${year}${monthStr}.png`;
   },
 
   // 阻止事件冒泡（用于弹窗内部，防止点击内容时关闭弹窗）
