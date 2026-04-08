@@ -1,9 +1,0 @@
-{
-  "usingComponents": {
-    "ec-canvas": "../../miniprogram_npm/echarts-for-weixin/index"
-  },
-  "navigationBarTitleText": "行政区划柱状图",
-  "navigationBarBackgroundColor": "#2E7D32",
-  "navigationBarTextStyle": "white",
-  "backgroundColor": "#f8f9fa"
-}

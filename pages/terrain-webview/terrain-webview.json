@@ -1,6 +1,8 @@
 {
   "navigationBarTitleText": "秦岭碳汇地图",
-  "usingComponents": {},
+  "usingComponents": {
+    "ec-canvas": "../../miniprogram_npm/echarts-for-weixin/index"
+  },
   "enablePullDownRefresh": false,
   "navigationBarBackgroundColor": "#0a1931",
   "navigationBarTextStyle": "white"

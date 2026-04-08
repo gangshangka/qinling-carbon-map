@@ -1,15 +1,258 @@
 <!--pages/terrain-webview/terrain-webview.wxml-->
 <view class="container">
-  <!-- web-view组件，加载秦岭地形图网页 -->
-  <web-view 
-    src="{{webViewUrl}}" 
-    bindload="onWebViewLoad" 
-    binderror="onWebViewError"
-    style="width: 100%; height: 100vh;">
-  </web-view>
-  
-  <!-- 加载提示 -->
-  <view class="loading-tip" wx:if="{{!webViewUrl}}">
-    <view class="loading-text">正在准备地形图...</view>
+  <!-- 顶部选项卡 -->
+  <view class="tab-bar">
+    <view 
+      class="tab-item {{viewMode === 'terrain' ? 'active' : ''}}" 
+      bindtap="switchViewMode" 
+      data-mode="terrain"
+    >
+      <text class="tab-text">地形图</text>
+    </view>
+    <view 
+      class="tab-item {{viewMode === '3d-bar' ? 'active' : ''}}" 
+      bindtap="switchViewMode" 
+      data-mode="3d-bar"
+    >
+      <text class="tab-text">3D柱状图</text>
+    </view>
+  </view>
+
+  <!-- 地形图模式 -->
+  <view class="content-view" wx:if="{{viewMode === 'terrain'}}">
+    <!-- web-view组件，加载秦岭地形图网页 -->
+    <web-view 
+      src="{{webViewUrl}}" 
+      bindload="onWebViewLoad" 
+      binderror="onWebViewError"
+      style="width: 100%; height: calc(100vh - 50px);">
+    </web-view>
+    
+    <!-- 加载提示 -->
+    <view class="loading-tip" wx:if="{{!webViewUrl}}">
+      <view class="loading-text">正在准备地形图...</view>
+    </view>
+  </view>
+
+  <!-- 3D柱状图模式 -->
+  <view class="content-view" wx:if="{{viewMode === '3d-bar'}}">
+    <!-- 加载状态 -->
+    <view wx:if="{{isLoading}}" class="loading-container">
+      <view class="loading-spinner"></view>
+      <text class="loading-text">加载数据中...</text>
+    </view>
+
+    <!-- 错误提示 -->
+    <view wx:if="{{errorMsg && !isLoading}}" class="error-container">
+      <view class="error-icon">⚠️</view>
+      <text class="error-text">{{errorMsg}}</text>
+      <button class="refresh-btn" bindtap="refreshData">重新加载</button>
+    </view>
+
+    <!-- 统计信息卡片 -->
+    <view wx:if="{{!isLoading && !errorMsg}}" class="stats-card">
+      <view class="stats-title">县区统计信息</view>
+      <view class="stats-grid">
+        <view class="stat-item">
+          <view class="stat-value">{{countyStats.total}}</view>
+          <view class="stat-label">县区数量</view>
+        </view>
+        <view class="stat-item">
+          <view class="stat-value">{{countyStats.avg}}</view>
+          <view class="stat-label">平均碳汇值</view>
+        </view>
+        <view class="stat-item">
+          <view class="stat-value">{{countyStats.max}}</view>
+          <view class="stat-label">最高值 ({{countyStats.maxCounty}})</view>
+        </view>
+        <view class="stat-item">
+          <view class="stat-value">{{countyStats.min}}</view>
+          <view class="stat-label">最低值 ({{countyStats.minCounty}})</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 3D图表容器 -->
+    <view wx:if="{{!isLoading && !errorMsg}}" class="chart-container">
+      <ec-canvas 
+        id="bar3d-chart" 
+        canvas-id="bar3d-chart" 
+        echarts="{{echarts}}"
+        ec="{{ec}}" 
+        class="chart-canvas">
+      </ec-canvas>
+    </view>
+
+    <!-- 控制面板 -->
+    <view wx:if="{{!isLoading && !errorMsg}}" class="control-panel">
+      <!-- 排序方式 -->
+      <view class="control-section">
+        <view class="control-title">排序方式</view>
+        <view class="button-group">
+          <button 
+            class="control-btn {{sortMode === 'value' ? 'active' : ''}}" 
+            data-mode="value"
+            bindtap="changeSortMode">
+            按碳汇值
+          </button>
+          <button 
+            class="control-btn {{sortMode === 'name' ? 'active' : ''}}" 
+            data-mode="name"
+            bindtap="changeSortMode">
+            按名称
+          </button>
+          <button 
+            class="control-btn {{sortMode === 'location' ? 'active' : ''}}" 
+            data-mode="location"
+            bindtap="changeSortMode">
+            按地理位置
+          </button>
+        </view>
+      </view>
+
+      <!-- 高度缩放 -->
+      <view class="control-section">
+        <view class="control-title">高度缩放</view>
+        <view class="button-group">
+          <button 
+            class="control-btn {{heightScale === 0.5 ? 'active' : ''}}" 
+            data-scale="0.5"
+            bindtap="changeHeightScale">
+            0.5x
+          </button>
+          <button 
+            class="control-btn {{heightScale === 1.0 ? 'active' : ''}}" 
+            data-scale="1.0"
+            bindtap="changeHeightScale">
+            1.0x
+          </button>
+          <button 
+            class="control-btn {{heightScale === 2.0 ? 'active' : ''}}" 
+            data-scale="2.0"
+            bindtap="changeHeightScale">
+            2.0x
+          </button>
+          <button 
+            class="control-btn {{heightScale === 3.0 ? 'active' : ''}}" 
+            data-scale="3.0"
+            bindtap="changeHeightScale">
+            3.0x
+          </button>
+        </view>
+      </view>
+
+      <!-- 柱状条尺寸 -->
+      <view class="control-section">
+        <view class="control-title">柱状条粗细</view>
+        <view class="button-group">
+          <button 
+            class="control-btn {{barSize === 0.5 ? 'active' : ''}}" 
+            data-size="0.5"
+            bindtap="changeBarSize">
+            细
+          </button>
+          <button 
+            class="control-btn {{barSize === 1.0 ? 'active' : ''}}" 
+            data-size="1.0"
+            bindtap="changeBarSize">
+            中
+          </button>
+          <button 
+            class="control-btn {{barSize === 1.5 ? 'active' : ''}}" 
+            data-size="1.5"
+            bindtap="changeBarSize">
+            粗
+          </button>
+          <button 
+            class="control-btn {{barSize === 2.0 ? 'active' : ''}}" 
+            data-size="2.0"
+            bindtap="changeBarSize">
+            特粗
+          </button>
+        </view>
+      </view>
+
+      <!-- 配色方案 -->
+      <view class="control-section">
+        <view class="control-title">配色方案</view>
+        <view class="color-buttons">
+          <button 
+            class="color-btn {{colorScheme === 'red-yellow-green' ? 'active' : ''}}" 
+            data-scheme="red-yellow-green"
+            style="background: linear-gradient(to right, #ff4444, #ffbb33, #00C851, #007E33);"
+            bindtap="changeColorScheme">
+            红黄绿渐变
+          </button>
+          <button 
+            class="color-btn {{colorScheme === 'viridis' ? 'active' : ''}}" 
+            data-scheme="viridis"
+            style="background: linear-gradient(to right, #440154, #31688e, #35b779, #fde725);"
+            bindtap="changeColorScheme">
+            Viridis
+          </button>
+          <button 
+            class="color-btn {{colorScheme === 'plasma' ? 'active' : ''}}" 
+            data-scheme="plasma"
+            style="background: linear-gradient(to right, #0d0887, #cc4678, #f89441, #f0f921);"
+            bindtap="changeColorScheme">
+            Plasma
+          </button>
+          <button 
+            class="color-btn {{colorScheme === 'blue-gradient' ? 'active' : ''}}" 
+            data-scheme="blue-gradient"
+            style="background: linear-gradient(to right, #2196F3, #64B5F6, #90CAF9, #E3F2FD);"
+            bindtap="changeColorScheme">
+            蓝渐变
+          </button>
+        </view>
+      </view>
+
+      <!-- 图例说明 -->
+      <view class="legend-section">
+        <view class="control-title">图例说明</view>
+        <view class="legend-items">
+          <view class="legend-item">
+            <view class="legend-color" style="background-color: #ff4444;"></view>
+            <text class="legend-text">碳源/负值区域</text>
+          </view>
+          <view class="legend-item">
+            <view class="legend-color" style="background-color: #ffbb33;"></view>
+            <text class="legend-text">低碳汇区域</text>
+          </view>
+          <view class="legend-item">
+            <view class="legend-color" style="background-color: #00C851;"></view>
+            <text class="legend-text">中碳汇区域</text>
+          </view>
+          <view class="legend-item">
+            <view class="legend-color" style="background-color: #007E33;"></view>
+            <text class="legend-text">高碳汇区域</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 操作提示 -->
+      <view class="hint-section">
+        <view class="hint-title">操作提示</view>
+        <view class="hint-text">
+          • 点击柱状条查看详细信息<br/>
+          • 使用控制面板调整排序和显示效果<br/>
+          • 柱状条使用厚度效果增强视觉体验<br/>
+          • 背景为秦岭地形图轮廓，增强地理认知
+        </view>
+      </view>
+    </view>
+
+    <!-- 刷新按钮 -->
+    <view class="action-buttons">
+      <button class="action-btn refresh" bindtap="refreshData">
+        🔄 刷新数据
+      </button>
+      <button class="action-btn terrain" bindtap="goToTerrainMap">
+        🗺️ 查看地形图
+      </button>
+      <button class="action-btn back" bindtap="goBack">
+        ← 返回首页
+      </button>
+    </view>
   </view>
 </view>

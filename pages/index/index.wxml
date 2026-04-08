@@ -9,15 +9,7 @@
   <!-- 一个容器，用来放置图片 -->
   <view class="image-viewer">
     
-    <!-- 上传图片状态提示：一个小横幅，提示图片加载状态 -->
-    <!-- class 里用 {{showUploadedTip ? 'show' : 'hide'}} 动态控制显示或隐藏 -->
-    <!-- showUploadedTip 是 JS 中定义的变量，为 true 时显示，false 时隐藏 -->
-    <view class="upload-status-tip {{showUploadedTip ? 'show' : 'hide'}}">
-      <!-- 显示一个相机表情作为图标 -->
-      <text class="upload-status-icon">📸</text>
-      <!-- 显示提示文字，文字内容由 JS 中的 uploadedImageTip 变量提供 -->
-      <text class="upload-status-text">{{uploadedImageTip}}</text>
-    </view>
+
     
     <!-- 占位图：始终显示的背景图（比如默认图片） -->
     <!-- src 是图片地址，从 JS 中的 placeholderImageUrl 变量获取 -->
@@ -27,7 +19,7 @@
       src="{{placeholderImageUrl}}"
       mode="aspectFit"
       class="placeholder-image"
-      style="transform: scale({{imageScale}}); transform-origin: center center; opacity: {{imageOpacity}};"
+      style="transform: scale({{imageScale}}); transform-origin: center center; opacity: {{placeholderOpacity}};"
     />
     
     <!-- 目标图：真正要显示的图片（用户选择的年份月份对应的图） -->
@@ -37,11 +29,28 @@
     <image
       src="{{currentImageUrl}}"
       mode="aspectFit"
+      lazy-load="false"
+      show-menu-by-longpress="false"
       bindload="onImageLoad"
       binderror="onImageError"
       class="target-image {{imageLoaded ? 'visible' : 'hidden'}}"
       style="transform: scale({{imageScale}}); transform-origin: center center; opacity: {{imageOpacity}};"
     />
+    
+    <!-- 图片预加载进度条 -->
+    <view class="preload-progress-container" wx:if="{{!allImagesPreloaded}}">
+      <view class="preload-progress-content">
+        <text class="preload-progress-title">图片预加载中...</text>
+        <view class="preload-progress-bar">
+          <view class="preload-progress-inner" style="width: {{loadProgress}}%;"></view>
+        </view>
+        <text class="preload-progress-text">{{loadProgress}}%</text>
+        <text class="preload-progress-details">
+          {{localImagesPreloaded ? '本地图片加载完成' : '本地图片加载中...'}} / 
+          {{allCloudUrlsPreloaded ? '云端图片加载完成' : '云端图片加载中...'}}
+        </text>
+      </view>
+    </view>
   </view>
 
   <!-- ========= 2. 控制面板与图表整合区 ========= -->
