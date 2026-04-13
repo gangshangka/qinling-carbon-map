@@ -14,6 +14,7 @@
     "navigationBarBackgroundColor": "#2E7D32",
     "backgroundColor": "#f8f9fa"
   },
+
   "permission": {
     "scope.userLocation": {
       "desc": "用于地图定位和空间分析"

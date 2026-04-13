@@ -23,9 +23,8 @@
 // app.js
 App({
   onLaunch() {
-    console.log('秦岭碳收支遥感监测系统启动');
     const { checkConfig } = require('./config.js');
-    console.log('配置检查结果:', checkConfig());
+    checkConfig();
     
     // ============================================
     // 微信云开发配置说明（毕业设计推荐方案）

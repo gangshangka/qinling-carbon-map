@@ -209,17 +209,23 @@
     <!-- 导航项：碳汇统计页面 -->
     <view class="nav-item" bindtap="navigateToCarbonChart">
       <text class="nav-icon">📊</text>
-      <text class="nav-text">碳汇统计</text>
+      <text class="nav-text">图表</text>
+    </view>
+    <!-- 导航项：2D地图页面 -->
+    <view class="nav-item" bindtap="navigateToCarbonMap">
+      <text class="nav-icon">🗺️</text>
+      <text class="nav-text">2D地图</text>
     </view>
     <!-- 导航项：3D柱状图页面 -->
     <view class="nav-item" bindtap="navigateTo3DBarChart">
       <text class="nav-icon">📊</text>
       <text class="nav-text">3D柱状图</text>
-    </view>
+    </view> 
     <!-- 导航项：管理员页面 -->
     <view class="nav-item" bindtap="navigateToAdmin">
       <text class="nav-icon">👨‍💼</text>
       <text class="nav-text">管理员</text>
     </view>
   </view>
+
 </view>

@@ -862,7 +862,7 @@ Page({
     // 保存回本地存储
     wx.setStorageSync('carbon_image_map', imageMap);
     
-    console.log('图片映射表已更新:', year, '年', month, '月', imagePath);
+    // console.log('图片映射表已更新:', year, '年', month, '月', imagePath);
     
     // 通知主页更新（通过全局事件或直接调用）
     // 这里可以触发一个全局事件，主页监听该事件并更新imageMap

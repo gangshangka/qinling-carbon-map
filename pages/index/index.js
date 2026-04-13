@@ -336,7 +336,7 @@ Page({
     // 检查年份是否超出数据范围（2012-2022）且没有上传图片
     const hasUploadedImage = this.data.imageMap[year] && this.data.imageMap[year][month];
     if ((year < 2012 || year > 2022) && !hasUploadedImage) {
-      console.log(`年份 ${year} 超出数据范围（2012-2022）且无上传图片，直接使用占位图`);
+     // console.log(`年份 ${year} 超出数据范围（2012-2022）且无上传图片，直接使用占位图`);
       this.useLocalPlaceholder();
       return;
     }
@@ -347,11 +347,11 @@ Page({
     // 检查是否是云存储路径（cloud://开头）
     if (imagePath && imagePath.startsWith('cloud://')) {
       // 如果是云路径，获取临时URL
-      console.log('检测到云存储路径，获取临时URL:', imagePath);
+      //console.log('检测到云存储路径，获取临时URL:', imagePath);
       this.getCloudImageTempUrl(imagePath, year, month);
     } else {
       // 本地路径（包括本地缓存文件），直接设置
-      console.log('使用本地图片路径:', imagePath);
+      //console.log('使用本地图片路径:', imagePath);
       this.setData({ currentImageUrl: imagePath, imageScale: 1.0, scalePercent: 100, placeholderOpacity: 1 });
     }
     
@@ -496,11 +496,11 @@ addImageToMap(year, month, imagePath) {
     
     // 如果已经存在缓存，跳过下载
     if (this.getCachedFilePath(year, month)) {
-      console.log(`图片 ${year}年${month}月 已缓存，跳过下载`);
+      //console.log(`图片 ${year}年${month}月 已缓存，跳过下载`);
       return Promise.resolve();
     }
     
-    console.log(`开始下载并缓存图片: ${year}年${month}月`);
+    //console.log(`开始下载并缓存图片: ${year}年${month}月`);
     
     return new Promise((resolve, reject) => {
       // 下载文件
@@ -526,7 +526,7 @@ addImageToMap(year, month, imagePath) {
               };
               this.setData({ localFileCache: newCache });
               
-              console.log(`图片缓存成功: ${year}年${month}月, 路径: ${savedFilePath}`);
+              //console.log(`图片缓存成功: ${year}年${month}月, 路径: ${savedFilePath}`);
               resolve(savedFilePath);
             } catch (saveErr) {
               console.error('保存文件失败:', saveErr);
@@ -549,7 +549,7 @@ addImageToMap(year, month, imagePath) {
 
   // 预缓存接下来5张图片（实现无缝切换）
   preCacheNextImages(currentYear, currentMonth) {
-    console.log(`开始预缓存接下来5张图片，从 ${currentYear}年${currentMonth}月开始`);
+    //console.log(`开始预缓存接下来5张图片，从 ${currentYear}年${currentMonth}月开始`);
     
     const maxYear = this.data.maxYear;
     const imageMap = this.data.imageMap;
@@ -583,7 +583,7 @@ addImageToMap(year, month, imagePath) {
       // 1. 首先检查是否已经有本地缓存
       const cachedFilePath = this.getCachedFilePath(year, month);
       if (cachedFilePath) {
-        console.log(`图片 ${year}年${month}月 已有缓存，跳过`);
+        //console.log(`图片 ${year}年${month}月 已有缓存，跳过`);
         continue;
       }
       
@@ -615,20 +615,20 @@ addImageToMap(year, month, imagePath) {
           type: 'cloud'
         });
         count++;
-        console.log(`计划预缓存云存储图片: ${year}年${month}月`);
+        //console.log(`计划预缓存云存储图片: ${year}年${month}月`);
       } else if (imagePath && !imagePath.includes('nep201201.png') && !imagePath.startsWith('http')) {
         // 本地图片（非默认占位图，非HTTP URL），如果已经在本地就不需要缓存
         // 这里主要处理/pages/index/images/下的图片，这些图片已经存在
-        console.log(`图片 ${year}年${month}月 是本地图片，无需额外缓存`);
+        //console.log(`图片 ${year}年${month}月 是本地图片，无需额外缓存`);
       }
     }
     
     if (imagesToPreCache.length === 0) {
-      console.log('没有需要预缓存的云存储图片');
+      //console.log('没有需要预缓存的云存储图片');
       return;
     }
     
-    console.log(`需要预缓存 ${imagesToPreCache.length} 张云存储图片`);
+    //console.log(`需要预缓存 ${imagesToPreCache.length} 张云存储图片`);
     
     // 异步预缓存这些图片（不阻塞当前图片加载）
     setTimeout(() => {
@@ -662,11 +662,11 @@ addImageToMap(year, month, imagePath) {
                 // 下载并缓存
                 this.downloadAndCacheImage(res.fileList[0].tempFileURL, item.year, item.month)
                   .then(() => {
-                    console.log(`预缓存成功: ${item.year}年${item.month}月`);
+                    //console.log(`预缓存成功: ${item.year}年${item.month}月`);
                     resolve();
                   })
                   .catch((err) => {
-                    console.log(`预缓存失败: ${item.year}年${item.month}月`, err);
+                    //console.log(`预缓存失败: ${item.year}年${item.month}月`, err);
                     resolve(); // 即使失败也继续
                   });
               } else {

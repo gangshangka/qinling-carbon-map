@@ -37,7 +37,7 @@
   height: 100%;
   display: block;
   margin: 0;
-  padding: 0;
+  padding: 0 0 120rpx 0; /* 为底部导航栏留出空间 */
   transform-origin: center center;
   transition: none;
   image-rendering: -webkit-optimize-contrast;
@@ -408,53 +408,7 @@
   /* 保持完全可见，仅降低层级 */
 }
 
-/* 底部导航栏 */
-.bottom-navbar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 120rpx;
-  background: white;
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  border-top: 1rpx solid rgba(0, 0, 0, 0.1);
-  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.08);
-  z-index: 1000;
-  padding: 0 20rpx;
-  box-sizing: border-box;
-}
 
-.nav-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  flex: 1;
-  height: 100%;
-  padding: 15rpx 0;
-  transition: all 0.1s ease;
-  border-radius: 8rpx;
-}
-
-.nav-item:active {
-  background: rgba(76, 175, 80, 0.05);
-  transform: translateY(-2rpx);
-}
-
-.nav-icon {
-  font-size: 36rpx;
-  margin-bottom: 8rpx;
-  line-height: 1;
-}
-
-.nav-text {
-  font-size: 20rpx;
-  color: #333;
-  font-weight: 500;
-  white-space: nowrap;
-}
 
 /* 自动播放按钮 */
 .auto-play-btn {
@@ -592,4 +546,52 @@
   color: #666;
   line-height: 1.5;
   display: block;
+}
+
+/* 底部导航栏 */
+.bottom-navbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 120rpx;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  border-top: 1rpx solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.08);
+  z-index: 1000;
+  padding: 0 20rpx;
+  box-sizing: border-box;
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  height: 100%;
+  padding: 15rpx 0;
+  transition: all 0.1s ease;
+  border-radius: 8rpx;
+}
+
+.nav-item:active {
+  background: rgba(76, 175, 80, 0.05);
+  transform: translateY(-2rpx);
+}
+
+.nav-icon {
+  font-size: 36rpx;
+  margin-bottom: 8rpx;
+  line-height: 1;
+}
+
+.nav-text {
+  font-size: 20rpx;
+  color: #333;
+  font-weight: 500;
+  white-space: nowrap;
 }
