@@ -1,0 +1,485 @@
+/* 系统性能报告页面样式 */
+.container {
+  padding: 20rpx;
+  background-color: #f8f9fa;
+  min-height: 100vh;
+}
+
+/* 页面标题 */
+.header {
+  text-align: center;
+  margin-bottom: 40rpx;
+  padding: 30rpx 20rpx;
+  background: linear-gradient(135deg, #2E7D32 0%, #43A047 100%);
+  border-radius: 20rpx;
+  color: white;
+  box-shadow: 0 4rpx 20rpx rgba(46, 125, 50, 0.2);
+}
+
+.title {
+  font-size: 40rpx;
+  font-weight: bold;
+  margin-bottom: 10rpx;
+}
+
+.subtitle {
+  font-size: 28rpx;
+  opacity: 0.9;
+}
+
+/* 加载状态 */
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 100rpx 0;
+}
+
+.loading-icon {
+  width: 120rpx;
+  height: 120rpx;
+  margin-bottom: 30rpx;
+}
+
+.loading-text {
+  font-size: 30rpx;
+  color: #666;
+}
+
+/* 报告容器 */
+.report-container {
+  margin-bottom: 40rpx;
+}
+
+/* 摘要卡片 */
+.summary-card {
+  background: white;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+}
+
+.summary-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30rpx;
+  padding-bottom: 20rpx;
+  border-bottom: 2rpx solid #eee;
+}
+
+.summary-title {
+  font-size: 34rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.summary-time {
+  font-size: 24rpx;
+  color: #888;
+}
+
+.summary-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
+  margin-bottom: 30rpx;
+}
+
+.stat-item {
+  flex: 1;
+  min-width: 150rpx;
+  text-align: center;
+  padding: 25rpx 15rpx;
+  background: #f8f9fa;
+  border-radius: 15rpx;
+  border: 2rpx solid #e9ecef;
+}
+
+.stat-value {
+  display: block;
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #2E7D32;
+  margin-bottom: 10rpx;
+}
+
+.stat-label {
+  display: block;
+  font-size: 24rpx;
+  color: #666;
+}
+
+.targets-achieved {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20rpx;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 15rpx;
+  border-left: 8rpx solid #2E7D32;
+}
+
+.achieved-text {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.achieved-badge {
+  padding: 10rpx 25rpx;
+  border-radius: 50rpx;
+  color: white;
+  font-size: 24rpx;
+  font-weight: bold;
+}
+
+/* 目标评估 */
+.targets-section {
+  margin-bottom: 40rpx;
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 25rpx;
+  padding-left: 15rpx;
+  border-left: 8rpx solid #2E7D32;
+}
+
+.target-card {
+  background: white;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  margin-bottom: 25rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+  border: 2rpx solid #e9ecef;
+}
+
+.target-card:last-child {
+  margin-bottom: 0;
+}
+
+.target-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25rpx;
+  padding-bottom: 20rpx;
+  border-bottom: 1rpx solid #eee;
+}
+
+.target-name {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.target-status {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+
+.status-icon {
+  font-size: 28rpx;
+  font-weight: bold;
+}
+
+.status-text {
+  font-size: 26rpx;
+  font-weight: bold;
+}
+
+.target-content {
+  padding: 10rpx 0;
+}
+
+.target-row {
+  display: flex;
+  margin-bottom: 20rpx;
+  align-items: flex-start;
+}
+
+.target-row:last-child {
+  margin-bottom: 0;
+}
+
+.target-label {
+  font-size: 26rpx;
+  color: #666;
+  min-width: 160rpx;
+  font-weight: bold;
+}
+
+.target-value {
+  font-size: 26rpx;
+  color: #333;
+  flex: 1;
+  line-height: 1.4;
+}
+
+.target-details {
+  margin-top: 25rpx;
+  padding: 20rpx;
+  background: #f8f9fa;
+  border-radius: 15rpx;
+  border: 1rpx solid #e9ecef;
+}
+
+.details-title {
+  font-size: 26rpx;
+  font-weight: bold;
+  color: #555;
+  margin-bottom: 15rpx;
+  padding-bottom: 10rpx;
+  border-bottom: 1rpx solid #ddd;
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12rpx;
+  font-size: 24rpx;
+}
+
+.detail-item:last-child {
+  margin-bottom: 0;
+}
+
+.detail-label {
+  color: #666;
+}
+
+.detail-value {
+  color: #333;
+  font-weight: 500;
+}
+
+/* 操作按钮 */
+.actions-section {
+  margin-bottom: 40rpx;
+}
+
+.action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
+}
+
+.action-btn {
+  flex: 1;
+  min-width: 180rpx;
+  height: 100rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 15rpx;
+  background: white;
+  box-shadow: 0 4rpx 15rpx rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.action-btn:active {
+  transform: translateY(4rpx);
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.12);
+}
+
+.refresh-btn {
+  background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+  color: white;
+}
+
+.details-btn {
+  background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
+  color: white;
+}
+
+.suggest-btn {
+  background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%);
+  color: white;
+}
+
+.export-btn {
+  background: linear-gradient(135deg, #4CAF50 0%, #388E3C 100%);
+  color: white;
+}
+
+.reset-btn {
+  background: linear-gradient(135deg, #F44336 0%, #D32F2F 100%);
+  color: white;
+}
+
+.btn-icon {
+  font-size: 36rpx;
+  margin-bottom: 8rpx;
+}
+
+.btn-text {
+  font-size: 24rpx;
+  font-weight: bold;
+}
+
+/* 测量说明 */
+.explanation-section {
+  background: white;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  margin-bottom: 40rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+}
+
+.explanation-content {
+  padding: 10rpx 0;
+}
+
+.explanation-item {
+  margin-bottom: 30rpx;
+  padding-bottom: 25rpx;
+  border-bottom: 1rpx solid #eee;
+}
+
+.explanation-item:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.exp-title {
+  display: block;
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #2E7D32;
+  margin-bottom: 15rpx;
+}
+
+.exp-desc {
+  display: block;
+  font-size: 26rpx;
+  color: #555;
+  line-height: 1.5;
+}
+
+/* 导出弹窗 */
+.export-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 40rpx;
+}
+
+.export-content {
+  width: 100%;
+  max-width: 800rpx;
+  background: white;
+  border-radius: 25rpx;
+  overflow: hidden;
+  box-shadow: 0 10rpx 50rpx rgba(0, 0, 0, 0.2);
+}
+
+.export-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 30rpx;
+  background: linear-gradient(135deg, #2E7D32 0%, #43A047 100%);
+  color: white;
+}
+
+.export-title {
+  font-size: 32rpx;
+  font-weight: bold;
+}
+
+.close-btn {
+  width: 60rpx;
+  height: 60rpx;
+  border: none;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  color: white;
+  font-size: 32rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.export-body {
+  padding: 30rpx;
+  max-height: 600rpx;
+  overflow-y: auto;
+}
+
+.export-textarea {
+  width: 100%;
+  height: 400rpx;
+  background: #f8f9fa;
+  border: 2rpx solid #e9ecef;
+  border-radius: 15rpx;
+  padding: 25rpx;
+  font-size: 24rpx;
+  color: #333;
+  line-height: 1.4;
+  font-family: monospace;
+}
+
+.export-footer {
+  display: flex;
+  padding: 25rpx 30rpx;
+  gap: 20rpx;
+  border-top: 2rpx solid #eee;
+}
+
+.export-copy-btn {
+  flex: 2;
+  height: 80rpx;
+  background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+  color: white;
+  border: none;
+  border-radius: 15rpx;
+  font-size: 28rpx;
+  font-weight: bold;
+}
+
+.export-close-btn {
+  flex: 1;
+  height: 80rpx;
+  background: #f8f9fa;
+  color: #666;
+  border: 2rpx solid #e9ecef;
+  border-radius: 15rpx;
+  font-size: 28rpx;
+  font-weight: bold;
+}
+
+/* 响应式调整 */
+@media (max-width: 750rpx) {
+  .summary-stats {
+    flex-direction: column;
+  }
+  
+  .stat-item {
+    min-width: auto;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+  }
+  
+  .action-btn {
+    min-width: auto;
+    width: 100%;
+  }
+}

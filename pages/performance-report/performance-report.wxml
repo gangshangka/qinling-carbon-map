@@ -1,0 +1,155 @@
+<!-- 系统性能报告页面 -->
+<view class="container">
+  <!-- 页面标题 -->
+  <view class="header">
+    <view class="title">系统性能测量报告</view>
+    <view class="subtitle">四大目标达成情况评估</view>
+  </view>
+
+  <!-- 加载状态 -->
+  <view wx:if="{{loading}}" class="loading">
+    <image src="/images/loading.gif" mode="widthFix" class="loading-icon"></image>
+    <text class="loading-text">正在加载性能数据...</text>
+  </view>
+
+  <!-- 性能报告 -->
+  <view wx:else class="report-container">
+    <!-- 报告摘要 -->
+    <view class="summary-card">
+      <view class="summary-header">
+        <text class="summary-title">📊 性能报告摘要</text>
+        <text class="summary-time">{{report.timestamp ? '更新时间: ' + formatTimestamp(report.timestamp) : ''}}</text>
+      </view>
+      
+      <view class="summary-stats">
+        <view class="stat-item">
+          <text class="stat-value">{{formatNumber(report.summary.avgResponseTime)}}ms</text>
+          <text class="stat-label">平均响应时间</text>
+        </view>
+        <view class="stat-item">
+          <text class="stat-value">{{formatPercent(report.summary.cacheHitRate)}}</text>
+          <text class="stat-label">缓存命中率</text>
+        </view>
+        <view class="stat-item">
+          <text class="stat-value">{{formatPercent(report.summary.networkReductionRate)}}</text>
+          <text class="stat-label">请求减少率</text>
+        </view>
+        <view class="stat-item">
+          <text class="stat-value">{{formatPercent(report.summary.availabilityRate)}}</text>
+          <text class="stat-label">系统可用性</text>
+        </view>
+      </view>
+      
+      <view class="targets-achieved">
+        <text class="achieved-text">目标达成: {{report.summary.targetsAchieved}}/{{report.summary.totalTargets}}</text>
+        <view class="achieved-badge" style="background-color: {{report.summary.targetsAchieved === report.summary.totalTargets ? '#4CAF50' : '#FF9800'}};">
+          {{report.summary.targetsAchieved === report.summary.totalTargets ? '全部达成' : '部分达成'}}
+        </view>
+      </view>
+    </view>
+
+    <!-- 四大目标评估 -->
+    <view class="targets-section">
+      <view class="section-title">🎯 四大目标评估</view>
+      
+      <view wx:for="{{targetsSummary}}" wx:key="name" class="target-card">
+        <view class="target-header">
+          <text class="target-name">{{item.name}}</text>
+          <view class="target-status" style="color: {{getStatusColor(item.achieved)}};">
+            <text class="status-icon">{{getStatusIcon(item.achieved) === 'success' ? '✓' : '⚠'}}</text>
+            <text class="status-text">{{getStatusText(item.achieved)}}</text>
+          </view>
+        </view>
+        
+        <view class="target-content">
+          <view class="target-row">
+            <text class="target-label">目标要求:</text>
+            <text class="target-value">{{item.target}}</text>
+          </view>
+          <view class="target-row">
+            <text class="target-label">当前状态:</text>
+            <text class="target-value">{{item.current}}</text>
+          </view>
+          
+          <!-- 详细指标 -->
+          <view wx:if="{{item.details}}" class="target-details">
+            <view class="details-title">详细指标:</view>
+            <view wx:for="{{Object.keys(item.details)}}" wx:key="*this" class="detail-item">
+              <text class="detail-label">{{detailKeyToChinese(key)}}:</text>
+              <text class="detail-value">
+                {{typeof item.details[key] === 'number' ? formatDetailValue(key, item.details[key]) : item.details[key]}}
+              </text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 操作按钮 -->
+    <view class="actions-section">
+      <view class="section-title">⚙️ 数据操作</view>
+      <view class="action-buttons">
+        <button class="action-btn refresh-btn" bindtap="refreshReport">
+          <text class="btn-icon">🔄</text>
+          <text class="btn-text">刷新报告</text>
+        </button>
+        <button class="action-btn details-btn" bindtap="viewDetailedMetrics">
+          <text class="btn-icon">📈</text>
+          <text class="btn-text">详细指标</text>
+        </button>
+        <button class="action-btn suggest-btn" bindtap="viewRecommendations">
+          <text class="btn-icon">💡</text>
+          <text class="btn-text">优化建议</text>
+        </button>
+        <button class="action-btn export-btn" bindtap="exportData">
+          <text class="btn-icon">📤</text>
+          <text class="btn-text">导出数据</text>
+        </button>
+        <button class="action-btn reset-btn" bindtap="resetMetrics">
+          <text class="btn-icon">🔄</text>
+          <text class="btn-text">重置数据</text>
+        </button>
+      </view>
+    </view>
+
+    <!-- 测量说明 -->
+    <view class="explanation-section">
+      <view class="section-title">📝 测量方法说明</view>
+      <view class="explanation-content">
+        <view class="explanation-item">
+          <text class="exp-title">1. 高可用性测量:</text>
+          <text class="exp-desc">通过 performanceMonitor.recordApiResponse() 记录所有API调用响应时间，计算平均响应时间；通过 recordAvailability() 记录系统运行时间，计算可用性率。</text>
+        </view>
+        <view class="explanation-item">
+          <text class="exp-title">2. 高性能测量:</text>
+          <text class="exp-desc">通过 recordImageCacheHit() 记录图片缓存命中情况，计算缓存命中率；通过 recordNetworkRequest() 记录网络请求，计算请求减少率（缓存请求/总请求）。</text>
+        </view>
+        <view class="explanation-item">
+          <text class="exp-title">3. 高安全测量:</text>
+          <text class="exp-desc">通过 recordSecurityEvent() 记录安全事件（登录失败、API错误、越权访问等），检查是否发生严重安全漏洞。</text>
+        </view>
+        <view class="explanation-item">
+          <text class="exp-title">4. 易扩展测量:</text>
+          <text class="exp-desc">基于系统架构评估：模块化设计（config.js支持多存储后端）、组件化页面、松耦合接口，支持未来功能扩展。</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 导出数据弹窗 -->
+  <view wx:if="{{showExport}}" class="export-modal">
+    <view class="export-content">
+      <view class="export-header">
+        <text class="export-title">📋 导出性能数据 (JSON格式)</text>
+        <button class="close-btn" bindtap="closeExport">✕</button>
+      </view>
+      <view class="export-body">
+        <textarea class="export-textarea" value="{{exportJson}}" disabled></textarea>
+      </view>
+      <view class="export-footer">
+        <button class="export-copy-btn" bindtap="copyJson">复制到剪贴板</button>
+        <button class="export-close-btn" bindtap="closeExport">关闭</button>
+      </view>
+    </view>
+  </view>
+</view>

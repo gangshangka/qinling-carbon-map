@@ -11,30 +11,36 @@
     
 
     
-    <!-- 占位图：始终显示的背景图（比如默认图片） -->
-    <!-- src 是图片地址，从 JS 中的 placeholderImageUrl 变量获取 -->
-    <!-- mode="aspectFit" 表示图片等比缩放，完整显示在区域内 -->
-    <!-- class 定义了样式，后面 style 动态设置缩放、旋转中心、透明度 -->
+    <!-- 占位图：始终作为底图显示，z-index最低，被目标图覆盖 -->
     <image
       src="{{placeholderImageUrl}}"
       mode="aspectFit"
       class="placeholder-image"
-      style="transform: scale({{imageScale}}); transform-origin: center center; opacity: {{placeholderOpacity}};"
+      style="transform: scale({{imageScale}}); transform-origin: center center; opacity: 1;"
     />
     
-    <!-- 目标图：真正要显示的图片（用户选择的年份月份对应的图） -->
-    <!-- 一开始可能隐藏，等图片加载完成后才显示，通过 class 中的 visible/hidden 控制 -->
-    <!-- bindload="onImageLoad" 表示图片加载成功时，调用 JS 中的 onImageLoad 函数 -->
-    <!-- binderror="onImageError" 表示图片加载失败时，调用 JS 中的 onImageError 函数 -->
+    <!-- 目标图层A：与图层B交叉淡入，确保始终有一层覆盖占位图 -->
     <image
-      src="{{currentImageUrl}}"
+      src="{{imageLayerA}}"
       mode="aspectFit"
       lazy-load="false"
       show-menu-by-longpress="false"
-      bindload="onImageLoad"
-      binderror="onImageError"
-      class="target-image {{imageLoaded ? 'visible' : 'hidden'}}"
-      style="transform: scale({{imageScale}}); transform-origin: center center; opacity: {{imageOpacity}};"
+      bindload="onLayerALoad"
+      binderror="onLayerAError"
+      class="target-image"
+      style="transform: scale({{imageScale}}); transform-origin: center center; opacity: {{opacityA}};"
+    />
+    
+    <!-- 目标图层B：与图层A交叉淡入 -->
+    <image
+      src="{{imageLayerB}}"
+      mode="aspectFit"
+      lazy-load="false"
+      show-menu-by-longpress="false"
+      bindload="onLayerBLoad"
+      binderror="onLayerBError"
+      class="target-image"
+      style="transform: scale({{imageScale}}); transform-origin: center center; opacity: {{opacityB}};"
     />
     
     <!-- 图片预加载进度条 -->
@@ -42,13 +48,14 @@
       <view class="preload-progress-content">
         <text class="preload-progress-title">图片预加载中...</text>
         <view class="preload-progress-bar">
-          <view class="preload-progress-inner" style="width: {{loadProgress}}%;"></view>
+          <view class="preload-progress-inner" style="width: {{loadProgress}}%; "></view>
         </view>
         <text class="preload-progress-text">{{loadProgress}}%</text>
         <text class="preload-progress-details">
           {{localImagesPreloaded ? '本地图片加载完成' : '本地图片加载中...'}} / 
           {{allCloudUrlsPreloaded ? '云端图片加载完成' : '云端图片加载中...'}}
         </text>
+        <text class="preload-progress-hint">加载完成后可开始播放</text>
       </view>
     </view>
   </view>
@@ -71,9 +78,10 @@
           <!-- 自动播放按钮，点击后触发 toggleAutoPlay 函数 -->
           <!-- class 中根据 autoPlay 是否为 true 来添加 active 样式（高亮） -->
           <button 
-            class="auto-play-btn {{autoPlay ? 'active' : ''}}" 
+            class="auto-play-btn {{autoPlay ? 'active' : ''}} {{!allImagesPreloaded ? 'disabled' : ''}}" 
             bindtap="toggleAutoPlay"
             size="mini"
+            disabled="{{!allImagesPreloaded}}"
           >
             <!-- 按钮文字根据 autoPlay 状态显示不同文字 -->
             {{autoPlay ? '停止播放' : '开始播放'}}
@@ -209,23 +217,17 @@
     <!-- 导航项：碳汇统计页面 -->
     <view class="nav-item" bindtap="navigateToCarbonChart">
       <text class="nav-icon">📊</text>
-      <text class="nav-text">图表</text>
-    </view>
-    <!-- 导航项：2D地图页面 -->
-    <view class="nav-item" bindtap="navigateToCarbonMap">
-      <text class="nav-icon">🗺️</text>
-      <text class="nav-text">2D地图</text>
+      <text class="nav-text">碳汇统计</text>
     </view>
     <!-- 导航项：3D柱状图页面 -->
     <view class="nav-item" bindtap="navigateTo3DBarChart">
       <text class="nav-icon">📊</text>
       <text class="nav-text">3D柱状图</text>
-    </view> 
+    </view>
     <!-- 导航项：管理员页面 -->
     <view class="nav-item" bindtap="navigateToAdmin">
       <text class="nav-icon">👨‍💼</text>
       <text class="nav-text">管理员</text>
     </view>
   </view>
-
 </view>

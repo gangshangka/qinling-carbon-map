@@ -852,21 +852,14 @@ Page({
 
   // 更新图片映射表
   updateImageMap(year, month, imagePath) {
-    // 从本地存储加载现有的图片映射表
     const imageMap = wx.getStorageSync('carbon_image_map') || {};
-    if (!imageMap[year]) {
-      imageMap[year] = {};
-    }
-    imageMap[year][month] = imagePath;
-    
-    // 保存回本地存储
+    const yearKey = String(year);
+    const monthKey = String(month); // 统一用字符串存储，避免数字/字符串不一致
+    if (!imageMap[yearKey]) imageMap[yearKey] = {};
+    imageMap[yearKey][monthKey] = imagePath;
     wx.setStorageSync('carbon_image_map', imageMap);
-    
-    // console.log('图片映射表已更新:', year, '年', month, '月', imagePath);
-    
-    // 通知主页更新（通过全局事件或直接调用）
-    // 这里可以触发一个全局事件，主页监听该事件并更新imageMap
-    // 为了简化，我们只更新本地存储，主页在下次加载时会读取
+    // 同时更新当前页面的 data
+    this.setData({ imageMap });
   },
 
   // 添加上传记录

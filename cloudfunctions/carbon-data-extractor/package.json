@@ -1,0 +1,17 @@
+{
+  "name": "carbon-data-extractor",
+  "version": "1.0.0",
+  "description": "云函数：提取TIF文件中的县域碳汇数据并保存",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "wx-server-sdk": "latest",
+    "geotiff": "^2.1.3",
+    "@turf/turf": "^6.5.0",
+    "proj4": "^2.8.0"
+  },
+  "author": "",
+  "license": "ISC"
+}

@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "openapi": [
+      "cloud.getTempFileURL",
+      "cloud.uploadFile",
+      "cloud.downloadFile",
+      "database.query",
+      "database.update",
+      "database.add"
+    ]
+  },
+  "timeout": 300
+}

@@ -5,8 +5,15 @@ import monthlyData from '../../data/monthly_data.js';
 Page({
   // 页面数据（相当于组件的状态）
   data: {
-    // 当前显示的图片路径（动态变化）
-    
+    // 双图层交叉淡入系统：A/B两层交替显示，切换时始终有一层覆盖占位图
+    imageLayerA: '',        // 图层A的图片URL
+    imageLayerB: '',        // 图层B的图片URL
+    opacityA: 0,            // 图层A透明度
+    opacityB: 0,            // 图层B透明度
+    activeLayer: '',        // 当前显示的图层（'A'或'B'），空表示尚未初始化
+    layerALoaded: false,    // 图层A图片是否加载完成
+    layerBLoaded: false,    // 图层B图片是否加载完成
+    // 保留 currentImageUrl 用于外部兼容引用
     currentImageUrl: '',
     // 占位图路径（固定，使用/images/nep201201.png作为永久占位图）
     placeholderImageUrl: '/images/nep201201.png',
@@ -22,7 +29,7 @@ Page({
     yearTabs: [2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2024],
     // 月份选项卡列表（1到12）
     monthTabs: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-    // 图片是否加载完成
+    // 图片是否加载完成（图层系统中用于判断当前图是否已显示）
     imageLoaded: false,
     // 图片是否加载失败
     imageError: false,
@@ -34,10 +41,6 @@ Page({
     currentMonthlyData: [],
     // 图片缩放比例（1为原始大小）
     imageScale: 1.0,
-    // 图片透明度（1为不透明）
-    imageOpacity: 1.0,
-    // 占位图透明度（1为不透明）
-    placeholderOpacity: 1.0,
     // 缩放百分比显示
     scalePercent: 100,
     // 预加载完成的年份数组
@@ -51,8 +54,11 @@ Page({
     autoPlay: false,            // 是否正在自动播放
     autoPlayStatus: '停止',     // 自动播放状态文本
     autoPlayTimer: null,        // 定时器ID
-    autoPlayInterval: 2000,     // 播放间隔（毫秒）延长到2秒，让图片加载完成后显示更长时间
+    autoPlayInterval: 30,        // 切换过渡时间（毫秒），极短仅用于图片间切换过渡
+    autoPlayDisplayTime: 1500,   // 单张图片保持显示时间（毫秒），图片加载完成后保持展示的时间
     waitingForImageLoad: false, // 是否在等待图片加载完成（用于自动播放）
+    // 占位图失败最短展示时间（毫秒），避免占位图停留过久
+    placeholderMinDisplayTime: 200,
     showMonthPicker: false,     // 是否显示月份选择弹窗
     showYearPicker: false,      // 是否显示年份选择弹窗
 
@@ -68,7 +74,8 @@ Page({
       localImagesPreloaded: false,   // 本地图片是否已预加载完成
       localPreloadStarted: false,    // 本地图片预加载是否已开始
       allImagesPreloaded: false,     // 是否所有图片（本地和云端）都已预加载
-
+      allCloudFilesCached: false,
+      loggedMissingImages: {},      // 记录已经输出过"无图片"日志的年份月份，避免重复输出
   },
 
   // 页面加载时触发
@@ -84,18 +91,18 @@ Page({
     // 获取系统信息（屏幕尺寸等）
     this.getSystemInfo();
     
-    // 预加载云端图片的临时URL
+    // 同时启动：预加载云端URL + 预下载缓存到本地（并行，不再串行等待）
     this.preloadAllCloudImages().then(() => {
       console.log('云端图片临时URL预加载完成');
-      
-      // 异步预下载并缓存所有云端图片到本地
-      setTimeout(() => {
-        this.preDownloadAndCacheAllCloudImages().then(() => {
-          console.log('云端图片本地缓存完成，后续切换将使用本地缓存');
-        }).catch(err => {
-          console.log('预缓存失败，但不影响正常使用:', err);
-        });
-      }, 1000); // 延迟1秒开始，避免影响页面初始加载
+    }).catch(err => {
+      console.log('云端URL预加载失败:', err);
+    });
+    
+    // 立即开始预下载并缓存云端图片到本地（与URL预加载并行）
+    this.preDownloadAndCacheAllCloudImages().then(() => {
+      console.log('云端图片本地缓存完成，后续切换将使用本地缓存');
+    }).catch(err => {
+      console.log('预缓存失败，但不影响正常使用:', err);
     });
     
     // 监听本地存储变化，当图片映射表更新时重新加载
@@ -330,13 +337,12 @@ Page({
 
   // 加载指定年份和月份的图片
   loadImage(year = this.data.currentYear, month = this.data.currentMonth) {
-    // 设置图片未加载、未失败状态（占位图永远使用固定图片）
-    this.setData({ imageLoaded: false, imageError: false, placeholderOpacity: 1 });
+    // 设置图片未加载、未失败状态
+    this.setData({ imageError: false, imageLoaded: false });
     
     // 检查年份是否超出数据范围（2012-2022）且没有上传图片
     const hasUploadedImage = this.data.imageMap[year] && this.data.imageMap[year][month];
     if ((year < 2012 || year > 2022) && !hasUploadedImage) {
-     // console.log(`年份 ${year} 超出数据范围（2012-2022）且无上传图片，直接使用占位图`);
       this.useLocalPlaceholder();
       return;
     }
@@ -347,18 +353,68 @@ Page({
     // 检查是否是云存储路径（cloud://开头）
     if (imagePath && imagePath.startsWith('cloud://')) {
       // 如果是云路径，获取临时URL
-      //console.log('检测到云存储路径，获取临时URL:', imagePath);
       this.getCloudImageTempUrl(imagePath, year, month);
     } else {
-      // 本地路径（包括本地缓存文件），直接设置
-      //console.log('使用本地图片路径:', imagePath);
-      this.setData({ currentImageUrl: imagePath, imageScale: 1.0, scalePercent: 100, placeholderOpacity: 1 });
+      // 本地路径（包括本地缓存文件），直接设置到非活跃图层
+      this._setNextLayerImage(imagePath);
     }
     
     // 异步预缓存接下来5张图片（实现无缝切换）
     setTimeout(() => {
       this.preCacheNextImages(year, month);
     }, 100);
+  },
+  
+  // 设置下一图层的图片URL（核心：交叉淡入逻辑）
+  _setNextLayerImage(imageUrl) {
+    const activeLayer = this.data.activeLayer;
+    if (!activeLayer) {
+      // 首次加载：放到A层，加载完成后直接显示
+      this.setData({
+        imageLayerA: imageUrl,
+        opacityA: 0,
+        layerALoaded: false,
+        currentImageUrl: imageUrl
+      });
+    } else if (activeLayer === 'A') {
+      // 当前A层显示，下一张放到B层
+      this.setData({
+        imageLayerB: imageUrl,
+        opacityB: 0,          // B层先不可见
+        layerBLoaded: false,
+        currentImageUrl: imageUrl
+      });
+    } else {
+      // 当前B层显示，下一张放到A层
+      this.setData({
+        imageLayerA: imageUrl,
+        opacityA: 0,          // A层先不可见
+        layerALoaded: false,
+        currentImageUrl: imageUrl
+      });
+    }
+  },
+  
+  // 交叉淡入：淡入新图层，淡出旧图层
+  _crossFadeToNextLayer() {
+    const activeLayer = this.data.activeLayer;
+    if (activeLayer === 'A') {
+      // 切换到B层
+      this.setData({
+        opacityA: 0,   // 淡出A
+        opacityB: 1,   // 淡入B
+        activeLayer: 'B',
+        imageLoaded: true
+      });
+    } else {
+      // 切换到A层
+      this.setData({
+        opacityB: 0,   // 淡出B
+        opacityA: 1,   // 淡入A
+        activeLayer: 'A',
+        imageLoaded: true
+      });
+    }
   },
   
   // 获取云存储图片的临时URL
@@ -370,7 +426,9 @@ getCloudImageTempUrl(cloudPath, year, month) {
   const now = Date.now();
   const cache = this.data.cloudTempUrlCache[cloudPath];
   if (cache && cache.expireTime && cache.expireTime > now + 30000) {
-    this.setData({ currentImageUrl: cache.url, imageScale: 1.0, scalePercent: 100, placeholderOpacity: 1 });
+    // 缓存命中：直接设置新图URL到非活跃图层
+    this._setNextLayerImage(cache.url);
+    this.setData({ imageScale: 1.0, scalePercent: 100 });
     
     // 即使临时URL缓存有效，也异步检查是否需要下载缓存（如果本地缓存不存在）
     const cachedFilePath = this.getCachedFilePath(year, month);
@@ -387,8 +445,7 @@ getCloudImageTempUrl(cloudPath, year, month) {
     }, 300);
     return;
   }
-  // 无缓存或过期：先显示占位图，再请求新URL
-  this.setData({ currentImageUrl: this.data.placeholderImageUrl, placeholderOpacity: 1 });
+  // 无缓存或过期：不闪占位图，保持旧图，等新URL获取后替换
   wx.cloud.getTempFileURL({
     fileList: [{ fileID: cloudPath, maxAge: 3600 }],
     success: res => {
@@ -396,7 +453,8 @@ getCloudImageTempUrl(cloudPath, year, month) {
         const tempUrl = res.fileList[0].tempFileURL;
         const expireTime = now + (3600 - 60) * 1000;
         const newCache = { ...this.data.cloudTempUrlCache, [cloudPath]: { url: tempUrl, expireTime } };
-        this.setData({ cloudTempUrlCache: newCache, currentImageUrl: tempUrl, placeholderOpacity: 1 });
+        this.setData({ cloudTempUrlCache: newCache });
+        this._setNextLayerImage(tempUrl);
         
         // 异步下载并缓存图片到本地
         this.downloadAndCacheImage(tempUrl, year, month).catch(err => {
@@ -694,7 +752,6 @@ addImageToMap(year, month, imagePath) {
     const imageMap = this.data.imageMap;
     const cloudPaths = [];
     
-    // 收集所有云存储路径
     for (const year in imageMap) {
       for (const month in imageMap[year]) {
         const path = imageMap[year][month];
@@ -706,13 +763,14 @@ addImageToMap(year, month, imagePath) {
     
     if (cloudPaths.length === 0) {
       console.log('没有需要缓存的云端图片');
+      this.setData({ allCloudFilesCached: true });
+      this.checkAllImagesPreloaded();
       return Promise.resolve();
     }
     
     console.log(`开始预缓存 ${cloudPaths.length} 张云端图片`);
     
-    // 分批处理，避免同时下载太多文件
-    const batchSize = 3;
+    const batchSize = 6;
     const batches = [];
     for (let i = 0; i < cloudPaths.length; i += batchSize) {
       batches.push(cloudPaths.slice(i, i + batchSize));
@@ -720,10 +778,12 @@ addImageToMap(year, month, imagePath) {
     
     let completed = 0;
     
-    // 逐批处理
     const processBatch = (batchIndex) => {
       if (batchIndex >= batches.length) {
-        console.log('所有图片预缓存完成');
+        console.log('🎉 所有云端图片预缓存完成');
+        // ===== 关键修改：全部缓存完成后设置标志并检查 =====
+        this.setData({ allCloudFilesCached: true });
+        this.checkAllImagesPreloaded();
         return Promise.resolve();
       }
       
@@ -732,24 +792,22 @@ addImageToMap(year, month, imagePath) {
       
       const promises = batch.map(item => {
         return new Promise((resolve) => {
-          // 首先获取临时URL
           wx.cloud.getTempFileURL({
             fileList: [{ fileID: item.cloudPath, maxAge: 3600 }],
             success: (res) => {
               if (res.fileList?.[0]?.tempFileURL) {
-                // 下载并缓存
                 this.downloadAndCacheImage(res.fileList[0].tempFileURL, item.year, item.month)
                   .then(() => {
                     completed++;
                     console.log(`缓存进度: ${completed}/${cloudPaths.length}`);
                     resolve();
                   })
-                  .catch(() => resolve()); // 即使失败也继续
+                  .catch(() => resolve());
               } else {
                 resolve();
               }
             },
-            fail: () => resolve() // 即使失败也继续
+            fail: () => resolve()
           });
         });
       });
@@ -763,55 +821,10 @@ addImageToMap(year, month, imagePath) {
   },
   // 回退到本地图片（当云存储图片获取失败时）
   fallbackToLocalImage(year, month) {
-    console.log('尝试回退到本地图片');
-    
-    // 检查年份是否超出数据范围（2012-2022）
-    if (year < 2012 || year > 2022) {
-      const rangeText = year < 2012 ? '早于' : '晚于';
-      console.log(`年份 ${year} ${rangeText}数据范围（2012-2022），使用默认占位图`);
-      // 对于超出数据范围的年份，直接返回默认占位图
-      this.setData({
-        currentImageUrl: '/images/nep201201.png',
-        imageScale: 1.0,
-        scalePercent: 100,
-        placeholderOpacity: 1
-      });
-      return;
-    }
-    
-    // 尝试使用本地图片
-    const monthStr = month < 10 ? '0' + month : month.toString();
-    const localPath = `/pages/index/images/nep${year}${monthStr}.png`;
-    
-    // 检查本地图片是否存在
-    wx.getImageInfo({
-      src: localPath,
-      success: () => {
-        // 本地图片存在，切换到本地图片
-        console.log('本地图片存在，切换到:', localPath);
-        this.setData({
-          currentImageUrl: localPath,
-          imageScale: 1.0,
-          scalePercent: 100,
-          placeholderOpacity: 1
-        });
-        
-        // 预缓存接下来5张图片
-        setTimeout(() => {
-          this.preCacheNextImages(year, month);
-        }, 100);
-      },
-      fail: () => {
-        // 本地图片也不存在，使用本地占位图
-        console.log('本地图片也不存在，使用本地占位图');
-        this.setData({
-          currentImageUrl: '/images/nep201201.png',
-          imageScale: 1.0,
-          scalePercent: 100,
-          placeholderOpacity: 1
-        });
-      }
-    });
+    console.log('云图片加载失败，直接使用默认占位图');
+    // 设置占位图到非活跃图层并直接淡入
+    this._setNextLayerImage('/images/nep201201.png');
+    this._crossFadeToNextLayer();
   },
 
   // 保持向后兼容的方法（只传年份）
@@ -822,23 +835,76 @@ addImageToMap(year, month, imagePath) {
 
 
 
-  // 图片加载成功回调
-  onImageLoad(e) {
-    // 获取图片详细信息（宽度、高度）
+  // 图层A图片加载成功回调
+  onLayerALoad(e) {
     const info = e.detail || { width: 800, height: 600 };
-    // 计算宽高比（百分比）
     const ratio = info.height && info.width ? ((info.height / info.width) * 100).toFixed(1) + '%' : '未知';
-    // 更新图片加载状态和信息（占位图URL保持不变，永远使用固定图片）
     this.setData({
-      imageLoaded: true,
+      layerALoaded: true,
       imageError: false,
-      placeholderOpacity: 0,
       imageInfo: { width: info.width || 800, height: info.height || 600, ratio: ratio }
     });
-    
+    const activeLayer = this.data.activeLayer;
+    if (!activeLayer) {
+      // 首次加载：直接淡入A层
+      this.setData({ opacityA: 1, activeLayer: 'A', imageLoaded: true });
+      this._onImageReady();
+    } else if (activeLayer === 'B') {
+      // A层是下一个要显示的图层，执行交叉淡入
+      this._crossFadeToNextLayer();
+      this._onImageReady();
+    }
+    // 如果activeLayer === 'A'，说明A层已经是活跃层，这次load是刷新，不需要操作
+  },
+
+  // 图层B图片加载成功回调
+  onLayerBLoad(e) {
+    const info = e.detail || { width: 800, height: 600 };
+    const ratio = info.height && info.width ? ((info.height / info.width) * 100).toFixed(1) + '%' : '未知';
+    this.setData({
+      layerBLoaded: true,
+      imageError: false,
+      imageInfo: { width: info.width || 800, height: info.height || 600, ratio: ratio }
+    });
+    const activeLayer = this.data.activeLayer;
+    if (activeLayer === 'A') {
+      // B层是下一个要显示的图层，执行交叉淡入
+      this._crossFadeToNextLayer();
+      this._onImageReady();
+    }
+    // 如果activeLayer === 'B'，说明B层已经是活跃层，这次load是刷新，不需要操作
+  },
+
+  // 图层A图片加载失败回调
+  onLayerAError(e) {
+    console.error('❌ 图层A影像加载失败', e.detail);
+    this.setData({ layerALoaded: false });
+    this._onImageError();
+  },
+
+  // 图层B图片加载失败回调
+  onLayerBError(e) {
+    console.error('❌ 图层B影像加载失败', e.detail);
+    this.setData({ layerBLoaded: false });
+    this._onImageError();
+  },
+
+  // 图片就绪后的统一处理（替代原onImageLoad的后半段）
+  _onImageReady() {
     // 自动播放处理：如果正在自动播放且等待图片加载，则继续下一步
     if (this.data.autoPlay && this.data.waitingForImageLoad) {
-      console.log('自动播放：当前图片加载完成，等待固定间隔后播放下一张');
+      console.log('自动播放：当前图片加载完成，保持展示后播放下一张');
+      
+      // 图片已就绪，现在同步更新年份/月份UI和图表
+      if (this._pendingYear !== undefined && this._pendingMonth !== undefined) {
+        this.setData({
+          currentYear: this._pendingYear,
+          currentMonth: this._pendingMonth
+        });
+        this.updateMonthlyData(this._pendingYear);
+        this._pendingYear = undefined;
+        this._pendingMonth = undefined;
+      }
       
       // 清除之前的定时器
       if (this._autoPlayWaitTimer) {
@@ -846,10 +912,74 @@ addImageToMap(year, month, imagePath) {
         this._autoPlayWaitTimer = null;
       }
       
-      // 等待固定间隔后播放下一张
+      // 保持展示 autoPlayDisplayTime 毫秒后切换到下一张
       this._autoPlayWaitTimer = setTimeout(() => {
         this._autoPlayNextWithWait();
-      }, this.data.autoPlayInterval);
+      }, this.data.autoPlayDisplayTime);
+    }
+  },
+
+  // 图片加载失败的统一处理
+  _onImageError() {
+    // 自动播放处理
+    if (this.data.autoPlay && this.data.waitingForImageLoad) {
+      console.log('自动播放：当前图片加载失败，直接继续下一张');
+      this.setData({ imageLoaded: true, imageError: true });
+      
+      // 即使失败，也同步更新年份/月份UI（与成功时保持一致）
+      if (this._pendingYear !== undefined && this._pendingMonth !== undefined) {
+        this.setData({
+          currentYear: this._pendingYear,
+          currentMonth: this._pendingMonth
+        });
+        this.updateMonthlyData(this._pendingYear);
+        this._pendingYear = undefined;
+        this._pendingMonth = undefined;
+      }
+      
+      if (this._autoPlayWaitTimer) {
+        clearTimeout(this._autoPlayWaitTimer);
+        this._autoPlayWaitTimer = null;
+      }
+      
+      // 失败/占位图使用最短展示时间，避免占位图停留过长
+      this._autoPlayWaitTimer = setTimeout(() => {
+        this._autoPlayNextWithWait();
+      }, this.data.placeholderMinDisplayTime);
+      return;
+    }
+    
+    // 非自动播放时的错误处理
+    const { currentYear, currentMonth, imageMap } = this.data;
+    const isUploadedImage = imageMap[currentYear] && imageMap[currentYear][currentMonth];
+    
+    if (isUploadedImage) {
+      const uploadedPath = imageMap[currentYear][currentMonth];
+      if (uploadedPath && uploadedPath.startsWith('cloud://')) {
+        console.log('云存储图片临时URL加载失败，尝试重新获取临时URL');
+        if (this.data.autoPlay) {
+          this.fallbackToLocalImage(currentYear, currentMonth);
+          return;
+        }
+        const newCache = { ...this.data.cloudTempUrlCache };
+        delete newCache[uploadedPath];
+        this.setData({ cloudTempUrlCache: newCache });
+        this.getCloudImageTempUrl(uploadedPath, currentYear, currentMonth);
+      } else {
+        this.fallbackToLocalImage(currentYear, currentMonth);
+      }
+    } else {
+      if (currentYear < 2012 || currentYear > 2022) {
+        const rangeText = currentYear < 2012 ? '早于' : '晚于';
+        wx.showToast({
+          title: `${currentYear}年数据${currentYear < 2012 ? '不可用' : '尚未收录'}`,
+          icon: 'none',
+          duration: 2000
+        });
+        this.useLocalPlaceholder();
+        return;
+      }
+      this.useLocalPlaceholder();
     }
   },
 
@@ -887,107 +1017,16 @@ addImageToMap(year, month, imagePath) {
     // 控制台输出播放下一张的信息
     console.log('自动播放下一张（等待加载）:', currentYear, '年', currentMonth, '月');
     
-    // 更新年份和月份
+    // 记住目标年份月份，但不立即更新UI（等图片加载完成后再同步）
+    this._pendingYear = currentYear;
+    this._pendingMonth = currentMonth;
+    
     this.setData({
-      currentYear,
-      currentMonth,
-      waitingForImageLoad: true,  // 设置等待状态
-      imageLoaded: false          // 重置图片加载状态
+      waitingForImageLoad: true
     });
     
-    // 更新图表
-    this.updateMonthlyData(currentYear);
-    
-    // 加载新图片（图片加载完成后，onImageLoad会继续下一步）
+    // 只加载新图片，不更新currentYear/currentMonth（等图片就绪后再同步）
     this.loadImage(currentYear, currentMonth);
-  },
-
-  // 图片加载失败回调
-  onImageError(e) {
-    // 控制台输出加载失败错误
-    console.error('❌ 影像加载失败', e.detail);
-    
-    // 自动播放处理：如果正在自动播放且等待图片加载，则继续下一张
-    if (this.data.autoPlay && this.data.waitingForImageLoad) {
-      console.log('自动播放：当前图片加载失败，直接继续下一张');
-      // 设置图片加载完成状态（虽然是失败，但也要继续）
-      this.setData({ 
-        imageLoaded: true,  // 设置为true，让自动播放逻辑继续
-        imageError: true 
-      });
-      
-      // 清除之前的定时器
-      if (this._autoPlayWaitTimer) {
-        clearTimeout(this._autoPlayWaitTimer);
-        this._autoPlayWaitTimer = null;
-      }
-      
-      // 立即继续下一张（不等待间隔，因为这张图片加载失败了）
-      this._autoPlayWaitTimer = setTimeout(() => {
-        this._autoPlayNextWithWait();
-      }, 100); // 等待100ms后继续，避免立即重试
-      
-      return;
-    }
-    
-    const { currentYear, currentMonth, imageMap } = this.data;
-    
-    // 检查是否是上传的图片（在imageMap中）
-    const isUploadedImage = imageMap[currentYear] && imageMap[currentYear][currentMonth];
-    
-    if (isUploadedImage) {
-      // 是上传的图片（可能在imageMap中是云存储路径）
-      const uploadedPath = imageMap[currentYear][currentMonth];
-      console.log('上传图片加载失败，原始路径:', uploadedPath);
-      
-      // 检查是否是云存储路径
-      if (uploadedPath && uploadedPath.startsWith('cloud://')) {
-        // 云存储图片加载失败，可能是临时URL过期或有问题
-        console.log('云存储图片临时URL加载失败，尝试重新获取临时URL');
-        
-        // 如果正在自动播放，直接回退到本地图片以保证流畅性
-        if (this.data.autoPlay) {
-          console.log('正在自动播放，为保持流畅性直接回退到本地图片');
-          this.fallbackToLocalImage(currentYear, currentMonth);
-          return;
-        }
-        
-        // 清除该云路径的缓存，强制重新获取
-        const newCache = { ...this.data.cloudTempUrlCache };
-        delete newCache[uploadedPath];
-        this.setData({ cloudTempUrlCache: newCache });
-        console.log('已清除缓存:', uploadedPath);
-        
-        // 重新获取临时URL
-        this.getCloudImageTempUrl(uploadedPath, currentYear, currentMonth);
-      } else {
-        // 其他类型的上传图片路径加载失败
-        console.log('上传图片（非云存储）加载失败，尝试使用本地回退');
-        this.fallbackToLocalImage(currentYear, currentMonth);
-      }
-    } else {
-      // 不是上传的图片
-      
-      // 检查年份是否超出数据范围（2012-2022）
-      if (currentYear < 2012 || currentYear > 2022) {
-        const rangeText = currentYear < 2012 ? '早于' : '晚于';
-        console.log(`年份 ${currentYear} ${rangeText}数据范围（2012-2022），显示无数据提示`);
-        wx.showToast({
-          title: `${currentYear}年数据${currentYear < 2012 ? '不可用' : '尚未收录'}`,
-          icon: 'none',
-          duration: 2000
-        });
-        
-        // 年份超出数据范围且不是上传图片，直接使用本地占位图
-        console.log(`年份 ${currentYear} ${rangeText}数据范围（2012-2022），使用本地占位图`);
-        this.useLocalPlaceholder();
-        return;
-      }
-      
-      // 普通本地图片加载失败，使用占位图
-      console.log('本地图片加载失败，使用占位图');
-      this.useLocalPlaceholder();
-    }
   },
 
   // 使用本地占位图（当图片不存在时）
@@ -1004,9 +1043,7 @@ addImageToMap(year, month, imagePath) {
       this.setData({
         imageLoaded: false,
         imageError: true,
-        placeholderOpacity: 1,
         imageInfo: { width: 800, height: 600, ratio: '75%' }
-        // 不改变currentImageUrl，保持原来的上传图片路径
       });
       return;
     }
@@ -1016,15 +1053,10 @@ addImageToMap(year, month, imagePath) {
       // 年份超出数据范围，直接使用默认占位图
       console.log(`年份 ${currentYear} 超出数据范围（2012-2022），使用默认占位图`);
       const defaultPlaceholderUrl = '/images/nep201201.png';
-      this.setData({
-        imageLoaded: false,
-        imageError: true,
-        placeholderOpacity: 1,
-        imageInfo: { width: 800, height: 600, ratio: '75%' },
-        currentImageUrl: defaultPlaceholderUrl
-      });
-      // 更新月度数据（图表）
-      this.updateMonthlyData(2012); // 使用2012年的数据
+      this._setNextLayerImage(defaultPlaceholderUrl);
+      this._crossFadeToNextLayer();
+      this.setData({ imageError: true, imageInfo: { width: 800, height: 600, ratio: '75%' } });
+      this.updateMonthlyData(2012);
       return;
     }
     
@@ -1036,30 +1068,18 @@ addImageToMap(year, month, imagePath) {
     wx.getImageInfo({
       src: yearFirstMonthPath,
       success: () => {
-        // 当前年份1月图片存在，使用它
         console.log('使用当前年份1月图片作为占位图:', yearFirstMonthPath);
-        this.setData({
-          imageLoaded: false,
-          imageError: true,
-          placeholderOpacity: 1,
-          imageInfo: { width: 800, height: 600, ratio: '75%' },
-          currentImageUrl: yearFirstMonthPath
-        });
-        // 更新月度数据（图表）
+        this._setNextLayerImage(yearFirstMonthPath);
+        this._crossFadeToNextLayer();
+        this.setData({ imageError: true, imageInfo: { width: 800, height: 600, ratio: '75%' } });
         this.updateMonthlyData(currentYear);
       },
       fail: () => {
-        // 当前年份1月图片不存在，使用默认的2012年1月图片
         console.log('使用默认占位图:', defaultPlaceholderUrl);
-        this.setData({
-          imageLoaded: false,
-          imageError: true,
-          placeholderOpacity: 1,
-          imageInfo: { width: 800, height: 600, ratio: '75%' },
-          currentImageUrl: defaultPlaceholderUrl
-        });
-        // 更新月度数据（图表）
-        this.updateMonthlyData(2012); // 使用2012年的数据
+        this._setNextLayerImage(defaultPlaceholderUrl);
+        this._crossFadeToNextLayer();
+        this.setData({ imageError: true, imageInfo: { width: 800, height: 600, ratio: '75%' } });
+        this.updateMonthlyData(2012);
       }
     });
   },
@@ -1633,162 +1653,243 @@ addImageToMap(year, month, imagePath) {
     // 执行绘制
     ctx.draw();
   },
-
-  // 预加载所有年份和月份的所有图片（本地图片）
-  preloadAllImages() {
-    // 防止重复调用
-    if (this.data.localPreloadStarted) {
-      console.log('preloadAllImages 已开始，跳过重复调用');
-      return;
-    }
-    this.setData({ localPreloadStarted: true });
-    console.log('开始预加载本地图片');
-    
-    // 获取年份和月份列表
-    const years = this.data.yearTabs;
-    const months = this.data.monthTabs;
-    
-    // 过滤年份：只预加载2012-2022年范围内的图片
-    const filteredYears = years.filter(year => year >= 2012 && year <= 2022);
-    if (filteredYears.length === 0) {
-      console.log('没有需要预加载的图片');
+  startConcurrentPreload(tasks) {
+    if (!tasks || tasks.length === 0) {
+      console.warn('没有预加载任务，直接标记完成');
       this.setData({ localImagesPreloaded: true });
       this.checkAllImagesPreloaded();
       return;
     }
-    
-    // 计算总图片数（使用过滤后的年份）
-    const totalImages = filteredYears.length * months.length;
-    console.log(`预加载 ${totalImages} 张图片 (${filteredYears.length}年×12月)`);
-    
-    // 总超时：8秒后强制完成本地图片预加载
-    const forceFinishTimeout = setTimeout(() => {
-      if (!this.data.localImagesPreloaded) {
-        console.log('预加载总超时，强制完成');
-        this.setData({ 
-          localImagesPreloaded: true,
-          loadProgress: 100 
-        });
-        this.checkAllImagesPreloaded();
-      }
-    }, 8000);
-    
-    let loadedCount = 0;
-    let localPreloadedFlag = false;
-    
-    // 更新进度（初始为0）
-    this.setData({ loadProgress: 0 });
-    
-    // 创建所有图片任务队列
-    const tasks = [];
-    filteredYears.forEach(year => {
-      months.forEach(month => {
-        const monthStr = month < 10 ? '0' + month : month.toString();
-        const imagePath = `/images/nep${year}${monthStr}.png`;
-        const alternativePath = `/pages/index/images/nep${year}${monthStr}.png`;
-        tasks.push({ year, month, imagePath, alternativePath });
-      });
-    });
-    
-    // 并发控制：最大同时进行3个请求
-    const MAX_CONCURRENT = 3;
+  
+    const MAX_CONCURRENT = 6;
     let currentConcurrent = 0;
     let taskIndex = 0;
-    
-    // 执行下一个任务
+    let loadedCount = 0;
+    const totalImages = tasks.length;
+    let isFinished = false; // 防止重复完成
+  
+    // 超时保护（增加到60秒，适应更多图片）
+    const forceFinishTimeout = setTimeout(() => {
+      if (!isFinished) {
+        console.warn('预加载总超时，强制完成');
+        isFinished = true;
+        this.setData({ localImagesPreloaded: true });
+        this.checkAllImagesPreloaded();
+      }
+    }, 60000); // 60秒
+  
     const runNextTask = () => {
+      // 如果已经强制完成，不再执行新任务
+      if (isFinished) return;
+  
       // 所有任务完成
       if (taskIndex >= tasks.length) {
-        if (loadedCount >= totalImages && !localPreloadedFlag) {
-          localPreloadedFlag = true;
+        if (currentConcurrent === 0 && !isFinished) {
+          isFinished = true;
           clearTimeout(forceFinishTimeout);
           this.setData({ localImagesPreloaded: true });
           this.checkAllImagesPreloaded();
         }
         return;
       }
-      
+  
       // 达到最大并发数，等待
       if (currentConcurrent >= MAX_CONCURRENT) {
         return;
       }
-      
-      // 获取任务
+  
       const task = tasks[taskIndex];
       taskIndex++;
       currentConcurrent++;
-      
-      // 单个任务超时处理（2秒）
+  
+      let taskCompleted = false; // 防止单个任务重复完成
       const taskTimeoutId = setTimeout(() => {
-        currentConcurrent--;
-        loadedCount++;
-        // 更新进度
-        this.setData({
-          loadProgress: Math.round((loadedCount / totalImages) * 100)
-        });
-        // 继续执行下一个任务
-        runNextTask();
-      }, 2000);
-      
-      // 执行图片预加载
-      wx.getImageInfo({
-        src: task.imagePath,
-        success: () => {
-          clearTimeout(taskTimeoutId);
+        if (!taskCompleted && !isFinished) {
+          taskCompleted = true;
           currentConcurrent--;
           loadedCount++;
           this.setData({
-            loadProgress: Math.round((loadedCount / totalImages) * 100)
+            loadProgress: Math.min(100, Math.round((loadedCount / totalImages) * 100))
           });
-          // 继续执行下一个任务
           runNextTask();
+        }
+      }, 3000); // 单张图片超时3秒
+  
+      wx.getImageInfo({
+        src: task.imagePath,
+        success: () => {
+          if (!taskCompleted && !isFinished) {
+            taskCompleted = true;
+            clearTimeout(taskTimeoutId);
+            currentConcurrent--;
+            loadedCount++;
+            this.setData({
+              loadProgress: Math.min(100, Math.round((loadedCount / totalImages) * 100))
+            });
+            runNextTask();
+          }
         },
         fail: () => {
-          clearTimeout(taskTimeoutId);
-          // 尝试备用路径
-          wx.getImageInfo({
-            src: task.alternativePath,
-            success: () => {
-              currentConcurrent--;
-              loadedCount++;
-              this.setData({
-                loadProgress: Math.round((loadedCount / totalImages) * 100)
-              });
-              runNextTask();
-            },
-            fail: () => {
-              currentConcurrent--;
-              loadedCount++;
-              this.setData({
-                loadProgress: Math.round((loadedCount / totalImages) * 100)
-              });
-              runNextTask();
+          if (!taskCompleted && !isFinished) {
+            taskCompleted = true;
+            clearTimeout(taskTimeoutId);
+            // 尝试备用路径（如果有）
+            wx.getImageInfo({
+              src: task.alternativePath,
+              success: () => {
+                currentConcurrent--;
+                loadedCount++;
+                this.setData({
+                  loadProgress: Math.min(100, Math.round((loadedCount / totalImages) * 100))
+                });
+                runNextTask();
+              },
+              fail: () => {
+                currentConcurrent--;
+                loadedCount++;
+                this.setData({
+                  loadProgress: Math.min(100, Math.round((loadedCount / totalImages) * 100))
+                });
+                runNextTask();
+              }
+            });
+          }
+        }
+      });
+    };
+  
+    // 启动并发
+    for (let i = 0; i < MAX_CONCURRENT; i++) {
+      runNextTask();
+    }
+  },
+  // 预加载所有年份和月份的所有图片（本地图片）
+  preloadAllImages() {
+    console.log('开始预加载所有云端图片（尝试两种命名格式）');
+    
+    const years = this.data.yearTabs.filter(y => y >= 2012 && y <= 2022);
+    const months = this.data.monthTabs;
+    
+    const cloudFileItems = [];
+    
+    years.forEach(year => {
+      months.forEach(month => {
+        const monthStr = month < 10 ? '0' + month : month.toString();
+        
+        // 格式1: nep{year}{monthStr}.png
+        const fileID1 = `cloud://cloudbase-8gdof83j7fdc6094.636c-cloudbase-8gdof83j7fdc6094-1406189579/qinling-carbon-data/images/nep${year}${monthStr}.png`;
+        // 格式2: {year}_{month}.png
+        const fileID2 = `cloud://cloudbase-8gdof83j7fdc6094.636c-cloudbase-8gdof83j7fdc6094-1406189579/qinling-carbon-data/images/${year}_${month}.png`;
+        
+        cloudFileItems.push({ year, month, fileIDs: [fileID1, fileID2] });
+      });
+    });
+    
+    if (cloudFileItems.length === 0) {
+      console.warn('没有需要预加载的年份月份');
+      this.setData({ allCloudUrlsPreloaded: true, localImagesPreloaded: true });
+      this.checkAllImagesPreloaded();
+      return;
+    }
+    
+    // 将所有 fileID 扁平化，每个元素保留年月信息以便后续匹配
+    const flatFileList = [];
+    cloudFileItems.forEach(item => {
+      item.fileIDs.forEach(fileID => {
+        flatFileList.push({ year: item.year, month: item.month, fileID });
+      });
+    });
+    
+    // 分批，每批最多 50 个
+    const BATCH_SIZE = 50;
+    const batches = [];
+    for (let i = 0; i < flatFileList.length; i += BATCH_SIZE) {
+      batches.push(flatFileList.slice(i, i + BATCH_SIZE));
+    }
+    
+    console.log(`共尝试 ${flatFileList.length} 个可能文件（2种格式×132个月），分为 ${batches.length} 批`);
+    
+    let allTasks = [];
+    
+    const processBatch = (batchIndex) => {
+      if (batchIndex >= batches.length) {
+        console.log(`所有批次完成，有效图片任务数: ${allTasks.length}`);
+        
+        if (allTasks.length === 0) {
+          // 没有任何有效云端图片，直接标记完成
+          console.warn('没有有效云端图片，直接完成预加载');
+          this.setData({ localImagesPreloaded: true, allCloudUrlsPreloaded: true });
+          this.checkAllImagesPreloaded();
+          return;
+        }
+        
+        this.setData({ preloadTasks: allTasks });
+        this.startConcurrentPreload(allTasks);
+        
+        this.setData({ allCloudUrlsPreloaded: true });
+        this.checkAllImagesPreloaded();
+        return;
+      }
+      
+      const batch = batches[batchIndex];
+      const fileList = batch.map(item => ({ fileID: item.fileID, maxAge: 3600 }));
+      
+      wx.cloud.getTempFileURL({
+        fileList: fileList,
+        success: res => {
+          const tempUrlMap = {};
+          (res.fileList || []).forEach(item => {
+            if (item.tempFileURL) {
+              tempUrlMap[item.fileID] = item.tempFileURL;
             }
           });
+          
+          batch.forEach(item => {
+            const tempURL = tempUrlMap[item.fileID];
+            if (tempURL) {
+              allTasks.push({
+                year: item.year,
+                month: item.month,
+                imagePath: tempURL,
+                alternativePath: tempURL
+              });
+            }
+          });
+          
+          console.log(`批次 ${batchIndex + 1}/${batches.length} 完成，累计有效 tasks: ${allTasks.length}`);
+          processBatch(batchIndex + 1);
+        },
+        fail: err => {
+          console.error(`批次 ${batchIndex + 1} 获取临时链接失败:`, err);
+          processBatch(batchIndex + 1);
         }
       });
     };
     
-    // 启动任务执行
-    for (let i = 0; i < Math.min(MAX_CONCURRENT, tasks.length); i++) {
-      runNextTask();
-    }
+    processBatch(0);
   },
-  
   // 检查所有图片（本地和云端）是否都已预加载完成
   checkAllImagesPreloaded() {
-    console.log(`检查所有图片预加载状态: localImagesPreloaded=${this.data.localImagesPreloaded}, allCloudUrlsPreloaded=${this.data.allCloudUrlsPreloaded}, loadProgress=${this.data.loadProgress}, allImagesPreloaded=${this.data.allImagesPreloaded}`);
-    // 检查本地图片预加载是否完成和云端图片预加载是否完成
-    if (this.data.localImagesPreloaded && this.data.allCloudUrlsPreloaded) {
+    console.log(`检查预加载状态: localPreload=${this.data.localImagesPreloaded}, cloudUrlReady=${this.data.allCloudUrlsPreloaded}, cloudCached=${this.data.allCloudFilesCached}, progress=${this.data.loadProgress}`);
+    
+    // 必须同时满足三个条件才算真正完成
+    if (this.data.localImagesPreloaded && this.data.allCloudUrlsPreloaded && this.data.allCloudFilesCached) {
       this.setData({ allImagesPreloaded: true });
-      console.log('所有图片（本地和云端）预加载完成');
-    } else if (this.data.loadProgress >= 99 && this.data.allCloudUrlsPreloaded) {
-      // 应急逻辑：如果进度达到99%且云端图片已预加载，但本地标志未设置，强制完成
-      console.log('应急逻辑：进度≥99%且云端已加载，强制完成所有图片预加载');
-      this.setData({ 
-        localImagesPreloaded: true,
-        allImagesPreloaded: true 
-      });
+      console.log('✅ 所有图片（本地预加载 + 云端链接 + 云端缓存）全部完成');
+    }
+    
+    // 应急超时保护：如果进度已达到99%且链接已就绪，但缓存迟迟未完成（超过30秒），强制放行
+    // 你可以根据实际情况调整或删除这段，保留也无妨
+    if (this.data.loadProgress >= 99 && this.data.allCloudUrlsPreloaded) {
+      if (!this._cacheTimeoutId) {
+        this._cacheTimeoutId = setTimeout(() => {
+          if (!this.data.allCloudFilesCached) {
+            console.warn('⚠️ 云端缓存超时，强制标记完成');
+            this.setData({ allCloudFilesCached: true });
+            this.checkAllImagesPreloaded();
+          }
+        }, ); // 30秒超时
+      }
     }
   },
 
@@ -1803,15 +1904,10 @@ addImageToMap(year, month, imagePath) {
       console.log('switchToImage: 检测到云存储路径，获取临时URL:', imagePath);
       this.getCloudImageTempUrl(imagePath, year, month);
     } else {
-      // 本地路径，直接设置
+      // 本地路径，设置到非活跃图层
       console.log('switchToImage: 使用本地图片路径:', imagePath);
-      this.setData({ 
-        currentImageUrl: imagePath, 
-        imageLoaded: false,
-        placeholderOpacity: 1,
-        imageScale: 1.0, 
-        scalePercent: 100 
-      });
+      this._setNextLayerImage(imagePath);
+      this.setData({ imageScale: 1.0, scalePercent: 100 });
     }
   },
 
@@ -1839,10 +1935,16 @@ addImageToMap(year, month, imagePath) {
 
   // 切换透明度（用于调试或特殊效果）
   toggleOpacity() {
-    // 如果当前透明度为1，设为0.7，否则设为1
-    const newOpacity = this.data.imageOpacity === 1 ? 0.7 : 1;
-    // 更新透明度
-    this.setData({ imageOpacity: newOpacity });
+    // 调试用：切换当前活跃图层的透明度
+    const activeLayer = this.data.activeLayer;
+    if (!activeLayer) return;
+    const currentOpacity = activeLayer === 'A' ? this.data.opacityA : this.data.opacityB;
+    const newOpacity = currentOpacity === 1 ? 0.7 : 1;
+    if (activeLayer === 'A') {
+      this.setData({ opacityA: newOpacity });
+    } else {
+      this.setData({ opacityB: newOpacity });
+    }
   },
 
   // 切换信息覆盖层（可能用于显示图片信息，但未完全实现）
@@ -1900,7 +2002,7 @@ addImageToMap(year, month, imagePath) {
 当前日期: ${this.data.currentYear}年${this.data.currentMonth}月
 影像尺寸: ${this.data.imageInfo.width} × ${this.data.imageInfo.height}
 缩放比例: ${this.data.scalePercent}%
-透明度: ${Math.round(this.data.imageOpacity * 100)}%
+当前图层: ${this.data.activeLayer}
 预加载: ${this.data.preloadedYears.length} 个年份
 数据状态: ${this.data.currentMonthlyData.length} 个月度数据点
 图片映射: ${Object.keys(this.data.imageMap).length} 个年份
@@ -2051,40 +2153,21 @@ addImageToMap(year, month, imagePath) {
 
   // 初始化默认图片映射表（基于现有图片文件）
   initDefaultImageMap() {
-    // 创建空映射表
+    // 只创建空的映射表结构，不预设任何图片路径
     const imageMap = {};
-    // 获取年份列表和月份列表
+    
+    // 如果需要预设年份范围（便于后续判断），只创建空对象
     const years = this.data.yearTabs;
-    const months = this.data.monthTabs;
-    
-    // 过滤年份：只初始化2012-2022年范围内的图片映射
     const filteredYears = years.filter(year => year >= 2012 && year <= 2022);
-    if (filteredYears.length !== years.length) {
-      console.log(`initDefaultImageMap: 过滤超出数据范围的年份，原始: ${years.length}个，过滤后: ${filteredYears.length}个`);
-    }
     
-    // 假设图片命名规则为: nep{年份}{月份:02d}.png
     for (const year of filteredYears) {
-      // 为每个年份创建对象
-      imageMap[year] = {};
-      for (const month of months) {
-        // 格式化月份为两位数字
-        const monthStr = month < 10 ? '0' + month : month.toString();
-        // 构建默认图片路径
-        const imagePath = `/images/nep${year}${monthStr}.png`;
-        // 存入映射表
-        imageMap[year][month] = imagePath;
-      }
+      imageMap[year] = {};  // 空对象，不包含任何月份路径
     }
     
-    // 更新数据中的映射表
     this.setData({ imageMap });
-    // 保存到本地存储
     wx.setStorageSync('carbon_image_map', imageMap);
-    // 控制台输出初始化完成
-    console.log('初始化默认图片映射表完成');
+    console.log('初始化空的图片映射表完成，后续上传会填充实际云存储路径');
   },
-
   // 添加图片到映射表（管理员上传新图片后调用）
   addImageToMap(year, month, imagePath) {
     // 获取当前映射表
@@ -2154,6 +2237,15 @@ addImageToMap(year, month, imagePath) {
 
   // 切换自动播放
   toggleAutoPlay() {
+    // 预加载未完成时禁止播放
+    if (!this.data.allImagesPreloaded) {
+      wx.showToast({
+        title: '图片预加载中，请稍候...',
+        icon: 'none',
+        duration: 1500
+      });
+      return;
+    }
     // 如果当前正在自动播放，停止；否则开始
     if (this.data.autoPlay) {
       this.stopAutoPlay();
@@ -2164,6 +2256,15 @@ addImageToMap(year, month, imagePath) {
 
   // 开始自动播放
   startAutoPlay() {
+    // 预加载未完成时禁止播放
+    if (!this.data.allImagesPreloaded) {
+      wx.showToast({
+        title: '图片预加载中，请稍候...',
+        icon: 'none',
+        duration: 1500
+      });
+      return;
+    }
     this._realStartAutoPlay();
   },
   
@@ -2190,13 +2291,10 @@ addImageToMap(year, month, imagePath) {
     // 设置等待状态
     this.setData({ waitingForImageLoad: true });
     
-    // 重置imageLoaded状态，确保我们能检测到图片加载完成
-    this.setData({ imageLoaded: false });
-    
     // 加载当前图片（第一次调用时加载当前选中的图片）
     this.loadImage(this.data.currentYear, this.data.currentMonth);
     
-    // 注意：下一步将在onImageLoad中触发
+    // 注意：下一步将在图层加载回调中触发
   },
 
   // 停止自动播放
@@ -2378,51 +2476,53 @@ addImageToMap(year, month, imagePath) {
   // 优化detectImagePath函数，添加图片来源标记
   detectImagePath(year, month) {
     const imageMap = this.data.imageMap;
-    
-    // 1. 首先检查本地文件缓存
-    const cachedFilePath = this.getCachedFilePath(year, month);
+    const yearStr = String(year);
+    const monthStr = month < 10 ? '0' + month : month.toString();
+
+    // 1. 检查本地文件缓存
+    const cachedFilePath = this.getCachedFilePath(yearStr, monthStr);
     if (cachedFilePath) {
       console.log(`detectImagePath: 使用本地缓存文件: ${cachedFilePath}`);
       return cachedFilePath;
     }
-    
+
     // 2. 从imageMap获取原始云路径
     let cloudPath = null;
+    const yearKey = String(year);
+    const monthKey = String(month);
     if (imageMap[year] && imageMap[year][month]) {
       cloudPath = imageMap[year][month];
+    } else if (imageMap[yearKey] && imageMap[yearKey][monthKey]) {
+      cloudPath = imageMap[yearKey][monthKey];
     }
-    
+
     if (cloudPath && cloudPath.startsWith('cloud://')) {
-      // 3. 检查缓存中是否有该云路径的有效临时URL
+      // 3. 检查临时URL缓存
       const cache = this.data.cloudTempUrlCache[cloudPath];
       const now = Date.now();
       if (cache && cache.expireTime && cache.expireTime > now + 30000) {
         console.log(`detectImagePath: 使用缓存的临时URL: ${cache.url}`);
-        // 直接返回临时URL，跳过后续的getCloudImageTempUrl调用
         return cache.url;
       }
-      // 4. 缓存不存在或即将过期，返回云路径，让后续逻辑重新获取
       console.log(`detectImagePath: 未找到有效缓存，返回云路径: ${cloudPath}`);
       return cloudPath;
     }
-    
-    // 5. 非云存储图片，使用本地路径
-    const monthStr = month < 10 ? '0' + month : month.toString();
-    
-    // 检查年份是否超出数据范围（2012-2022）
-    if (year < 2012 || year > 2022) {
-      // 年份超出数据范围，返回默认占位图路径
-      console.log(`detectImagePath: 年份 ${year} 超出数据范围（2012-2022），返回默认占位图`);
-      return '/images/nep201201.png';
+
+    // 5. 无上传记录，尝试构造标准云存储路径
+    const standardCloudPath = `cloud://cloudbase-8gdof83j7fdc6094.636c-cloudbase-8gdof83j7fdc6094-1406189579/qinling-carbon-data/images/nep${year}${monthStr}.png`;
+
+    // 检查该云路径是否已缓存临时URL（避免重复请求）
+    const cache = this.data.cloudTempUrlCache[standardCloudPath];
+    const now = Date.now();
+    if (cache && cache.expireTime && cache.expireTime > now + 30000) {
+      console.log(`detectImagePath: 标准云路径命中缓存: ${cache.url}`);
     }
-    
-    // 优先返回/pages/index/images/下的图片，这是实际存在的路径
-    return `/pages/index/images/nep${year}${monthStr}.png`;
+    console.log(`detectImagePath: 尝试标准云路径: ${standardCloudPath}`);
+    return standardCloudPath;
   },
 
   // 阻止事件冒泡（用于弹窗内部，防止点击内容时关闭弹窗）
   stopPropagation() {
-    // 阻止事件冒泡，防止点击面板内部时触发外层点击事件
     return;
   }
-});
+})

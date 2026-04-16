@@ -39,7 +39,6 @@
   margin: 0;
   padding: 0 0 120rpx 0; /* 为底部导航栏留出空间 */
   transform-origin: center center;
-  transition: none;
   image-rendering: -webkit-optimize-contrast;
   image-rendering: crisp-edges;
   image-rendering: pixelated;
@@ -47,21 +46,14 @@
 }
 
 .placeholder-image {
-  opacity: 1;
   z-index: 1;
+  transition: none;
 }
 
+/* 双图层：A和B交替使用，实现交叉淡入淡出，切换时占位图永远被覆盖 */
 .target-image {
-  opacity: 0;
   z-index: 2;
-}
-
-.target-image.visible {
-  opacity: 1;
-}
-
-.target-image.hidden {
-  opacity: 0;
+  transition: opacity 0.35s ease-in-out;
 }
 
 /* 控制面板与图表整合容器 */
@@ -431,6 +423,12 @@
   box-shadow: 0 3rpx 8rpx rgba(76, 175, 80, 0.3);
 }
 
+.auto-play-btn.disabled {
+  background: #e0e0e0;
+  color: #999;
+  opacity: 0.6;
+}
+
 .auto-play-btn::after {
   border: none;
 }
@@ -546,6 +544,14 @@
   color: #666;
   line-height: 1.5;
   display: block;
+}
+
+.preload-progress-hint {
+  font-size: 22rpx;
+  color: #4CAF50;
+  margin-top: 16rpx;
+  display: block;
+  font-weight: 500;
 }
 
 /* 底部导航栏 */
