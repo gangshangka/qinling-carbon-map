@@ -55,7 +55,7 @@ Page({
     autoPlayStatus: '停止',     // 自动播放状态文本
     autoPlayTimer: null,        // 定时器ID
     autoPlayInterval: 30,        // 切换过渡时间（毫秒），极短仅用于图片间切换过渡
-    autoPlayDisplayTime: 1500,   // 单张图片保持显示时间（毫秒），图片加载完成后保持展示的时间
+    autoPlayDisplayTime: 504,    // 单张图片保持显示时间（毫秒），图片加载完成后保持展示的时间
     waitingForImageLoad: false, // 是否在等待图片加载完成（用于自动播放）
     // 占位图失败最短展示时间（毫秒），避免占位图停留过久
     placeholderMinDisplayTime: 200,
@@ -340,12 +340,8 @@ Page({
     // 设置图片未加载、未失败状态
     this.setData({ imageError: false, imageLoaded: false });
     
-    // 检查年份是否超出数据范围（2012-2022）且没有上传图片
+    // 检查是否有上传图片
     const hasUploadedImage = this.data.imageMap[year] && this.data.imageMap[year][month];
-    if ((year < 2012 || year > 2022) && !hasUploadedImage) {
-      this.useLocalPlaceholder();
-      return;
-    }
     
     // 检测图片路径（优先使用上传图片）
     const imagePath = this.detectImagePath(year, month);
@@ -423,6 +419,8 @@ Page({
 
 // 修改getCloudImageTempUrl方法，增加缓存逻辑
 getCloudImageTempUrl(cloudPath, year, month) {
+  // 记录当前加载的云路径，用于失败时判断文件名格式
+  this._currentCloudPath = cloudPath;
   const now = Date.now();
   const cache = this.data.cloudTempUrlCache[cloudPath];
   if (cache && cache.expireTime && cache.expireTime > now + 30000) {
@@ -645,12 +643,11 @@ addImageToMap(year, month, imagePath) {
         continue;
       }
       
-      // 2. 检查是否有图片（在imageMap中或数据范围内）
+      // 2. 检查是否有图片（在imageMap中或本地）
       const hasUploadedImage = imageMap[year] && imageMap[year][month];
-      const inDataRange = year >= 2012 && year <= 2022;
       
-      if (!hasUploadedImage && !inDataRange) {
-        // 没有上传图片且不在数据范围内，跳过这张图片
+      if (!hasUploadedImage) {
+        // 没有上传图片，跳过这张图片
         continue;
       }
       
@@ -821,10 +818,38 @@ addImageToMap(year, month, imagePath) {
   },
   // 回退到本地图片（当云存储图片获取失败时）
   fallbackToLocalImage(year, month) {
-    console.log('云图片加载失败，直接使用默认占位图');
-    // 设置占位图到非活跃图层并直接淡入
-    this._setNextLayerImage('/images/nep201201.png');
-    this._crossFadeToNextLayer();
+    console.log('云图片加载失败，尝试另一种文件名格式');
+    // 尝试另一种文件名格式的云路径
+    const cloudBase = 'cloud://cloudbase-8gdof83j7fdc6094.636c-cloudbase-8gdof83j7fdc6094-1406189579/qinling-carbon-data/images';
+    const monthStr = month < 10 ? '0' + month : String(month);
+    const oldFormatPath = `${cloudBase}/nep${year}${monthStr}.png`;
+    const newFormatPath = `${cloudBase}/${year}_${month}.png`;
+
+    // 用实例变量记录失败路径（同步，不依赖setData）
+    if (!this._failedCloudPaths) this._failedCloudPaths = {};
+    const currentPath = this._currentCloudPath || '';
+    this._failedCloudPaths[currentPath] = true;
+
+    // 判断当前使用的是哪种格式，尝试另一种
+    let fallbackPath = '';
+    if (currentPath.includes('/nep')) {
+      fallbackPath = newFormatPath;
+      console.log(`旧格式失败，尝试新格式: ${fallbackPath}`);
+    } else {
+      fallbackPath = oldFormatPath;
+      console.log(`新格式失败，尝试旧格式: ${fallbackPath}`);
+    }
+
+    // 如果另一种格式也失败过了，直接用占位图
+    if (this._failedCloudPaths[fallbackPath]) {
+      console.log('两种格式都已失败，使用默认占位图');
+      this._setNextLayerImage('/images/nep201201.png');
+      this._crossFadeToNextLayer();
+      return;
+    }
+
+    // 尝试另一种格式（先设置路径再请求，避免路径判断错乱）
+    this.getCloudImageTempUrl(fallbackPath, year, month);
   },
 
   // 保持向后兼容的方法（只传年份）
@@ -969,16 +994,6 @@ addImageToMap(year, month, imagePath) {
         this.fallbackToLocalImage(currentYear, currentMonth);
       }
     } else {
-      if (currentYear < 2012 || currentYear > 2022) {
-        const rangeText = currentYear < 2012 ? '早于' : '晚于';
-        wx.showToast({
-          title: `${currentYear}年数据${currentYear < 2012 ? '不可用' : '尚未收录'}`,
-          icon: 'none',
-          duration: 2000
-        });
-        this.useLocalPlaceholder();
-        return;
-      }
       this.useLocalPlaceholder();
     }
   },
@@ -1048,17 +1063,7 @@ addImageToMap(year, month, imagePath) {
       return;
     }
     
-    // 检查年份是否超出数据范围（2012-2022）且不是上传图片
-    if (currentYear < 2012 || currentYear > 2022) {
-      // 年份超出数据范围，直接使用默认占位图
-      console.log(`年份 ${currentYear} 超出数据范围（2012-2022），使用默认占位图`);
-      const defaultPlaceholderUrl = '/images/nep201201.png';
-      this._setNextLayerImage(defaultPlaceholderUrl);
-      this._crossFadeToNextLayer();
-      this.setData({ imageError: true, imageInfo: { width: 800, height: 600, ratio: '75%' } });
-      this.updateMonthlyData(2012);
-      return;
-    }
+
     
     // 尝试使用当前年份1月的本地图片作为占位图
     const yearFirstMonthPath = `/images/nep${currentYear}01.png`;
@@ -1260,7 +1265,7 @@ addImageToMap(year, month, imagePath) {
       ctx.fillText(`${year}年 月度碳汇`, margin.left, margin.top - canvasHeight * 0.01);
       ctx.font = `${canvasHeight * 0.04}px sans-serif`;
       ctx.fillStyle = '#666';
-      ctx.fillText('单位: 吨', margin.left + chartWidth - 70, margin.top - canvasHeight * 0.01);
+      ctx.fillText('单位: kg C/(m²·mo.)', margin.left + chartWidth - 70, margin.top - canvasHeight * 0.01);
 
       // 计算最小值和最大值
       const values = data.map(d => d.value);
@@ -1503,7 +1508,7 @@ addImageToMap(year, month, imagePath) {
     ctx.fillText(`${year}年 月度碳汇`, margin.left, margin.top - canvasHeight * 0.01);
     ctx.setFontSize(canvasHeight * 0.04);
     ctx.setFillStyle('#666');
-    ctx.fillText('单位: 吨', margin.left + chartWidth - 70, margin.top - canvasHeight * 0.01);
+    ctx.fillText('单位: kg C/(m²·mo.)', margin.left + chartWidth - 70, margin.top - canvasHeight * 0.01);
 
     // 提取数值并计算范围
     const values = data.map(d => d.value);
@@ -2158,9 +2163,8 @@ addImageToMap(year, month, imagePath) {
     
     // 如果需要预设年份范围（便于后续判断），只创建空对象
     const years = this.data.yearTabs;
-    const filteredYears = years.filter(year => year >= 2012 && year <= 2022);
     
-    for (const year of filteredYears) {
+    for (const year of years) {
       imageMap[year] = {};  // 空对象，不包含任何月份路径
     }
     
@@ -2509,9 +2513,30 @@ addImageToMap(year, month, imagePath) {
     }
 
     // 5. 无上传记录，尝试构造标准云存储路径
-    const standardCloudPath = `cloud://cloudbase-8gdof83j7fdc6094.636c-cloudbase-8gdof83j7fdc6094-1406189579/qinling-carbon-data/images/nep${year}${monthStr}.png`;
+    // 支持两种文件名格式：nep202407.png（旧格式）和 2024_7.png（新格式）
+    const cloudBase = 'cloud://cloudbase-8gdof83j7fdc6094.636c-cloudbase-8gdof83j7fdc6094-1406189579/qinling-carbon-data/images';
+    const standardCloudPath = `${cloudBase}/nep${year}${monthStr}.png`;
+    const newFormatCloudPath = `${cloudBase}/${year}_${month}.png`;
 
-    // 检查该云路径是否已缓存临时URL（避免重复请求）
+    // 优先检查新格式缓存（2023年及以后使用新格式）
+    if (year >= 2023) {
+      const newCache = this.data.cloudTempUrlCache[newFormatCloudPath];
+      const now = Date.now();
+      if (newCache && newCache.expireTime && newCache.expireTime > now + 30000) {
+        console.log(`detectImagePath: 新格式云路径命中缓存: ${newCache.url}`);
+        return newFormatCloudPath;
+      }
+      // 检查新格式是否在失败记录中（之前加载失败过）
+      if (this._failedCloudPaths && this._failedCloudPaths[newFormatCloudPath]) {
+        // 新格式失败过，尝试旧格式
+        console.log(`detectImagePath: 新格式已失败过，尝试旧格式: ${standardCloudPath}`);
+      } else {
+        console.log(`detectImagePath: 尝试新格式云路径: ${newFormatCloudPath}`);
+        return newFormatCloudPath;
+      }
+    }
+
+    // 检查旧格式缓存
     const cache = this.data.cloudTempUrlCache[standardCloudPath];
     const now = Date.now();
     if (cache && cache.expireTime && cache.expireTime > now + 30000) {

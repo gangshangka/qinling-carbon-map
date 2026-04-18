@@ -13,7 +13,7 @@ def to_mercator(lon, lat):
     x, y = transformer.transform(lon, lat)
     return x, y
 
-# 为每个县添加模拟统计值（例如碳汇量，单位：吨/年）
+# 为每个县添加模拟统计值（例如碳汇量，单位：kgC/m^2·mon）
 # 您可以替换为真实数据，例如从CSV读取，通过PAC字段匹配
 np.random.seed(42)
 gdf['carbon'] = np.random.randint(1000, 5000, len(gdf))

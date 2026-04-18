@@ -63,8 +63,9 @@
     </view>
     
   </view>
-  
-  <!-- 图表容器 -->
+
+
+  <!-- 图表容器 - 放在最后，通过 margin-top:auto 推到底部 -->
   <view class="chart-container">
     <ec-canvas 
       id="carbon-chart" 
@@ -73,36 +74,5 @@
       ec="{{ ec }}" 
       style="width: 100%; height: 100%;"
     ></ec-canvas>
-  </view>
-  
-  <!-- 当前数据项显示 -->
-  <view class="data-display">
-    <view wx:if="{{chartMode === 'annual'}}" class="current-item">
-      <text class="current-value">{{ annualData && annualData[currentYearIndex] ? annualData[currentYearIndex].year : '' }}</text>
-      <text class="value-text">年</text>
-      <view class="item-details">
-        <text>碳汇量: {{ annualData && annualData[currentYearIndex] ? annualData[currentYearIndex].value.toFixed(2) : '0.00' }} 吨</text>
-        <text>同比增长: {{ annualData && annualData[currentYearIndex] ? annualData[currentYearIndex].change.toFixed(2) : '0.00' }}%</text>
-      </view>
-    </view>
-    <view wx:if="{{chartMode === 'county'}}" class="current-item">
-      <text class="current-value">{{ countyData && countyData[currentCountyIndex] ? countyData[currentCountyIndex].county : '' }}</text>
-      <text class="value-text">县</text>
-      <view class="item-details">
-        <text>碳汇量: {{ countyData && countyData[currentCountyIndex] ? countyData[currentCountyIndex].value.toFixed(2) : '0.00' }} 吨</text>
-        <text>排名: 第{{ countyData && countyData[currentCountyIndex] ? countyData[currentCountyIndex].rank : '0' }}名</text>
-      </view>
-    </view>
-
-
-  </view>
-  
-
-  
-  <!-- 说明 -->
-  <view class="description">
-    <text>数据来源：秦岭碳汇监测</text>
-    <text>单位：吨碳当量</text>
-    <text>更新日期: {{updateTime}}</text>
   </view>
 </view>

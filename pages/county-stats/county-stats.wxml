@@ -88,12 +88,12 @@
       <view class="overview-card">
         <text class="card-icon">📈</text>
         <text class="card-title">平均碳汇</text>
-        <text class="card-value">{{averageCarbon}}吨</text>
+        <text class="card-value">{{averageCarbon}}kgC/m^2·mon</text>
       </view>
       <view class="overview-card">
         <text class="card-icon">🏆</text>
         <text class="card-title">最高碳汇</text>
-        <text class="card-value">{{maxCarbon}}吨</text>
+        <text class="card-value">{{maxCarbon}}kgC/m^2·mon</text>
       </view>
     </view>
   </view>

@@ -481,7 +481,7 @@ Page({
         },
         yAxis: {
           type: 'value',
-          name: '碳汇量 (吨)',
+          name: ' (kgC/m^2·mon)',
           nameTextStyle: { fontSize: 16, color: '#333', fontWeight: 'bold' }
         },
         series: [{
@@ -529,7 +529,7 @@ Page({
         formatter: (params) => {
           const data = params[0];
           const yearData = annualData[data.dataIndex];
-          return `${yearData.year}年<br/>碳汇量: ${data.value.toFixed(2)}吨<br/>同比增长: ${yearData.change.toFixed(2)}%`;
+          return `${yearData.year}年<br/> ${data.value.toFixed(2)}kgC/m^2·mon<br/>同比增长: ${yearData.change.toFixed(2)}%`;
         },
         backgroundColor: 'rgba(50, 50, 50, 0.7)',
         borderColor: '#333',
@@ -556,7 +556,7 @@ Page({
       },
       yAxis: {
         type: 'value',
-        name: '碳汇量 (吨)',
+        name: ' (kgC/m^2·mon)',
         nameTextStyle: {
           fontSize: 14,
           color: '#333',
@@ -655,7 +655,7 @@ Page({
         },
         yAxis: {
           type: 'value',
-          name: '碳汇量 (吨)',
+          name: ' ((kgC/m^2·mon)',
           nameTextStyle: { fontSize: 16, color: '#333', fontWeight: 'bold' }
         },
         series: [{
@@ -697,7 +697,7 @@ Page({
       },
       tooltip: {
         trigger: 'axis',
-        formatter: '{b}: {c}吨',
+        formatter: '{b}: {c}kg1',
         backgroundColor: 'rgba(50, 50, 50, 0.7)',
         borderColor: '#333',
         textStyle: { color: '#fff' }
@@ -711,7 +711,7 @@ Page({
       },
       xAxis: {
         type: 'value',
-        name: '碳汇量 (吨)',
+        name: '(kgC/m^2·mon)',
         nameTextStyle: {
           fontSize: 14,
           color: '#333',
@@ -808,7 +808,7 @@ Page({
         },
         yAxis: {
           type: 'value',
-          name: '碳汇量 (吨)',
+          name: '((kgC/m^2·mon)',
           nameTextStyle: {
             fontSize: 12,
             color: '#666'
@@ -870,7 +870,7 @@ Page({
         formatter: (params) => {
           const data = params[0];
           const monthData = yearData[data.dataIndex];
-          return `${currentYear}年${monthData.month}月<br/>碳汇量: ${data.value.toFixed(2)}吨`;
+          return `${currentYear}年${monthData.month}月<br/>: ${data.value.toFixed(2)}kgC/m^2·mon`;
         },
         backgroundColor: 'rgba(50, 50, 50, 0.7)',
         borderColor: '#333',
@@ -897,7 +897,7 @@ Page({
       },
       yAxis: {
         type: 'value',
-        name: '碳汇量 (吨)',
+        name: '(kgC/m^2·mon)',
         nameTextStyle: {
           fontSize: 14,
           color: '#333',
