@@ -241,20 +241,21 @@ async function processTifSimple(fileContent, year, month) {
     console.log('简化模式也无法读取TIF文件:', err.message)
   }
   
-  // 基于全局统计估算各县数据（与 estimateCountyDataFromStats 使用相同的缩放逻辑）
+  // 基于全局统计估算各县数据
+  // 简化模式没有GeoJSON边界，只能基于全局均值做粗略估算
+  // 注意：这种估算方式精度有限，建议优先使用GeoJSON边界的完整提取模式
   if (globalStats && globalStats.mean !== 0) {
+    // 直接使用TIF像素均值作为县域碳汇值的估算基础
+    // TIF中的NEP值就是碳汇量，单位与县域数据一致
     const tifMean = globalStats.mean
-    // 缩放到县域级别，与 estimateCountyDataFromStats 一致
-    const referenceCountyMean = -30
-    const referenceTifMean = -335
-    const scaleFactor = referenceCountyMean / referenceTifMean
     
     COUNTY_NAMES.forEach(name => {
       const center = COUNTY_CENTERS[name]
       if (!center) return
+      // 基于纬度和经度的微调权重（秦岭核心区域碳汇更高）
       const latWeight = 1 + (center[1] - 33.0) * 0.1
       const lngWeight = 1 + Math.abs(center[0] - 108.5) * 0.05
-      const estimatedValue = tifMean * scaleFactor * latWeight * lngWeight
+      const estimatedValue = tifMean * latWeight * lngWeight
       countyData[name] = parseFloat(estimatedValue.toFixed(CONFIG.DECIMAL_PLACES))
     })
   } else {
@@ -290,25 +291,23 @@ function estimateCountyDataFromStats(stats, year, month) {
     return { year, month, countyData, totalCounties: COUNTY_NAMES.length, validCounties: 0 }
   }
   
-  // TIF的 mean 是像素级均值（如 -335），需要缩放到县域级别
-  // 静态数据中各县的典型单月值范围在 -0.01 到 -200 之间
+  // 直接使用TIF统计均值作为县域碳汇值的基础
+  // TIF中的NEP像素值就是碳汇量，与县域数据单位一致，不需要额外缩放
   const tifMean = meanValue
-  const referenceCountyMean = -30
-  const referenceTifMean = -335
-  const scaleFactor = referenceCountyMean / referenceTifMean
   
   const countyData = {}
   COUNTY_NAMES.forEach(name => {
     const center = COUNTY_CENTERS[name]
     if (!center) return
+    // 基于纬度和经度的微调权重（秦岭核心区域碳汇更高）
     const latWeight = 1 + (center[1] - 33.0) * 0.08
     const lngWeight = 1 + Math.abs(center[0] - 108.5) * 0.03
-    const estimatedValue = tifMean * scaleFactor * latWeight * lngWeight
+    const estimatedValue = tifMean * latWeight * lngWeight
     countyData[name] = parseFloat(estimatedValue.toFixed(CONFIG.DECIMAL_PLACES))
   })
   
   const validCounties = Object.values(countyData).filter(v => v !== 0).length
-  console.log(`估算完成: ${validCounties}个县域有有效数据, 缩放因子=${scaleFactor.toFixed(4)}`)
+  console.log(`估算完成: ${validCounties}个县域有有效数据`)
   
   return {
     year,
@@ -527,35 +526,15 @@ async function processTifForCounties(fileContent, year, month) {
     }
   }
   
-  // TIF像素均值到县域碳汇值的缩放
-  // TIF原始像素值可能是碳通量的原始量级（如-1500），与历史县域数据（-500~+300）量级不同
-  // 需要检查并做缩放，保持与 estimateCountyDataFromStats 一致的输出范围
-  const rawValues = countyResults
-    .filter(r => r.meanValue !== null)
-    .map(r => r.meanValue)
-  
-  let scaleFactor = 1.0
-  if (rawValues.length > 0) {
-    const rawAbsMax = Math.max(...rawValues.map(v => Math.abs(v)))
-    
-    // 如果原始像素值绝对值最大超过500，说明TIF使用了不同的量级
-    // 使用与 estimateCountyDataFromStats 相同的缩放逻辑
-    if (rawAbsMax > 500) {
-      // 参考 estimateCountyDataFromStats 中的缩放比
-      // referenceCountyMean=-30, referenceTifMean=-335
-      // scaleFactor = -30 / -335 ≈ 0.0896
-      const SCALE_FACTOR = -30 / -335  // ≈ 0.0896
-      scaleFactor = SCALE_FACTOR
-      console.log(`原始像素值绝对值最大=${rawAbsMax.toFixed(2)}，超过500，应用缩放因子=${scaleFactor.toFixed(6)}`)
-    }
-  }
+  // processTifForCounties 通过县域边界提取的像素均值就是正确的碳汇值
+  // 不需要额外缩放，直接使用提取结果
+  console.log('使用GeoJSON边界提取的县域碳汇数据，无需缩放')
   
   // 转换为字典格式
   const countyData = {}
   countyResults.forEach(result => {
     if (result.meanValue !== null) {
-      const scaledValue = result.meanValue * scaleFactor
-      countyData[result.countyName] = parseFloat(scaledValue.toFixed(CONFIG.DECIMAL_PLACES))
+      countyData[result.countyName] = parseFloat(result.meanValue.toFixed(CONFIG.DECIMAL_PLACES))
     }
   })
   

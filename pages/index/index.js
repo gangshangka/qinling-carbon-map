@@ -1140,6 +1140,11 @@ addImageToMap(year, month, imagePath) {
       }
     }
 
+    // 补全缺失月份（值为0），确保始终有12个月数据，避免柱子过宽
+    if (yearData.length > 0) {
+      yearData = this.fillMissingMonths(year, yearData);
+    }
+
     if (yearData.length > 0) {
       this.setData({ 
         currentMonthlyData: yearData,
@@ -1151,6 +1156,19 @@ addImageToMap(year, month, imagePath) {
       this.setData({ lastDrawnYear: year });
       this.loadMonthlyDataFromCloud(year);
     }
+  },
+
+  // 补全缺失月份（值为0），确保始终有12个月数据，避免柱状图柱子过宽
+  fillMissingMonths(year, yearData) {
+    const existingMonths = new Set(yearData.map(item => item.month));
+    const filledData = [...yearData];
+    for (let m = 1; m <= 12; m++) {
+      if (!existingMonths.has(m)) {
+        filledData.push({ year: year, month: m, value: 0 });
+      }
+    }
+    filledData.sort((a, b) => a.month - b.month);
+    return filledData;
   },
 
   // 从本地缓存读取指定年份的月度数据（由 admin-upload 上传TIF时缓存）
@@ -1170,7 +1188,8 @@ addImageToMap(year, month, imagePath) {
   loadMonthlyDataFromCloud(year) {
     if (!wx.cloud) {
       console.log('云开发未初始化，无法读取云数据库数据');
-      this.drawChartWithRetry(year, []);
+      const emptyYearData = this.fillMissingMonths(year, []);
+      this.drawChartWithRetry(year, emptyYearData);
       return;
     }
 
@@ -1185,9 +1204,10 @@ addImageToMap(year, month, imagePath) {
       console.log(`从云数据库读取 ${year} 年数据: ${records.length} 条记录`);
 
       if (records.length === 0) {
-        console.log(`云数据库中无 ${year} 年数据`);
-        this.setData({ currentMonthlyData: [] });
-        this.drawChartWithRetry(year, []);
+        console.log(`云数据库中无 ${year} 年数据，补全12个月为0`);
+        const emptyYearData = this.fillMissingMonths(year, []);
+        this.setData({ currentMonthlyData: emptyYearData });
+        this.drawChartWithRetry(year, emptyYearData);
         return;
       }
 
@@ -1203,22 +1223,25 @@ addImageToMap(year, month, imagePath) {
         };
       }).sort((a, b) => a.month - b.month);
 
-      console.log(`转换后的 ${year} 年月度数据:`, yearData);
+      // 补全缺失月份（值为0），确保始终有12个月数据
+      const filledYearData = this.fillMissingMonths(year, yearData);
+      console.log(`转换后的 ${year} 年月度数据:`, filledYearData);
 
       // 合并到 monthlyRealData 中，避免重复加载
       const existingYears = this.data.monthlyRealData.map(item => item.year);
       if (!existingYears.includes(year)) {
-        const newData = [...this.data.monthlyRealData, ...yearData];
+        const newData = [...this.data.monthlyRealData, ...filledYearData];
         this.setData({ monthlyRealData: newData });
       }
 
-      this.setData({ currentMonthlyData: yearData });
-      this.drawChartWithRetry(year, yearData);
+      this.setData({ currentMonthlyData: filledYearData });
+      this.drawChartWithRetry(year, filledYearData);
     }).catch(err => {
       wx.hideLoading();
       console.error('从云数据库读取数据失败:', err);
-      this.setData({ currentMonthlyData: [] });
-      this.drawChartWithRetry(year, []);
+      const emptyYearData = this.fillMissingMonths(year, []);
+      this.setData({ currentMonthlyData: emptyYearData });
+      this.drawChartWithRetry(year, emptyYearData);
     });
   },
   

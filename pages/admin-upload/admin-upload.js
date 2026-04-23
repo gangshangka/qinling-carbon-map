@@ -1323,27 +1323,22 @@ Page({
       "紫阳县": [108.5, 32.5], "岚皋县": [108.9, 32.3], "旬阳县": [109.4, 32.8]
     };
 
-    // 参考已有年份同月份的县域均值，将TIF全局均值等比例缩放到县域级别
-    // 静态数据中各县的典型单月值范围在 -0.01 到 -200 之间
-    // TIF的 mean 是像素级均值（如 -335），需要缩放到县域级别
+    // 直接使用TIF统计均值作为县域碳汇值的基础
+    // TIF中的NEP像素值就是碳汇量，与县域数据单位一致，不需要额外缩放
     const tifMean = meanValue;
-    // 参考值：静态数据中典型年份7月的县域均值大约在 -5 到 -50 之间
-    const referenceCountyMean = -30; // 典型7月县域均值参考值
-    const referenceTifMean = -335;   // 对应的TIF像素均值参考值
-    const scaleFactor = referenceCountyMean / referenceTifMean; // 约 0.09
 
     const countyData = {};
     for (const name in COUNTY_CENTERS) {
       const center = COUNTY_CENTERS[name];
-      // 基于纬度的权重（秦岭核心区域碳汇更高）
+      // 基于纬度和经度的微调权重（秦岭核心区域碳汇更高）
       const latWeight = 1 + (center[1] - 33.0) * 0.08;
       const lngWeight = 1 + Math.abs(center[0] - 108.5) * 0.03;
-      // 缩放后的估算值
-      const estimatedValue = tifMean * scaleFactor * latWeight * lngWeight;
+      // 估算值 = TIF均值 × 经纬度权重
+      const estimatedValue = tifMean * latWeight * lngWeight;
       countyData[name] = parseFloat(estimatedValue.toFixed(2));
     }
     
-    console.log(`基于全局统计(mean=${meanValue})估算了${Object.keys(countyData).length}个县域碳汇数据, 缩放因子=${scaleFactor.toFixed(4)}`);
+    console.log(`基于全局统计(mean=${meanValue})估算了${Object.keys(countyData).length}个县域碳汇数据`);
     return countyData;
   },
 

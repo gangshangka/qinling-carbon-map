@@ -221,7 +221,7 @@ async function processTifFileSimulated(fileContent, year, month) {
   console.log('模拟模式处理')
   await new Promise(resolve => setTimeout(resolve, 500))
   const pngFileID = `cloud://cloudbase-8gdof83j7fdc6094.636c-cloudbase-8gdof83j7fdc6094/qinling-carbon-data/images/${year}_${month}.png`
-  const stats = { count: 10000, mean: 32.67, min: -2819.21, max: 1638.96, sum: 326700.0, std: 450.23 }
+  const stats = { count: 0, mean: 0, min: 0, max: 0, sum: 0, std: 0 }
   return { pngFileID, pngFileName: `${year}_${month}.png`, width: 800, height: 600, stats, simulated: true }
 }
 
