@@ -391,8 +391,8 @@
   border-radius: 12rpx;
   overflow: hidden;
   box-sizing: border-box;
-  position: relative;
-  transition: z-index 0.3s ease;
+  position: static;
+  z-index: auto;
 }
 
 .chart-container.hidden {

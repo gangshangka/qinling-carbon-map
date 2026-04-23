@@ -86,7 +86,7 @@
             <!-- 按钮文字根据 autoPlay 状态显示不同文字 -->
             {{autoPlay ? '停止播放' : '开始播放'}}
           </button>
-          <!-- 显示自动播放的状态文字，如“播放中”或“已停止”，数据来自 autoPlayStatus -->
+          <!-- 显示自动播放的状态文字，如"播放中"或"已停止"，数据来自 autoPlayStatus -->
           <text class="auto-play-status">{{autoPlayStatus}}</text>
         </view>
       </view>

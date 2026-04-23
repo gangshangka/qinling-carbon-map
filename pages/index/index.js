@@ -431,9 +431,17 @@ getCloudImageTempUrl(cloudPath, year, month) {
     // 即使临时URL缓存有效，也异步检查是否需要下载缓存（如果本地缓存不存在）
     const cachedFilePath = this.getCachedFilePath(year, month);
     if (!cachedFilePath) {
-      // 异步下载并缓存
+      // 异步下载并缓存，403时自动刷新临时URL重试
       this.downloadAndCacheImage(cache.url, year, month).catch(err => {
         console.log('异步缓存失败:', err);
+        // 如果是403错误，清除过期缓存并重新获取临时URL
+        if (err.message && (err.message.includes('403') || err.message.includes('404'))) {
+          console.log('临时URL可能已过期，重新获取');
+          const newCache = { ...this.data.cloudTempUrlCache };
+          delete newCache[cloudPath];
+          this.setData({ cloudTempUrlCache: newCache });
+          this.getCloudImageTempUrl(cloudPath, year, month);
+        }
       });
     }
     
@@ -454,9 +462,13 @@ getCloudImageTempUrl(cloudPath, year, month) {
         this.setData({ cloudTempUrlCache: newCache });
         this._setNextLayerImage(tempUrl);
         
-        // 异步下载并缓存图片到本地
+        // 异步下载并缓存图片到本地，403时自动重试
         this.downloadAndCacheImage(tempUrl, year, month).catch(err => {
           console.log('下载缓存失败:', err);
+          // 如果是403/404错误，重新获取临时URL
+          if (err.message && (err.message.includes('403') || err.message.includes('404'))) {
+            console.log('新获取的临时URL也失败，可能是文件不存在');
+          }
         });
         
         // 预缓存接下来5张图片
@@ -552,11 +564,8 @@ addImageToMap(year, month, imagePath) {
     
     // 如果已经存在缓存，跳过下载
     if (this.getCachedFilePath(year, month)) {
-      //console.log(`图片 ${year}年${month}月 已缓存，跳过下载`);
       return Promise.resolve();
     }
-    
-    //console.log(`开始下载并缓存图片: ${year}年${month}月`);
     
     return new Promise((resolve, reject) => {
       // 下载文件
@@ -582,12 +591,16 @@ addImageToMap(year, month, imagePath) {
               };
               this.setData({ localFileCache: newCache });
               
-              //console.log(`图片缓存成功: ${year}年${month}月, 路径: ${savedFilePath}`);
               resolve(savedFilePath);
             } catch (saveErr) {
               console.error('保存文件失败:', saveErr);
               reject(saveErr);
             }
+          } else if (res.statusCode === 403 || res.statusCode === 404) {
+            // 403=签名过期, 404=文件不存在：清除对应的临时URL缓存，下次会重新获取
+            console.warn(`下载失败，状态码: ${res.statusCode}，清除过期缓存`);
+            this._invalidateTempUrlCacheByUrl(tempUrl);
+            reject(new Error(`下载失败: ${res.statusCode}`));
           } else {
             console.error(`下载失败，状态码: ${res.statusCode}`);
             reject(new Error(`下载失败: ${res.statusCode}`));
@@ -599,6 +612,18 @@ addImageToMap(year, month, imagePath) {
         }
       });
     });
+  },
+  
+  // 根据临时URL清除过期的临时URL缓存
+  _invalidateTempUrlCacheByUrl(tempUrl) {
+    const newCache = { ...this.data.cloudTempUrlCache };
+    for (const cloudPath in newCache) {
+      if (newCache[cloudPath].url === tempUrl) {
+        console.log(`清除过期的临时URL缓存: ${cloudPath}`);
+        delete newCache[cloudPath];
+      }
+    }
+    this.setData({ cloudTempUrlCache: newCache });
   },
   
   //   },
@@ -1097,18 +1122,104 @@ addImageToMap(year, month, imagePath) {
       return;
     }
     
-    // 过滤出当前年份的数据
-    const yearData = this.data.monthlyRealData.filter(item => item.year === year);
+    // 过滤出当前年份的数据（静态数据）
+    let yearData = this.data.monthlyRealData.filter(item => item.year === year);
     // 按月份排序
     yearData.sort((a, b) => a.month - b.month);
-    // 更新当前年份的月度数据
-    this.setData({ 
-      currentMonthlyData: yearData,
-      lastDrawnYear: year  // 记录本次绘制的年份
+
+    // 如果静态数据中没有该年份（如2024年），尝试从本地缓存和云数据库读取
+    if (yearData.length === 0) {
+      // 先尝试从本地缓存读取云端数据
+      const cachedCloudData = this.loadMonthlyDataFromLocalCache(year);
+      if (cachedCloudData.length > 0) {
+        console.log(`从本地缓存获取到 ${year} 年数据: ${cachedCloudData.length} 个月`);
+        yearData = cachedCloudData;
+        // 合并到 monthlyRealData 中，避免重复加载
+        const newData = [...this.data.monthlyRealData, ...yearData];
+        this.setData({ monthlyRealData: newData });
+      }
+    }
+
+    if (yearData.length > 0) {
+      this.setData({ 
+        currentMonthlyData: yearData,
+        lastDrawnYear: year
+      });
+      this.drawChartWithRetry(year, yearData);
+    } else {
+      // 本地缓存也没有，从云数据库读取
+      this.setData({ lastDrawnYear: year });
+      this.loadMonthlyDataFromCloud(year);
+    }
+  },
+
+  // 从本地缓存读取指定年份的月度数据（由 admin-upload 上传TIF时缓存）
+  loadMonthlyDataFromLocalCache(year) {
+    try {
+      const cacheKey = 'monthly_data_cloud_cache';
+      const cachedData = wx.getStorageSync(cacheKey) || [];
+      const yearData = cachedData.filter(item => item.year === year);
+      return yearData;
+    } catch (err) {
+      console.error('从本地缓存读取月度数据失败:', err);
+      return [];
+    }
+  },
+
+  // 从云数据库 carbon_data 集合读取指定年份的月度数据
+  loadMonthlyDataFromCloud(year) {
+    if (!wx.cloud) {
+      console.log('云开发未初始化，无法读取云数据库数据');
+      this.drawChartWithRetry(year, []);
+      return;
+    }
+
+    wx.showLoading({ title: '加载数据中...', mask: true });
+
+    const db = wx.cloud.database();
+    db.collection('carbon_data').where({
+      year: year
+    }).orderBy('month', 'asc').limit(100).get().then(res => {
+      wx.hideLoading();
+      const records = res.data || [];
+      console.log(`从云数据库读取 ${year} 年数据: ${records.length} 条记录`);
+
+      if (records.length === 0) {
+        console.log(`云数据库中无 ${year} 年数据`);
+        this.setData({ currentMonthlyData: [] });
+        this.drawChartWithRetry(year, []);
+        return;
+      }
+
+      // 将云数据库记录转换为与 monthly_data.js 相同的格式
+      const yearData = records.map(record => {
+        const countyData = record.countyData || {};
+        const values = Object.values(countyData);
+        const totalValue = values.length > 0 ? values.reduce((sum, v) => sum + v, 0) : 0;
+        return {
+          year: record.year,
+          month: record.month,
+          value: parseFloat(totalValue.toFixed(2))
+        };
+      }).sort((a, b) => a.month - b.month);
+
+      console.log(`转换后的 ${year} 年月度数据:`, yearData);
+
+      // 合并到 monthlyRealData 中，避免重复加载
+      const existingYears = this.data.monthlyRealData.map(item => item.year);
+      if (!existingYears.includes(year)) {
+        const newData = [...this.data.monthlyRealData, ...yearData];
+        this.setData({ monthlyRealData: newData });
+      }
+
+      this.setData({ currentMonthlyData: yearData });
+      this.drawChartWithRetry(year, yearData);
+    }).catch(err => {
+      wx.hideLoading();
+      console.error('从云数据库读取数据失败:', err);
+      this.setData({ currentMonthlyData: [] });
+      this.drawChartWithRetry(year, []);
     });
-    
-    // 确保图表容器已准备好再绘制（带重试机制）
-    this.drawChartWithRetry(year, yearData);
   },
   
   // 带重试的图表绘制（等待canvas节点就绪）

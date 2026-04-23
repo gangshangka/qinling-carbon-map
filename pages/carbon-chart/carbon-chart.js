@@ -35,14 +35,46 @@ Page({
     // 性能优化相关
     loading: true, // 数据加载状态
     dataProcessed: false, // 数据是否已处理完成
-    dataCacheKey: 'carbon_chart_data_cache' // 缓存key
+    dataCacheKey: 'carbon_chart_data_cache', // 缓存key
+    cacheVersion: 2 // 缓存版本，代码变更时递增以失效旧缓存
   },
 
   // 处理原始数据，生成年度、县级和月度数据
   processRawData() {
     console.log('开始处理原始碳汇数据...');
     
-    const rawData = rawCarbonData; // 直接使用导入的原始数据
+    let rawData = rawCarbonData; // 使用原始静态数据
+
+    // 合并本地缓存的云端数据（如2024年上传TIF后缓存的数据）
+    try {
+      const cloudCacheKey = 'carbon_cloud_data_cache';
+      const cloudCachedData = wx.getStorageSync(cloudCacheKey) || {};
+      
+      for (const year in cloudCachedData) {
+        for (const month in cloudCachedData[year]) {
+          const countyData = cloudCachedData[year][month];
+          if (!countyData || Object.keys(countyData).length === 0) continue;
+          
+          // 只合并不存在的年月数据
+          if (!rawData[year]) {
+            rawData[year] = {};
+          }
+          if (!rawData[year][month] || Object.keys(rawData[year][month]).length === 0) {
+            rawData[year][month] = countyData;
+          } else {
+            // 如果静态数据中该月份数据全为0，则用云数据覆盖
+            const staticValues = Object.values(rawData[year][month]);
+            const allZero = staticValues.every(v => v === 0);
+            if (allZero) {
+              rawData[year][month] = countyData;
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.log('合并本地缓存云端数据失败:', err);
+    }
+    
     const annualData = [];
     const monthlyData = [];
     
@@ -219,7 +251,7 @@ Page({
     try {
       // 尝试从缓存读取
       const cachedData = wx.getStorageSync(cacheKey);
-      if (cachedData && cachedData.timestamp && (now - cachedData.timestamp < cacheExpireTime)) {
+      if (cachedData && cachedData.timestamp && (now - cachedData.timestamp < cacheExpireTime) && cachedData.cacheVersion === this.data.cacheVersion) {
         console.log('从缓存加载数据，缓存时间:', new Date(cachedData.timestamp).toLocaleString());
         
         // 从缓存恢复数据
@@ -241,6 +273,9 @@ Page({
         });
         
         console.log('缓存数据加载完成');
+        
+        // 即使有缓存，也异步检查云端是否有新数据
+        this.loadCloudCarbonData();
         return;
       }
     } catch (err) {
@@ -287,7 +322,8 @@ Page({
           yearTabs: processedData.yearTabs,
           yearMonthList: processedData.yearMonthList,
           currentYearMonth: processedData.currentYearMonth,
-          timestamp: now
+          timestamp: now,
+          cacheVersion: this.data.cacheVersion
         };
         
         wx.setStorageSync(cacheKey, cacheData);
@@ -298,6 +334,9 @@ Page({
           loading: false,
           dataProcessed: true 
         });
+
+        // 从云数据库加载新数据（如2024年），合并到已有数据中
+        this.loadCloudCarbonData();
       } catch (error) {
         console.error('数据处理失败:', error);
         this.setData({ 
@@ -306,6 +345,205 @@ Page({
         });
       }
     }, 0); // 无延迟异步执行
+  },
+
+  // 从云数据库加载新数据（如2024年上传的TIF提取的数据），合并到已有数据中
+  loadCloudCarbonData() {
+    if (!wx.cloud) {
+      console.log('云开发未初始化，跳过从云数据库加载数据');
+      // 即使云未初始化，也尝试从本地缓存加载
+      this.loadCloudCarbonDataFromLocalCache();
+      return;
+    }
+
+    const db = wx.cloud.database();
+    // 查询所有碳汇数据记录
+    db.collection('carbon_data').limit(1000).get().then(res => {
+      const records = res.data || [];
+      console.log(`从云数据库读取到 ${records.length} 条碳汇数据记录`);
+
+      // 同时从本地缓存读取（admin-upload 上传时缓存的）
+      const localCacheRecords = this.getLocalCacheCarbonRecords();
+
+      // 合并云数据和本地缓存数据（本地缓存补充云数据库可能缺少的记录）
+      const allRecords = this.mergeCarbonRecords(records, localCacheRecords);
+
+      if (allRecords.length === 0) {
+        console.log('云数据库和本地缓存中均无碳汇数据记录');
+        return;
+      }
+
+      // 获取已有的年份数据（来自静态文件）
+      const rawData = rawCarbonData;
+      let newDataMerged = false;
+
+      // 遍历所有记录，只合并静态数据中不存在的年月数据
+      allRecords.forEach(record => {
+        const year = record.year;
+        const month = record.month;
+        const countyData = record.countyData || {};
+
+        // 检查静态数据中是否已有该年月的数据
+        const yearStr = String(year);
+        const monthStr = String(month);
+        if (rawData[yearStr] && rawData[yearStr][monthStr] && Object.keys(rawData[yearStr][monthStr]).length > 0) {
+          // 静态数据已有该年月数据，跳过（但可以更新）
+          // 如果静态数据中该月份数据全为0，则用云数据覆盖
+          const staticValues = Object.values(rawData[yearStr][monthStr]);
+          const allZero = staticValues.every(v => v === 0);
+          if (!allZero) {
+            return; // 静态数据有效，不覆盖
+          }
+        }
+
+        // 合并云数据到rawData
+        if (!rawData[yearStr]) {
+          rawData[yearStr] = {};
+        }
+        rawData[yearStr][monthStr] = countyData;
+        newDataMerged = true;
+      });
+
+      if (!newDataMerged) {
+        console.log('云数据未带来新增年月，无需重新处理');
+        return;
+      }
+
+      console.log('云数据已合并，重新处理数据...');
+      this.applyMergedData(rawData);
+    }).catch(err => {
+      console.error('从云数据库加载碳汇数据失败:', err);
+      // 云数据库失败时，尝试从本地缓存加载
+      this.loadCloudCarbonDataFromLocalCache();
+    });
+  },
+
+  // 从本地缓存加载碳汇数据（admin-upload 上传TIF时缓存的数据）
+  loadCloudCarbonDataFromLocalCache() {
+    try {
+      const cacheKey = 'carbon_cloud_data_cache';
+      const cachedData = wx.getStorageSync(cacheKey) || {};
+      
+      if (Object.keys(cachedData).length === 0) {
+        console.log('本地缓存中无碳汇数据');
+        return;
+      }
+
+      const rawData = rawCarbonData;
+      let newDataMerged = false;
+
+      for (const year in cachedData) {
+        for (const month in cachedData[year]) {
+          const countyData = cachedData[year][month];
+          if (!countyData || Object.keys(countyData).length === 0) continue;
+
+          // 检查静态数据是否已有
+          if (rawData[year] && rawData[year][month]) {
+            const staticValues = Object.values(rawData[year][month]);
+            const allZero = staticValues.every(v => v === 0);
+            if (!allZero) continue;
+          }
+
+          if (!rawData[year]) {
+            rawData[year] = {};
+          }
+          rawData[year][month] = countyData;
+          newDataMerged = true;
+        }
+      }
+
+      if (newDataMerged) {
+        console.log('从本地缓存合并碳汇数据，重新处理...');
+        this.applyMergedData(rawData);
+      }
+    } catch (err) {
+      console.error('从本地缓存加载碳汇数据失败:', err);
+    }
+  },
+
+  // 从本地缓存获取碳汇记录列表（格式与云数据库记录一致）
+  getLocalCacheCarbonRecords() {
+    try {
+      const cacheKey = 'carbon_cloud_data_cache';
+      const cachedData = wx.getStorageSync(cacheKey) || {};
+      const records = [];
+
+      for (const year in cachedData) {
+        for (const month in cachedData[year]) {
+          const countyData = cachedData[year][month];
+          if (countyData && Object.keys(countyData).length > 0) {
+            records.push({
+              year: parseInt(year),
+              month: parseInt(month),
+              countyData: countyData
+            });
+          }
+        }
+      }
+
+      return records;
+    } catch (err) {
+      return [];
+    }
+  },
+
+  // 合并云数据库记录和本地缓存记录（去重，以云数据库优先）
+  mergeCarbonRecords(cloudRecords, localRecords) {
+    const recordMap = {};
+
+    // 先加入本地缓存记录
+    localRecords.forEach(record => {
+      const key = `${record.year}_${record.month}`;
+      if (!recordMap[key]) {
+        recordMap[key] = record;
+      }
+    });
+
+    // 云数据库记录覆盖本地缓存（云数据优先）
+    cloudRecords.forEach(record => {
+      const key = `${record.year}_${record.month}`;
+      recordMap[key] = record;
+    });
+
+    return Object.values(recordMap);
+  },
+
+  // 应用合并后的数据到页面
+  applyMergedData(rawData) {
+    // 重新处理数据
+    const processedData = this.processRawData();
+
+    // 更新页面数据
+    this.setData({
+      annualData: processedData.annualData,
+      countyData: processedData.countyData,
+      monthlyData: processedData.monthlyData,
+      countyDataByYear: processedData.countyDataByYear,
+      countyDataByYearMonth: processedData.countyDataByYearMonth,
+      latestYear: processedData.latestYear,
+      totalCounties: processedData.totalCounties,
+      currentYear: processedData.currentYear,
+      availableYears: processedData.availableYears,
+      yearTabs: processedData.yearTabs,
+      yearMonthList: processedData.yearMonthList,
+      currentYearMonth: processedData.currentYearMonth,
+      updateTime: new Date().toISOString().split('T')[0]
+    });
+
+    // 更新图表
+    if (this.chart) {
+      const option = this.getChartOption();
+      this.chart.setOption(option, true);
+    }
+
+    // 清除旧缓存，以便下次加载使用新数据
+    try {
+      wx.removeStorageSync(this.data.dataCacheKey);
+    } catch (e) {
+      // ignore
+    }
+
+    console.log('云数据合并完成，页面已更新');
   },
   
   extractAvailableYears() {
@@ -581,6 +819,7 @@ Page({
         type: 'bar',
         barWidth: '80%',
         data: barData,
+        selectedMode: false,
         label: {
           show: true,
           position: 'right',
@@ -590,10 +829,16 @@ Page({
           formatter: (params) => params.value.toFixed(0)
         },
         emphasis: {
+          focus: 'none',
           itemStyle: {
             shadowBlur: 10,
             shadowOffsetX: 0,
             shadowColor: 'rgba(0, 0, 0, 0.5)'
+          }
+        },
+        blur: {
+          itemStyle: {
+            opacity: 1
           }
         }
       }],
@@ -750,6 +995,7 @@ Page({
         type: 'bar',
         barWidth: '80%',
         data: barData,
+        selectedMode: false,
         label: {
           show: true,
           position: 'right',
@@ -759,10 +1005,16 @@ Page({
           formatter: (params) => params.value.toFixed(0)
         },
         emphasis: {
+          focus: 'none',
           itemStyle: {
             shadowBlur: 10,
             shadowOffsetX: 0,
             shadowColor: 'rgba(0, 0, 0, 0.5)'
+          }
+        },
+        blur: {
+          itemStyle: {
+            opacity: 1
           }
         }
       }],
@@ -789,58 +1041,38 @@ Page({
     
     console.log('当前年份数据量:', yearData.length);
     
-    if (!yearData || yearData.length === 0) {
-      // 如果没有数据，返回一个简单的图表配置
-      return {
-        title: {
-          text: `${currentYear}年碳汇月度变化`,
-          left: 'center',
-          top: 10,
-          textStyle: { fontSize: 18, color: '#333' }
-        },
-        xAxis: {
-          type: 'category',
-          data: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
-          axisLabel: {
-            fontSize: 12,
-            color: '#666'
-          }
-        },
-        yAxis: {
-          type: 'value',
-          name: '((kgC/m^2·mon)',
-          nameTextStyle: {
-            fontSize: 12,
-            color: '#666'
-          }
-        },
-        series: [{
-          type: 'bar',
-          data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-          itemStyle: {
-            color: '#4ECDC4'
-          }
-        }],
-        dataZoom: [{
-          type: 'inside',
-          xAxisIndex: 0,
-          start: 0,
-          end: 100,
-          zoomLock: false
-        }]
-      };
+    // 始终显示12个月，缺失月份补0
+    const allMonths = [];
+    const allValues = [];
+    const monthLabels = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+    
+    // 构建月份到值的映射
+    const monthValueMap = {};
+    yearData.forEach(item => {
+      monthValueMap[item.month] = item.value;
+    });
+    
+    for (let m = 1; m <= 12; m++) {
+      allMonths.push(monthLabels[m - 1]);
+      allValues.push(monthValueMap[m] !== undefined ? monthValueMap[m] : 0);
     }
     
-    // 使用实际数据
-    const months = yearData.map(item => `${item.month}月`);
-    const values = yearData.map(item => item.value);
+    // 使用实际有数据的月份信息
+    const validMonthCount = allValues.filter(v => v !== 0).length;
+    const noDataTitle = validMonthCount === 0 ? '（暂无数据）' : '';
 
-    // 创建bar数据，设置颜色
+    // 创建bar数据：所有12个月都有柱子，0值显示灰色小柱
     const echarts = this.data.echarts;
-    const barData = values.map((value, _index) => ({
-      value: value,
+    const maxValue = Math.max(...allValues.filter(v => v !== 0), 1);
+    // 给0值一个极小的可视值，让柱子能显示出来
+    const minVisible = maxValue * 0.01;
+
+    const barData = allValues.map((value) => ({
+      value: value === 0 ? minVisible : value,
+      realValue: value, // 保存真实值用于tooltip和label
       itemStyle: {
-        color: value >= 0 ? new echarts.graphic.LinearGradient(
+        color: value === 0 ? '#e8e8e8' : // 无数据月份用浅灰色
+               value >= 0 ? new echarts.graphic.LinearGradient(
           0, 0, 0, 1,
           [
             { offset: 0, color: '#52c41a' },
@@ -860,7 +1092,7 @@ Page({
 
     return {
       title: {
-        text: `${currentYear}年碳汇月度变化`,
+        text: `${currentYear}年碳汇月度变化${noDataTitle}`,
         left: 'center',
         top: 5,
         textStyle: { fontSize: 18, color: '#333' }
@@ -869,8 +1101,12 @@ Page({
         trigger: 'axis',
         formatter: (params) => {
           const data = params[0];
-          const monthData = yearData[data.dataIndex];
-          return `${currentYear}年${monthData.month}月<br/>: ${data.value.toFixed(2)}kgC/m^2·mon`;
+          const monthIndex = data.dataIndex;
+          const realVal = allValues[monthIndex];
+          if (realVal === 0) {
+            return `${currentYear}年${monthIndex + 1}月<br/>暂无数据`;
+          }
+          return `${currentYear}年${monthIndex + 1}月<br/>${realVal.toFixed(2)}kgC/m^2·mon`;
         },
         backgroundColor: 'rgba(50, 50, 50, 0.7)',
         borderColor: '#333',
@@ -885,7 +1121,7 @@ Page({
       },
       xAxis: {
         type: 'category',
-        data: months,
+        data: allMonths,
         axisLabel: {
           fontSize: 12,
           color: '#555',
@@ -920,21 +1156,32 @@ Page({
       series: [{
         name: '碳汇量',
         type: 'bar',
-        barWidth: '80%',
+        barMaxWidth: 30,
+        barMinHeight: 2,
         data: barData,
+        selectedMode: false,
         label: {
           show: true,
-          position: 'right',
-          fontSize: 12,
+          position: 'top',
+          fontSize: 10,
           fontWeight: 'normal',
           color: '#333',
-          formatter: (params) => params.value.toFixed(0)
+          formatter: (params) => {
+            const realVal = allValues[params.dataIndex];
+            return realVal === 0 ? '0' : realVal.toFixed(0);
+          }
         },
         emphasis: {
+          focus: 'none',
           itemStyle: {
             shadowBlur: 10,
             shadowOffsetX: 0,
             shadowColor: 'rgba(0, 0, 0, 0.5)'
+          }
+        },
+        blur: {
+          itemStyle: {
+            opacity: 1
           }
         }
       }],

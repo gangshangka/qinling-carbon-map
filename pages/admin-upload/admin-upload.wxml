@@ -201,7 +201,20 @@
           <view class="upload-tip">
             <text class="tip-text"><text class="tip-important">重要：</text>TIF文件名必须符合格式：<text class="tip-code">nep20xxxx.tif</text> 或 <text class="tip-code">nep20xxxx.tiff</text></text>
             <text class="tip-example">示例：nep202301.tif（表示2023年1月）、nep202212.tiff（表示2022年12月）</text>
-            <text class="tip-process">文件将使用Python脚本处理，生成带图例的PNG图片并添加到主页展示。</text>
+            <text class="tip-process">文件将使用云函数处理，生成PNG图片并提取县域碳汇数据，可在统计图表中查看。</text>
+          </view>
+          
+          <!-- 手动提取碳汇数据按钮（用于重新提取或云函数失败后重试） -->
+          <view class="extract-actions">
+            <button 
+              class="upload-btn extract-btn" 
+              type="default" 
+              size="mini" 
+              bindtap="manualExtractCarbonData"
+            >
+              重新提取碳汇数据
+            </button>
+            <text class="extract-hint">如TIF已上传但统计图无数据，可点击此按钮重新提取</text>
           </view>
         </view>
       </view>
@@ -348,6 +361,89 @@
         >
           刷新文件列表
         </button>
+      </view>
+    </view>
+
+    <!-- ========= 数据管理区域 ========= -->
+    <view class="data-management-section">
+      <view class="dm-section-header">
+        <text class="dm-section-title">📂 已上传数据管理</text>
+        <button class="dm-refresh-btn" size="mini" bindtap="loadUploadedDataList" disabled="{{dataListLoading}}">
+          {{dataListLoading ? '加载中...' : '刷新'}}
+        </button>
+      </view>
+
+      <!-- 数据概览 -->
+      <view class="dm-overview" wx:if="{{uploadedDataList.pngImages.length > 0 || uploadedDataList.carbonRecords.length > 0}}">
+        <view class="dm-overview-item">
+          <text class="dm-overview-number">{{uploadedDataList.pngImages.length}}</text>
+          <text class="dm-overview-label">PNG影像</text>
+        </view>
+        <view class="dm-overview-divider"></view>
+        <view class="dm-overview-item">
+          <text class="dm-overview-number">{{uploadedDataList.carbonRecords.length}}</text>
+          <text class="dm-overview-label">碳汇数据</text>
+        </view>
+      </view>
+
+      <!-- 无数据提示 -->
+      <view class="dm-no-data" wx:if="{{!dataListLoading && uploadedDataList.pngImages.length === 0 && uploadedDataList.carbonRecords.length === 0}}">
+        <text class="dm-no-data-icon">📭</text>
+        <text class="dm-no-data-text">暂无已上传的数据</text>
+        <text class="dm-no-data-hint">请通过上方上传功能添加TIF/PNG/JSON文件</text>
+      </view>
+
+      <!-- PNG影像列表 -->
+      <view class="dm-category" wx:if="{{uploadedDataList.pngImages.length > 0}}">
+        <view class="dm-category-header">
+          <text class="dm-category-title">🖼️ PNG影像</text>
+        </view>
+        <view class="dm-data-list">
+          <view class="dm-data-item" wx:for="{{uploadedDataList.pngImages}}" wx:key="index">
+            <view class="dm-data-item-info">
+              <text class="dm-data-item-label">{{item.year}}年{{item.month}}月</text>
+              <text class="dm-data-item-path" wx:if="{{item.cloudPath}}">{{item.cloudPath}}</text>
+            </view>
+            <button class="dm-delete-btn" size="mini" data-year="{{item.year}}" data-month="{{item.month}}" data-type="png" bindtap="onDeleteData">
+              删除
+            </button>
+          </view>
+        </view>
+      </view>
+
+      <!-- 碳汇数据列表 -->
+      <view class="dm-category" wx:if="{{uploadedDataList.carbonRecords.length > 0}}">
+        <view class="dm-category-header">
+          <text class="dm-category-title">📊 碳汇数据</text>
+        </view>
+        <view class="dm-data-list">
+          <view class="dm-data-item" wx:for="{{uploadedDataList.carbonRecords}}" wx:key="index">
+            <view class="dm-data-item-info">
+              <text class="dm-data-item-label">{{item.year}}年{{item.month}}月</text>
+              <text class="dm-data-item-detail">{{item.validCounties}}个县域</text>
+            </view>
+            <button class="dm-delete-btn" size="mini" data-year="{{item.year}}" data-month="{{item.month}}" data-type="carbon" bindtap="onDeleteData">
+              删除
+            </button>
+          </view>
+        </view>
+      </view>
+
+      <!-- 年份快捷删除 -->
+      <view class="dm-year-delete-section" wx:if="{{availableYears.length > 0}}">
+        <view class="dm-category-header">
+          <text class="dm-category-title">🗑️ 按年份批量删除</text>
+        </view>
+        <view class="dm-year-delete-grid">
+          <block wx:for="{{availableYears}}" wx:key="index">
+            <view class="dm-year-delete-item">
+              <text class="dm-year-delete-text">{{item}}年</text>
+              <button class="dm-year-delete-btn" size="mini" data-year="{{item}}" bindtap="onDeleteByYear">
+                删除整年
+              </button>
+            </view>
+          </block>
+        </view>
       </view>
     </view>
   </view>

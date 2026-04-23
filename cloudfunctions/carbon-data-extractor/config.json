@@ -4,9 +4,11 @@
       "cloud.getTempFileURL",
       "cloud.uploadFile",
       "cloud.downloadFile",
+      "cloud.deleteFile",
       "database.query",
       "database.update",
-      "database.add"
+      "database.add",
+      "database.delete"
     ]
   },
   "timeout": 300
