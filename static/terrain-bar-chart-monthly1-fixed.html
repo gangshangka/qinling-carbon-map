@@ -6831,10 +6831,11 @@ window.monthlyCarbonData = {
                     shadowOffsetY: 2
                 },
                 emphasis: {
-                    itemStyle: { areaColor: '#3a9ef9' }
+                    itemStyle: { areaColor: '#3a9ef9' },
+                    label: { show: false }  // 点击地形时不显示县区名称
                 },
                 roam: true,
-                label: { show: false }   // 如需显示标签改为 true
+                label: { show: false }
             }
         });
         console.log('✅ 地图配置更新成功');
@@ -7262,7 +7263,10 @@ window.monthlyCarbonData = {
                             borderWidth: 0.5
                         },
                         roam: true,
-                        label: { show: false }
+                        label: { show: false },
+                        emphasis: {
+                            label: { show: false }
+                        }
                     }
                 });
                 console.log('备用地图创建成功');
