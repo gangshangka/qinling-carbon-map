@@ -56,6 +56,13 @@ Page({
     autoPlayTimer: null,        // 定时器ID
     autoPlayInterval: 30,        // 切换过渡时间（毫秒），极短仅用于图片间切换过渡
     autoPlayDisplayTime: 504,    // 单张图片保持显示时间（毫秒），图片加载完成后保持展示的时间
+    autoPlaySpeedIndex: 1,      // 当前速度档位索引
+    autoPlaySpeeds: [           // 播放速度档位列表
+      { label: '0.5x', displayTime: 1008 },
+      { label: '1x', displayTime: 504 },
+      { label: '2x', displayTime: 252 },
+      { label: '4x', displayTime: 126 }
+    ],
     waitingForImageLoad: false, // 是否在等待图片加载完成（用于自动播放）
     // 占位图失败最短展示时间（毫秒），避免占位图停留过久
     placeholderMinDisplayTime: 200,
@@ -1116,9 +1123,9 @@ addImageToMap(year, month, imagePath) {
 
   // 从真实月度数据中筛选当前年份的数据，并触发图表绘制
   updateMonthlyData(year) {
-    // 如果年份与上次绘制的年份相同，跳过绘制（避免重复绘制）
-    if (this.data.lastDrawnYear === year) {
-      console.log(`年份 ${year} 图表已绘制，跳过重复绘制`);
+    // 如果年份与上次绘制的年份相同且数据已存在，直接重绘以更新月份阴影
+    if (this.data.lastDrawnYear === year && this.data.currentMonthlyData.length > 0) {
+      this.drawChartWithRetry(year, this.data.currentMonthlyData);
       return;
     }
     
@@ -1500,9 +1507,27 @@ addImageToMap(year, month, imagePath) {
         
         // 获取柱子颜色
         const barColor = this.getColorForValue(item.value);
+
+        // 当前选中月份的柱子加阴影强调
+        const isSelectedMonth = (item.month === this.data.currentMonth);
+        if (isSelectedMonth) {
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.35)';
+          ctx.shadowBlur = 8;
+          ctx.shadowOffsetX = 2;
+          ctx.shadowOffsetY = 2;
+        }
+
         ctx.fillStyle = barColor;
         // 绘制矩形柱子
         ctx.fillRect(x, y, barWidth, barHeight);
+
+        // 重置阴影
+        if (isSelectedMonth) {
+          ctx.shadowColor = 'transparent';
+          ctx.shadowBlur = 0;
+          ctx.shadowOffsetX = 0;
+          ctx.shadowOffsetY = 0;
+        }
         
         // 月份标签
         ctx.font = `${canvasHeight * 0.04}px sans-serif`;
@@ -1725,8 +1750,26 @@ addImageToMap(year, month, imagePath) {
       }
       
       const barColor = this.getColorForValue(item.value);
+
+      // 当前选中月份的柱子加阴影强调
+      const isSelectedMonth = (item.month === this.data.currentMonth);
+      if (isSelectedMonth) {
+        ctx.setShadowColor('rgba(0, 0, 0, 0.35)');
+        ctx.setShadowBlur(8);
+        ctx.setShadowOffsetX(2);
+        ctx.setShadowOffsetY(2);
+      }
+
       ctx.setFillStyle(barColor);
       ctx.fillRect(x, y, barWidth, barHeight);
+
+      // 重置阴影
+      if (isSelectedMonth) {
+        ctx.setShadowColor('transparent');
+        ctx.setShadowBlur(0);
+        ctx.setShadowOffsetX(0);
+        ctx.setShadowOffsetY(0);
+      }
       
       // 月份标签
       ctx.setFontSize(canvasHeight * 0.04);
@@ -2392,6 +2435,30 @@ addImageToMap(year, month, imagePath) {
     }
   },
 
+  // 切换播放速度
+  switchPlaySpeed() {
+    const speeds = this.data.autoPlaySpeeds;
+    let nextIndex = this.data.autoPlaySpeedIndex + 1;
+    if (nextIndex >= speeds.length) {
+      nextIndex = 0;
+    }
+    const newDisplayTime = speeds[nextIndex].displayTime;
+    this.setData({
+      autoPlaySpeedIndex: nextIndex,
+      autoPlayDisplayTime: newDisplayTime
+    });
+    // 如果正在播放，重启以应用新速度
+    if (this.data.autoPlay) {
+      this.stopAutoPlay();
+      this.startAutoPlay();
+    }
+    wx.showToast({
+      title: `播放速度: ${speeds[nextIndex].label}`,
+      icon: 'none',
+      duration: 800
+    });
+  },
+
   // 开始自动播放
   startAutoPlay() {
     // 预加载未完成时禁止播放
@@ -2588,6 +2655,10 @@ addImageToMap(year, month, imagePath) {
     
     // 加载对应月份的图片
     this.loadImage(this.data.currentYear, month);
+    
+    // 切换月份时重绘图表以更新阴影强调
+    this.setData({ lastDrawnYear: null });
+    this.updateMonthlyData(this.data.currentYear);
     
     // 控制台输出切换月份
     console.log('切换到月份:', month);

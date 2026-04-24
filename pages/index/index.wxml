@@ -75,6 +75,14 @@
           <text class="current-selection">{{currentYear}}年{{currentMonth}}月</text>
         </view>
         <view class="selection-header-right">
+          <!-- 播放速度切换按钮 -->
+          <button 
+            class="speed-btn {{autoPlay ? '' : 'disabled'}}" 
+            bindtap="switchPlaySpeed"
+            size="mini"
+          >
+            {{autoPlaySpeeds[autoPlaySpeedIndex].label}}
+          </button>
           <!-- 自动播放按钮，点击后触发 toggleAutoPlay 函数 -->
           <!-- class 中根据 autoPlay 是否为 true 来添加 active 样式（高亮） -->
           <button 

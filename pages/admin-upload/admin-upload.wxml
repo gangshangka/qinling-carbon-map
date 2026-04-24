@@ -1,61 +1,44 @@
-<!-- 管理员数据上传页面 -->
+<!-- 管理员数据上传页面 - 2级密码权限管理 -->
 <view class="admin-container">
-  <!-- 登录界面 -->
-  <view wx:if="{{!isLoggedIn}}" class="login-section">
+  <!-- 未登录：显示登录界面 -->
+  <view wx:if="{{authLevel === 0}}" class="login-section">
     <view class="login-card">
       <view class="login-header">
         <text class="login-title">管理员登录</text>
         <text class="login-subtitle">秦岭碳收支遥感监测系统</text>
       </view>
-      
       <view class="login-form">
         <view class="form-item">
           <text class="form-label">用户名</text>
-          <input 
-            class="form-input" 
-            type="text" 
-            placeholder="请输入用户名" 
-            value="{{username}}"
-            bindinput="onUsernameInput"
-          />
+          <input class="form-input" type="text" placeholder="请输入用户名" value="{{username}}" bindinput="onUsernameInput" />
         </view>
-        
         <view class="form-item">
           <text class="form-label">密码</text>
-          <input 
-            class="form-input" 
-            type="password" 
-            placeholder="请输入密码" 
-            value="{{password}}"
-            bindinput="onPasswordInput"
-          />
+          <input class="form-input" type="password" placeholder="请输入密码" value="{{password}}" bindinput="onPasswordInput" />
         </view>
-        
         <view wx:if="{{loginError}}" class="error-message">
           <text>{{loginError}}</text>
         </view>
-        
-        <button class="login-btn" type="primary" bindtap="handleLogin">
-          登录
-        </button>
-        
+        <button class="login-btn" type="primary" bindtap="handleLogin">登录</button>
         <view class="login-tip">
-          <text>默认账号: admin / admin123</text>
+          <text>1级账号: admin / admin123（查看权限）</text>
         </view>
       </view>
     </view>
   </view>
 
-  <!-- 管理界面 -->
+  <!-- 管理界面（1级或2级权限） -->
   <view wx:else class="management-section">
-    <!-- 顶部栏 -->
+    <!-- 顶部栏 - 显示权限级别 -->
     <view class="top-bar">
       <view class="user-info">
-        <text class="welcome-text">欢迎，管理员</text>
+        <text class="welcome-text">欢迎，{{authLevel === 2 ? '超级管理员' : '管理员'}}</text>
+        <text class="auth-badge auth-badge-{{authLevel}}">{{authLevel === 2 ? '2级-完整权限' : '1级-查看权限'}}</text>
       </view>
-      <button class="logout-btn" size="mini" bindtap="handleLogout">
-        退出登录
-      </button>
+      <view class="top-bar-right">
+        <button wx:if="{{authLevel === 1}}" class="upgrade-btn" size="mini" bindtap="verifyLevel2Tap">升级权限</button>
+        <button class="logout-btn" size="mini" bindtap="handleLogout">退出</button>
+      </view>
     </view>
 
     <!-- 年份月份选择 -->
@@ -66,36 +49,23 @@
       <view class="selection-row">
         <view class="picker-container">
           <text class="picker-label">年份:</text>
-          <picker 
-            class="picker" 
-            range="{{years}}" 
-            value="{{years.indexOf(selectedYear)}}" 
-            bindchange="bindYearChange"
-          >
+          <picker class="picker" range="{{years}}" value="{{years.indexOf(selectedYear)}}" bindchange="bindYearChange">
             <view class="picker-text">{{selectedYear}}年</view>
           </picker>
         </view>
-        
         <view class="picker-container">
           <text class="picker-label">月份:</text>
-          <picker 
-            class="picker" 
-            range="{{months}}" 
-            value="{{selectedMonth - 1}}" 
-            bindchange="bindMonthChange"
-          >
+          <picker class="picker" range="{{months}}" value="{{selectedMonth - 1}}" bindchange="bindMonthChange">
             <view class="picker-text">{{selectedMonth}}月</view>
           </picker>
         </view>
       </view>
     </view>
 
-
-
-    <!-- 文件上传区域 -->
-    <view class="upload-section">
+    <!-- 文件上传区域 - 仅2级权限可见 -->
+    <view wx:if="{{authLevel === 2}}" class="upload-section">
       <view class="section-title">
-        <text>文件上传</text>
+        <text>文件上传（需2级权限）</text>
       </view>
       
       <!-- PNG上传 -->
@@ -104,7 +74,6 @@
           <text class="upload-title">PNG图片上传</text>
           <text class="upload-subtitle">遥感影像图片 ({{selectedYear}}年{{selectedMonth}}月)</text>
         </view>
-        
         <view class="upload-content">
           <view class="upload-status">
             <text class="status-label">状态:</text>
@@ -112,34 +81,13 @@
               {{uploadStatus.png}}
             </text>
           </view>
-          
           <view class="upload-progress" wx:if="{{uploadStatus.png === '上传中...'}}">
-            <progress 
-              percent="{{uploadProgress.png}}" 
-              stroke-width="6" 
-              active-color="#2E7D32"
-            />
+            <progress percent="{{uploadProgress.png}}" stroke-width="6" active-color="#2E7D32" />
             <text class="progress-text">{{uploadProgress.png}}%</text>
           </view>
-          
           <view class="upload-buttons">
-            <button 
-              class="upload-btn" 
-              type="primary" 
-              size="mini" 
-              bindtap="choosePngFile"
-            >
-              选择PNG文件
-            </button>
-            <button 
-              class="upload-btn" 
-              type="primary" 
-              size="mini" 
-              bindtap="uploadPngFile"
-              disabled="{{!selectedPngFile || uploadStatus.png === '上传中...'}}"
-            >
-              上传PNG
-            </button>
+            <button class="upload-btn" type="primary" size="mini" bindtap="choosePngFile">选择PNG文件</button>
+            <button class="upload-btn" type="primary" size="mini" bindtap="uploadPngFile" disabled="{{!selectedPngFile || uploadStatus.png === '上传中...'}}">上传PNG</button>
           </view>
         </view>
       </view>
@@ -150,71 +98,31 @@
           <text class="upload-title">TIF文件上传</text>
           <text class="upload-subtitle">遥感影像原始数据 ({{selectedYear}}年{{selectedMonth}}月)</text>
         </view>
-        
         <view class="upload-content">
-          <!-- 文件名显示 -->
           <view class="file-name-display" wx:if="{{selectedTifFileName}}">
             <text class="file-name-label">已选择文件:</text>
-            <text class="file-name-value {{isTifFileNameValid ? 'valid' : 'invalid'}}">
-              {{selectedTifFileName}}
-            </text>
+            <text class="file-name-value {{isTifFileNameValid ? 'valid' : 'invalid'}}">{{selectedTifFileName}}</text>
             <text class="file-name-status {{isTifFileNameValid ? 'status-valid' : 'status-invalid'}}">
-              {{isTifFileNameValid ? '✓ 格式正确' : '✗ 格式错误'}}
+              {{isTifFileNameValid ? '格式正确' : '格式错误'}}
             </text>
           </view>
-          
           <view class="upload-status">
             <text class="status-label">状态:</text>
-            <text class="status-value {{uploadStatus.tif.indexOf('处理完成') !== -1 ? 'success' : uploadStatus.tif.indexOf('失败') !== -1 ? 'error' : ''}}">
-              {{uploadStatus.tif}}
-            </text>
+            <text class="status-value">{{uploadStatus.tif}}</text>
           </view>
-          
           <view class="upload-progress" wx:if="{{uploadStatus.tif.indexOf('处理') !== -1 && uploadStatus.tif.indexOf('完成') === -1}}">
-            <progress 
-              percent="{{uploadProgress.tif}}" 
-              stroke-width="6" 
-              active-color="#2E7D32"
-            />
+            <progress percent="{{uploadProgress.tif}}" stroke-width="6" active-color="#2E7D32" />
             <text class="progress-text">{{uploadProgress.tif}}%</text>
           </view>
-          
           <view class="upload-buttons">
-            <button 
-              class="upload-btn" 
-              type="primary" 
-              size="mini" 
-              bindtap="chooseTifFile"
-            >
-              选择TIF文件
-            </button>
-            <button 
-              class="upload-btn" 
-              type="primary" 
-              size="mini" 
-              bindtap="uploadTifFile"
-              disabled="{{!selectedTifFile || uploadStatus.tif.indexOf('处理') !== -1 && uploadStatus.tif.indexOf('完成') === -1 || !isTifFileNameValid}}"
-            >
-              处理TIF
-            </button>
+            <button class="upload-btn" type="primary" size="mini" bindtap="chooseTifFile">选择TIF文件</button>
+            <button class="upload-btn" type="primary" size="mini" bindtap="uploadTifFile" disabled="{{!selectedTifFile || !isTifFileNameValid}}">处理TIF</button>
           </view>
           <view class="upload-tip">
-            <text class="tip-text"><text class="tip-important">重要：</text>TIF文件名必须符合格式：<text class="tip-code">nep20xxxx.tif</text> 或 <text class="tip-code">nep20xxxx.tiff</text></text>
-            <text class="tip-example">示例：nep202301.tif（表示2023年1月）、nep202212.tiff（表示2022年12月）</text>
-            <text class="tip-process">文件将使用云函数处理，生成PNG图片并提取县域碳汇数据，可在统计图表中查看。</text>
+            <text class="tip-text">文件名格式：nep20xxxx.tif（如nep202407.tif）</text>
           </view>
-          
-          <!-- 手动提取碳汇数据按钮（用于重新提取或云函数失败后重试） -->
           <view class="extract-actions">
-            <button 
-              class="upload-btn extract-btn" 
-              type="default" 
-              size="mini" 
-              bindtap="manualExtractCarbonData"
-            >
-              重新提取碳汇数据
-            </button>
-            <text class="extract-hint">如TIF已上传但统计图无数据，可点击此按钮重新提取</text>
+            <button class="upload-btn extract-btn" type="default" size="mini" bindtap="manualExtractCarbonData">重新提取碳汇数据</button>
           </view>
         </view>
       </view>
@@ -225,75 +133,39 @@
           <text class="upload-title">JSON数据上传</text>
           <text class="upload-subtitle">碳汇统计数据 ({{selectedYear}}年{{selectedMonth}}月)</text>
         </view>
-        
         <view class="upload-content">
           <view class="upload-status">
             <text class="status-label">状态:</text>
-            <text class="status-value {{uploadStatus.json === '上传成功' ? 'success' : uploadStatus.json === '上传失败' ? 'error' : ''}}">
-              {{uploadStatus.json}}
-            </text>
+            <text class="status-value {{uploadStatus.json === '上传成功' ? 'success' : uploadStatus.json === '上传失败' ? 'error' : ''}}">{{uploadStatus.json}}</text>
           </view>
-          
-          <view class="upload-progress" wx:if="{{uploadStatus.json === '上传中...'}}">
-            <progress 
-              percent="{{uploadProgress.json}}" 
-              stroke-width="6" 
-              active-color="#2E7D32"
-            />
-            <text class="progress-text">{{uploadProgress.json}}%</text>
-          </view>
-          
           <view class="upload-buttons">
-            <button 
-              class="upload-btn" 
-              type="primary" 
-              size="mini" 
-              bindtap="chooseJsonFile"
-            >
-              选择JSON文件
-            </button>
-            <button 
-              class="upload-btn" 
-              type="primary" 
-              size="mini" 
-              bindtap="uploadJsonFile"
-              disabled="{{!selectedJsonFile || uploadStatus.json === '上传中...'}}"
-            >
-              上传JSON
-            </button>
+            <button class="upload-btn" type="primary" size="mini" bindtap="chooseJsonFile">选择JSON文件</button>
+            <button class="upload-btn" type="primary" size="mini" bindtap="uploadJsonFile" disabled="{{!selectedJsonFile || uploadStatus.json === '上传中...'}}">上传JSON</button>
           </view>
         </view>
       </view>
 
       <!-- 批量上传 -->
       <view class="batch-upload">
-        <button 
-          class="batch-upload-btn" 
-          type="warn" 
-          bindtap="batchUpload"
-          disabled="{{!selectedPngFile || !selectedJsonFile}}"
-        >
-          批量上传 (PNG + JSON)
-        </button>
+        <button class="batch-upload-btn" type="warn" bindtap="batchUpload" disabled="{{!selectedPngFile || !selectedJsonFile}}">批量上传 (PNG + JSON)</button>
+      </view>
+    </view>
+
+    <!-- 1级权限提示 -->
+    <view wx:else class="permission-hint-section">
+      <view class="permission-hint-card">
+        <text class="hint-icon">🔒</text>
+        <text class="hint-text">上传、删除、同步操作需要2级权限</text>
+        <button class="upgrade-btn-inline" size="mini" bindtap="verifyLevel2Tap">输入2级密码解锁</button>
       </view>
     </view>
 
     <!-- 上传记录 -->
     <view class="records-section">
       <view class="section-header">
-        <view class="section-title">
-          <text>上传记录</text>
-        </view>
-        <button 
-          class="clear-btn" 
-          size="mini" 
-          bindtap="clearUploadRecords"
-          disabled="{{uploadRecords.length === 0}}"
-        >
-          清空记录
-        </button>
+        <view class="section-title"><text>上传记录</text></view>
+        <button wx:if="{{authLevel === 2}}" class="clear-btn" size="mini" bindtap="clearUploadRecords" disabled="{{uploadRecords.length === 0}}">清空记录</button>
       </view>
-      
       <view class="records-list" wx:if="{{uploadRecords.length > 0}}">
         <block wx:for="{{uploadRecords}}" wx:key="index">
           <view class="record-item">
@@ -305,72 +177,34 @@
               <text class="record-filename">{{item.fileName}}</text>
               <text class="record-yearmonth">{{item.year}}年{{item.month}}月</text>
             </view>
-            <view class="record-id">
-              <text class="record-id-text">ID: {{item.fileId.substring(0, 8)}}...</text>
-            </view>
           </view>
         </block>
       </view>
-      
       <view class="empty-records" wx:else>
         <text class="empty-text">暂无上传记录</text>
       </view>
     </view>
 
-    <!-- 云存储文件管理 -->
-    <view class="cloud-section">
-      <view class="section-title">
-        <text>云存储文件管理</text>
-      </view>
-      
-      <view class="cloud-files" wx:if="{{cloudFiles.length > 0}}">
-        <block wx:for="{{cloudFiles}}" wx:key="fileID">
-          <view class="cloud-file-item">
-            <view class="file-info">
-              <text class="file-name">{{item.fileName}}</text>
-              <text class="file-size">{{item.formattedSize}}</text>
-            </view>
-            <view class="file-actions">
-              <button 
-                class="file-action-btn" 
-                size="mini" 
-                bindtap="viewFileDetail" 
-                data-fileid="{{item.fileID}}"
-              >
-                详情
-              </button>
-              <button 
-                class="file-action-btn delete" 
-                size="mini" 
-                bindtap="deleteCloudFile" 
-                data-fileid="{{item.fileID}}"
-              >
-                删除
-              </button>
-            </view>
-          </view>
-        </block>
-      </view>
-      
-      <view class="empty-cloud" wx:else>
-        <text class="empty-text">云存储暂无文件</text>
-        <button 
-          class="refresh-btn" 
-          size="mini" 
-          bindtap="loadCloudFiles"
-        >
-          刷新文件列表
-        </button>
-      </view>
-    </view>
-
-    <!-- ========= 数据管理区域 ========= -->
+    <!-- 数据管理区域 -->
     <view class="data-management-section">
       <view class="dm-section-header">
-        <text class="dm-section-title">📂 已上传数据管理</text>
+        <text class="dm-section-title">已上传数据管理</text>
         <button class="dm-refresh-btn" size="mini" bindtap="loadUploadedDataList" disabled="{{dataListLoading}}">
           {{dataListLoading ? '加载中...' : '刷新'}}
         </button>
+      </view>
+
+      <!-- 同步到网页按钮 - 仅2级权限 -->
+      <view wx:if="{{authLevel === 2}}" class="sync-to-web-section">
+        <view class="sync-token-row">
+          <text class="sync-token-label">GitHub Token:</text>
+          <input class="sync-token-input" type="text" placeholder="输入GitHub Personal Access Token" value="{{githubToken}}" bindinput="onGithubTokenInput" password="true" />
+        </view>
+        <button class="upload-btn sync-web-btn" type="primary" bindtap="syncToWeb" disabled="{{syncToWebLoading}}">
+          {{syncToWebLoading ? '同步中...' : '同步数据到网页'}}
+        </button>
+        <text class="sync-web-hint">将云数据库中的碳汇数据与GitHub Pages现有数据合并后同步</text>
+        <text class="sync-web-result" wx:if="{{syncToWebResult}}">{{syncToWebResult}}</text>
       </view>
 
       <!-- 数据概览 -->
@@ -388,15 +222,13 @@
 
       <!-- 无数据提示 -->
       <view class="dm-no-data" wx:if="{{!dataListLoading && uploadedDataList.pngImages.length === 0 && uploadedDataList.carbonRecords.length === 0}}">
-        <text class="dm-no-data-icon">📭</text>
         <text class="dm-no-data-text">暂无已上传的数据</text>
-        <text class="dm-no-data-hint">请通过上方上传功能添加TIF/PNG/JSON文件</text>
       </view>
 
       <!-- PNG影像列表 -->
       <view class="dm-category" wx:if="{{uploadedDataList.pngImages.length > 0}}">
         <view class="dm-category-header">
-          <text class="dm-category-title">🖼️ PNG影像</text>
+          <text class="dm-category-title">PNG影像</text>
         </view>
         <view class="dm-data-list">
           <view class="dm-data-item" wx:for="{{uploadedDataList.pngImages}}" wx:key="index">
@@ -404,9 +236,7 @@
               <text class="dm-data-item-label">{{item.year}}年{{item.month}}月</text>
               <text class="dm-data-item-path" wx:if="{{item.cloudPath}}">{{item.cloudPath}}</text>
             </view>
-            <button class="dm-delete-btn" size="mini" data-year="{{item.year}}" data-month="{{item.month}}" data-type="png" bindtap="onDeleteData">
-              删除
-            </button>
+            <button wx:if="{{authLevel === 2}}" class="dm-delete-btn" size="mini" data-year="{{item.year}}" data-month="{{item.month}}" data-type="png" bindtap="onDeleteData">删除</button>
           </view>
         </view>
       </view>
@@ -414,7 +244,7 @@
       <!-- 碳汇数据列表 -->
       <view class="dm-category" wx:if="{{uploadedDataList.carbonRecords.length > 0}}">
         <view class="dm-category-header">
-          <text class="dm-category-title">📊 碳汇数据</text>
+          <text class="dm-category-title">碳汇数据</text>
         </view>
         <view class="dm-data-list">
           <view class="dm-data-item" wx:for="{{uploadedDataList.carbonRecords}}" wx:key="index">
@@ -422,25 +252,21 @@
               <text class="dm-data-item-label">{{item.year}}年{{item.month}}月</text>
               <text class="dm-data-item-detail">{{item.validCounties}}个县域</text>
             </view>
-            <button class="dm-delete-btn" size="mini" data-year="{{item.year}}" data-month="{{item.month}}" data-type="carbon" bindtap="onDeleteData">
-              删除
-            </button>
+            <button wx:if="{{authLevel === 2}}" class="dm-delete-btn" size="mini" data-year="{{item.year}}" data-month="{{item.month}}" data-type="carbon" bindtap="onDeleteData">删除</button>
           </view>
         </view>
       </view>
 
-      <!-- 年份快捷删除 -->
-      <view class="dm-year-delete-section" wx:if="{{availableYears.length > 0}}">
+      <!-- 按年份批量删除 - 仅2级权限 -->
+      <view wx:if="{{authLevel === 2 && availableYears.length > 0}}" class="dm-year-delete-section">
         <view class="dm-category-header">
-          <text class="dm-category-title">🗑️ 按年份批量删除</text>
+          <text class="dm-category-title">按年份批量删除</text>
         </view>
         <view class="dm-year-delete-grid">
           <block wx:for="{{availableYears}}" wx:key="index">
             <view class="dm-year-delete-item">
               <text class="dm-year-delete-text">{{item}}年</text>
-              <button class="dm-year-delete-btn" size="mini" data-year="{{item}}" bindtap="onDeleteByYear">
-                删除整年
-              </button>
+              <button class="dm-year-delete-btn" size="mini" data-year="{{item}}" bindtap="onDeleteByYear">删除整年</button>
             </view>
           </block>
         </view>

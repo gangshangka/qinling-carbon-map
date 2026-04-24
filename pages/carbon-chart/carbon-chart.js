@@ -740,18 +740,24 @@ Page({
         color: value >= 0 ? new echarts.graphic.LinearGradient(
           0, 0, 0, 1,
           [
-            { offset: 0, color: '#52c41a' },
-            { offset: 0.5, color: '#4CAF50' },
-            { offset: 1, color: '#2E7D32' }
+            { offset: 0, color: '#81C784' },
+            { offset: 0.4, color: '#4CAF50' },
+            { offset: 0.7, color: '#388E3C' },
+            { offset: 1, color: '#1B5E20' }
           ]
         ) : new echarts.graphic.LinearGradient(
           0, 0, 0, 1,
           [
-            { offset: 0, color: '#ff7875' },
-            { offset: 0.5, color: '#ff4d4f' },
-            { offset: 1, color: '#cf1322' }
+            { offset: 0, color: '#FF8A80' },
+            { offset: 0.4, color: '#FF5252' },
+            { offset: 0.7, color: '#D32F2F' },
+            { offset: 1, color: '#B71C1C' }
           ]
-        )
+        ),
+        borderRadius: [4, 4, 0, 0],
+        shadowBlur: value >= 0 ? 4 : 3,
+        shadowColor: value >= 0 ? 'rgba(76, 175, 80, 0.25)' : 'rgba(255, 82, 82, 0.25)',
+        shadowOffsetY: 2
       }
     }));
 
@@ -831,9 +837,9 @@ Page({
         emphasis: {
           focus: 'none',
           itemStyle: {
-            shadowBlur: 10,
+            shadowBlur: 0,
             shadowOffsetX: 0,
-            shadowColor: 'rgba(0, 0, 0, 0.5)'
+            shadowColor: 'transparent'
           }
         },
         blur: {
@@ -920,16 +926,29 @@ Page({
     const barData = values.map((value, _index) => ({
       value: value,
       itemStyle: {
-        color: ranks[_index] === 1 ? '#FFD700' : // 第一名金色
-               ranks[_index] === 2 ? '#C0C0C0' : // 第二名银色
-               ranks[_index] === 3 ? '#CD7F32' : new echarts.graphic.LinearGradient(
-                 0, 0, 0, 1,
+        color: ranks[_index] === 1 ? new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+            { offset: 0, color: '#FFD54F' },
+            { offset: 1, color: '#FFC107' }
+          ]) : // 第一名金色
+               ranks[_index] === 2 ? new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+            { offset: 0, color: '#E0E0E0' },
+            { offset: 1, color: '#BDBDBD' }
+          ]) : // 第二名银色
+               ranks[_index] === 3 ? new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+            { offset: 0, color: '#D7A86E' },
+            { offset: 1, color: '#CD7F32' }
+          ]) : new echarts.graphic.LinearGradient(
+                 0, 0, 1, 0,
                  [
-                   { offset: 0, color: '#52c41a' },
+                   { offset: 0, color: '#81C784' },
                    { offset: 0.5, color: '#4CAF50' },
                    { offset: 1, color: '#2E7D32' }
                  ]
-               ) // 其他县区用绿色渐变
+               ), // 其他县区用绿色渐变
+        borderRadius: [0, 4, 4, 0],
+        shadowBlur: ranks[_index] <= 3 ? 6 : 3,
+        shadowColor: ranks[_index] <= 3 ? 'rgba(255, 193, 7, 0.3)' : 'rgba(76, 175, 80, 0.2)',
+        shadowOffsetX: 2
       }
     }));
 
@@ -1007,9 +1026,9 @@ Page({
         emphasis: {
           focus: 'none',
           itemStyle: {
-            shadowBlur: 10,
+            shadowBlur: 0,
             shadowOffsetX: 0,
-            shadowColor: 'rgba(0, 0, 0, 0.5)'
+            shadowColor: 'transparent'
           }
         },
         blur: {
@@ -1075,18 +1094,24 @@ Page({
                value >= 0 ? new echarts.graphic.LinearGradient(
           0, 0, 0, 1,
           [
-            { offset: 0, color: '#52c41a' },
-            { offset: 0.5, color: '#4CAF50' },
-            { offset: 1, color: '#2E7D32' }
+            { offset: 0, color: '#81C784' },
+            { offset: 0.4, color: '#4CAF50' },
+            { offset: 0.7, color: '#388E3C' },
+            { offset: 1, color: '#1B5E20' }
           ]
         ) : new echarts.graphic.LinearGradient(
           0, 0, 0, 1,
           [
-            { offset: 0, color: '#ff7875' },
-            { offset: 0.5, color: '#ff4d4f' },
-            { offset: 1, color: '#cf1322' }
+            { offset: 0, color: '#FF8A80' },
+            { offset: 0.4, color: '#FF5252' },
+            { offset: 0.7, color: '#D32F2F' },
+            { offset: 1, color: '#B71C1C' }
           ]
-        )
+        ),
+        borderRadius: [4, 4, 0, 0],
+        shadowBlur: value > 0 ? 4 : (value < 0 ? 3 : 0),
+        shadowColor: value >= 0 ? 'rgba(76, 175, 80, 0.25)' : 'rgba(255, 82, 82, 0.25)',
+        shadowOffsetY: 2
       }
     }));
 
@@ -1174,9 +1199,9 @@ Page({
         emphasis: {
           focus: 'none',
           itemStyle: {
-            shadowBlur: 10,
+            shadowBlur: 0,
             shadowOffsetX: 0,
-            shadowColor: 'rgba(0, 0, 0, 0.5)'
+            shadowColor: 'transparent'
           }
         },
         blur: {

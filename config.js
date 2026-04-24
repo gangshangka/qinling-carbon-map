@@ -104,7 +104,7 @@ const config = {
     // 数据年份范围
     yearRange: {
       min: 2012,
-      max: 2022
+      max: 2024
     },
     
     // 月份范围

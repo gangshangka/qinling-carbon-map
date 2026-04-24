@@ -1,5 +1,78 @@
 const cloud = require('wx-server-sdk')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
+const https = require('https')
+const http = require('http')
+
+// HTTPS请求工具函数（绕过SSL验证）
+function httpsRequest(options, body) {
+  return new Promise((resolve, reject) => {
+    const req = https.request({
+      ...options,
+      rejectUnauthorized: false,
+      secureProtocol: 'TLSv1_2_method'
+    }, (res) => {
+      let data = ''
+      res.on('data', chunk => data += chunk)
+      res.on('end', () => {
+        try {
+          resolve({ statusCode: res.statusCode, data: JSON.parse(data), raw: data })
+        } catch (e) {
+          resolve({ statusCode: res.statusCode, data: data, raw: data })
+        }
+      })
+    })
+    req.on('error', reject)
+    if (body) req.write(body)
+    req.end()
+  })
+}
+
+// 推送文件到GitHub
+async function pushToGithub(token, repo, filePath, content, message) {
+  const base64Content = Buffer.from(content).toString('base64')
+  
+  // 获取当前文件SHA
+  let sha = ''
+  try {
+    const getRes = await httpsRequest({
+      hostname: 'api.github.com',
+      path: `/repos/${repo}/contents/${filePath}`,
+      method: 'GET',
+      headers: {
+        'Authorization': `token ${token}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'User-Agent': 'qinling-carbon-app'
+      }
+    })
+    if (getRes.statusCode === 200 && getRes.data && getRes.data.sha) {
+      sha = getRes.data.sha
+    }
+  } catch (e) {
+    console.log('获取SHA失败(可能是新文件):', e.message)
+  }
+
+  // 推送更新
+  const putBody = JSON.stringify({
+    message: message,
+    content: base64Content,
+    sha: sha || undefined
+  })
+  
+  const putRes = await httpsRequest({
+    hostname: 'api.github.com',
+    path: `/repos/${repo}/contents/${filePath}`,
+    method: 'PUT',
+    headers: {
+      'Authorization': `token ${token}`,
+      'Accept': 'application/vnd.github.v3+json',
+      'User-Agent': 'qinling-carbon-app',
+      'Content-Type': 'application/json',
+      'Content-Length': Buffer.byteLength(putBody)
+    }
+  }, putBody)
+  
+  return putRes
+}
 
 // 配置
 const CONFIG = {
@@ -1065,8 +1138,156 @@ exports.main = async (event, context) => {
         }
       }
 
+      case 'sync_to_web': {
+        // 从云数据库读取所有碳汇数据，与GitHub Pages现有数据合并后推送
+        console.log('开始同步数据到网页...')
+        const webDb = cloud.database()
+
+        // 1. 先从GitHub Pages获取现有的carbonData2.json作为基础数据（保留历史数据）
+        let baseData = {}
+        const githubToken = event.githubToken || ''
+        if (githubToken) {
+          try {
+            console.log('获取GitHub Pages现有数据...')
+            const getRes = await httpsRequest({
+              hostname: 'api.github.com',
+              path: '/repos/gangshangka/qinling-carbon-3d/contents/carbonData2.json',
+              method: 'GET',
+              headers: {
+                'Authorization': `token ${githubToken}`,
+                'Accept': 'application/vnd.github.v3+json',
+                'User-Agent': 'qinling-carbon-app'
+              }
+            })
+            if (getRes.statusCode === 200 && getRes.data && getRes.data.content) {
+              const decoded = Buffer.from(getRes.data.content, 'base64').toString('utf-8')
+              baseData = JSON.parse(decoded)
+              console.log(`获取到现有数据，包含年份: ${Object.keys(baseData).sort().join(', ')}`)
+            } else {
+              console.log('GitHub上无现有数据或获取失败，将从空数据开始')
+            }
+          } catch (fetchErr) {
+            console.log('获取GitHub现有数据失败，将从空数据开始:', fetchErr.message)
+          }
+        } else {
+          console.log('未提供GitHub Token，无法获取现有数据')
+          // 尝试从云存储获取现有数据
+          try {
+            const downloadUrl = 'https://cloudbase-8gdof83j7fdc6094.tcb.qcloud.la/qinling-carbon-data/web/carbonData2.json'
+            console.log('尝试从云存储获取现有数据...')
+            const cloudRes = await httpsRequest({
+              hostname: 'cloudbase-8gdof83j7fdc6094.tcb.qcloud.la',
+              path: '/qinling-carbon-data/web/carbonData2.json',
+              method: 'GET',
+              headers: { 'User-Agent': 'qinling-carbon-app' }
+            })
+            if (cloudRes.statusCode === 200 && cloudRes.data && typeof cloudRes.data === 'object') {
+              baseData = cloudRes.data
+              console.log(`从云存储获取到数据，包含年份: ${Object.keys(baseData).sort().join(', ')}`)
+            }
+          } catch (cloudFetchErr) {
+            console.log('从云存储获取现有数据失败:', cloudFetchErr.message)
+          }
+        }
+
+        // 2. 读取云数据库中的 carbon_data 记录
+        let allRecords = []
+        let webBatch = 0
+        const webLimit = 100
+        while (true) {
+          const webResult = await webDb.collection('carbon_data').skip(webBatch * webLimit).limit(webLimit).get()
+          allRecords = allRecords.concat(webResult.data || [])
+          if ((webResult.data || []).length < webLimit) break
+          webBatch++
+          if (webBatch >= 20) break
+        }
+        console.log(`读取到 ${allRecords.length} 条云数据库碳汇数据记录`)
+
+        // 3. 在基础数据上合并云数据库的新数据（云数据库数据优先覆盖）
+        const webData = { ...baseData }
+        for (const record of allRecords) {
+          const yearStr = String(record.year)
+          const monthStr = String(record.month)
+          const countyData = record.countyData || {}
+
+          if (!webData[yearStr]) webData[yearStr] = {}
+          webData[yearStr][monthStr] = countyData
+        }
+        console.log(`合并后数据包含年份: ${Object.keys(webData).sort().join(', ')}`)
+
+        const webDataStr = JSON.stringify(webData)
+
+        // 1. 上传到云存储（公开可访问，供网页直接加载）
+        let cloudStorageUploaded = false
+        let cloudFileUrl = ''
+        try {
+          const cloudPath = 'qinling-carbon-data/web/carbonData2.json'
+          const uploadResult = await cloud.uploadFile({
+            cloudPath: cloudPath,
+            fileContent: Buffer.from(webDataStr)
+          })
+          console.log('云存储上传成功:', uploadResult.fileID)
+
+          // 获取下载URL
+          try {
+            const urlResult = await cloud.getTempFileURL({
+              fileList: [uploadResult.fileID]
+            })
+            if (urlResult.fileList && urlResult.fileList[0] && urlResult.fileList[0].tempFileURL) {
+              cloudFileUrl = urlResult.fileList[0].tempFileURL
+              console.log('云存储文件URL:', cloudFileUrl)
+            }
+          } catch (urlErr) {
+            console.log('获取云存储URL失败:', urlErr.message)
+          }
+
+          cloudStorageUploaded = true
+        } catch (uploadErr) {
+          console.error('云存储上传失败:', uploadErr.message)
+        }
+
+        // 2. 推送到GitHub Pages
+        let githubResult = null
+        if (githubToken) {
+          try {
+            console.log('开始推送到GitHub...')
+            githubResult = await pushToGithub(
+              githubToken,
+              'gangshangka/qinling-carbon-3d',
+              'carbonData2.json',
+              webDataStr,
+              `update: 同步碳汇数据 ${new Date().toLocaleString('zh-CN')}`
+            )
+            console.log('GitHub推送结果:', githubResult.statusCode)
+          } catch (ghErr) {
+            console.error('GitHub推送异常:', ghErr.message)
+            githubResult = { statusCode: 0, error: ghErr.message }
+          }
+        } else {
+          console.log('未提供GitHub Token，跳过推送')
+          githubResult = { statusCode: 0, skipped: true }
+        }
+
+        const pushed = githubResult && (githubResult.statusCode === 200 || githubResult.statusCode === 201)
+
+        return {
+          success: true,
+          data: {
+            message: pushed ? '数据已同步到GitHub Pages网页' : (githubResult.skipped ? '未提供Token' : 'GitHub推送失败'),
+            baseDataYears: Object.keys(baseData).sort(),
+            cloudDbRecordCount: allRecords.length,
+            mergedYears: Object.keys(webData).sort(),
+            githubPushed: pushed,
+            githubStatus: githubResult ? githubResult.statusCode : 0,
+            githubError: githubResult && githubResult.data && githubResult.data.message ? githubResult.data.message : '',
+            cloudStorageUploaded: cloudStorageUploaded,
+            cloudFileUrl: cloudFileUrl
+          }
+        }
+      }
+
       default:
-        throw new Error(`不支持的模式: ${mode}，支持的模式: extract, list, delete, summary`)
+        throw new Error(`不支持的模式: ${mode}，支持的模式: extract, list, delete, summary, sync_to_web`)
     }
   } catch (error) {
     console.error('处理失败:', error)

@@ -21,6 +21,7 @@
   border-radius: 16rpx;
   box-shadow: 0 4rpx 24rpx rgba(0, 0, 0, 0.08);
   padding: 60rpx 40rpx;
+  box-sizing: border-box;
 }
 
 .login-header {
@@ -66,6 +67,7 @@
   padding: 0 24rpx;
   font-size: 28rpx;
   background-color: #fff;
+  box-sizing: border-box;
 }
 
 .form-input:focus {
@@ -927,4 +929,147 @@
   font-size: 20rpx;
   color: #999;
   text-align: center;
+}
+
+/* 同步到网页 */
+.sync-to-web-section {
+  margin: 16rpx 0;
+  padding: 20rpx;
+  background: rgba(46, 125, 50, 0.08);
+  border-radius: 12rpx;
+  border: 1rpx solid rgba(46, 125, 50, 0.2);
+  text-align: center;
+}
+
+.sync-token-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16rpx;
+  padding: 0 10rpx;
+}
+
+.sync-token-label {
+  font-size: 22rpx;
+  color: #555;
+  white-space: nowrap;
+  margin-right: 8rpx;
+}
+
+.sync-token-input {
+  flex: 1;
+  font-size: 22rpx;
+  padding: 8rpx 12rpx;
+  border: 1rpx solid #ccc;
+  border-radius: 8rpx;
+  background: #fff;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.sync-web-btn {
+  margin-bottom: 8rpx;
+  background: linear-gradient(135deg, #2E7D32, #4CAF50) !important;
+  color: white !important;
+  font-size: 28rpx;
+  border-radius: 12rpx;
+}
+
+.sync-web-hint {
+  display: block;
+  font-size: 20rpx;
+  color: #888;
+  margin-top: 4rpx;
+}
+
+.sync-web-result {
+  display: block;
+  font-size: 22rpx;
+  color: #4CAF50;
+  margin-top: 8rpx;
+  font-weight: 500;
+}
+
+/* 2级密码权限样式 */
+.auth-level-badge {
+  text-align: center;
+  margin-bottom: 30rpx;
+}
+.badge-level1 {
+  display: inline-block;
+  background: #FFF3E0;
+  color: #E65100;
+  padding: 8rpx 24rpx;
+  border-radius: 20rpx;
+  font-size: 26rpx;
+  font-weight: 500;
+}
+.level2-btn {
+  background: linear-gradient(135deg, #FF6F00, #FF8F00) !important;
+}
+.level2-actions {
+  display: flex;
+  justify-content: center;
+  gap: 20rpx;
+  margin-top: 30rpx;
+}
+.skip-btn {
+  background: #f5f5f5;
+  color: #666;
+  border: 2rpx solid #ddd;
+}
+
+/* 权限徽标 */
+.auth-badge {
+  display: inline-block;
+  padding: 4rpx 16rpx;
+  border-radius: 12rpx;
+  font-size: 22rpx;
+  margin-left: 16rpx;
+  vertical-align: middle;
+}
+.auth-badge-1 {
+  background: #FFF3E0;
+  color: #E65100;
+}
+.auth-badge-2 {
+  background: #E8F5E9;
+  color: #2E7D32;
+}
+.top-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+.upgrade-btn {
+  background: #FF8F00 !important;
+  color: white !important;
+  border: none;
+}
+
+/* 权限提示卡片 */
+.permission-hint-section {
+  margin-bottom: 30rpx;
+}
+.permission-hint-card {
+  background: #FFF8E1;
+  border: 2rpx solid #FFE082;
+  border-radius: 16rpx;
+  padding: 40rpx 30rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16rpx;
+}
+.hint-icon {
+  font-size: 48rpx;
+}
+.hint-text {
+  font-size: 28rpx;
+  color: #E65100;
+}
+.upgrade-btn-inline {
+  background: #FF8F00 !important;
+  color: white !important;
+  border: none;
+  margin-top: 10rpx;
 }
