@@ -6830,9 +6830,24 @@ window.monthlyCarbonData = {
                     shadowOffsetX: 2,
                     shadowOffsetY: 2
                 },
+                tooltip: {
+                    show: true,
+                    formatter: function(params) {
+                        const countyName = params.name;
+                        const yearData = monthlyCarbonData[currentYear];
+                        const monthData = yearData ? yearData[currentMonth] : null;
+                        let carbonValue = '无数据';
+                        if (monthData && monthData[countyName] !== undefined) {
+                            carbonValue = monthData[countyName].toFixed(2);
+                        }
+                        return `<strong>${countyName}</strong><br/>碳汇值: <b>${carbonValue}</b> 单位`;
+                    },
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    textStyle: { color: '#fff' }
+                },
                 emphasis: {
                     itemStyle: { areaColor: '#3a9ef9' },
-                    label: { show: false }  // 点击地形时不显示县区名称
+                    label: { show: false }
                 },
                 roam: true,
                 label: { show: false }
@@ -7264,6 +7279,21 @@ window.monthlyCarbonData = {
                         },
                         roam: true,
                         label: { show: false },
+                        tooltip: {
+                            show: true,
+                            formatter: function(params) {
+                                const countyName = params.name;
+                                const yearData = monthlyCarbonData[currentYear];
+                                const monthData = yearData ? yearData[currentMonth] : null;
+                                let carbonValue = '无数据';
+                                if (monthData && monthData[countyName] !== undefined) {
+                                    carbonValue = monthData[countyName].toFixed(2);
+                                }
+                                return `<strong>${countyName}</strong><br/>碳汇值: <b>${carbonValue}</b> 单位`;
+                            },
+                            backgroundColor: 'rgba(0,0,0,0.8)',
+                            textStyle: { color: '#fff' }
+                        },
                         emphasis: {
                             label: { show: false }
                         }
