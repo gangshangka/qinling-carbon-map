@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>秦岭碳收支遥感监测系统 - 项目总览</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0f1a;
+            --card: rgba(16, 24, 48, 0.85);
+            --border: rgba(100, 160, 200, 0.2);
+            --accent: #00d4aa;
+            --accent2: #4da6ff;
+            --text: #e0e8f0;
+            --muted: #8899aa;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        body::before {
+            content: '';
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: 
+                radial-gradient(ellipse at 20% 50%, rgba(0,212,170,0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(77,166,255,0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 80%, rgba(0,100,80,0.06) 0%, transparent 50%);
+            z-index: 0;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; position: relative; z-index: 1; }
+
+        /* Header */
+        .hero {
+            text-align: center; padding: 60px 20px 40px;
+        }
+        .hero h1 {
+            font-size: 2.8em; font-weight: 700;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            margin-bottom: 12px;
+        }
+        .hero p { color: var(--muted); font-size: 1.1em; max-width: 700px; margin: 0 auto; line-height: 1.7; }
+        .hero .tags { margin-top: 20px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+        .hero .tag {
+            display: inline-block; padding: 5px 14px; border-radius: 20px; font-size: 0.85em;
+            background: rgba(0,212,170,0.12); border: 1px solid rgba(0,212,170,0.25); color: var(--accent);
+        }
+        .hero .tag.blue { background: rgba(77,166,255,0.12); border-color: rgba(77,166,255,0.25); color: var(--accent2); }
+
+        /* Sections */
+        .section { margin: 40px 0; }
+        .section-title {
+            font-size: 1.5em; font-weight: 600; margin-bottom: 20px;
+            padding-left: 14px; border-left: 3px solid var(--accent);
+        }
+
+        /* Cards */
+        .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 20px; }
+        .card {
+            background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+            padding: 24px; transition: all 0.3s; cursor: pointer;
+            backdrop-filter: blur(10px);
+        }
+        .card:hover { transform: translateY(-3px); border-color: var(--accent); box-shadow: 0 8px 30px rgba(0,212,170,0.15); }
+        .card h3 { font-size: 1.15em; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+        .card h3 i { color: var(--accent); }
+        .card p { color: var(--muted); font-size: 0.9em; line-height: 1.6; }
+        .card .link { display: inline-block; margin-top: 12px; color: var(--accent); font-size: 0.85em; text-decoration: none; }
+        .card .link:hover { text-decoration: underline; }
+
+        /* Code browser */
+        .code-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+        .code-item {
+            display: flex; align-items: center; gap: 10px;
+            background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+            padding: 12px 16px; transition: all 0.2s; text-decoration: none; color: var(--text);
+        }
+        .code-item:hover { border-color: var(--accent2); background: rgba(16,24,48,1); }
+        .code-item i { font-size: 1.2em; width: 24px; text-align: center; }
+        .code-item .fa-html5 { color: #e44d26; }
+        .code-item .fa-js { color: #f7df1e; }
+        .code-item .fa-css3 { color: #264de4; }
+        .code-item .fa-file-code-o { color: var(--accent); }
+        .code-item .fa-file-text-o { color: var(--muted); }
+        .code-item .fa-folder { color: #f0c040; }
+        .code-item .fa-database { color: var(--accent2); }
+        .code-item .name { flex: 1; font-size: 0.9em; }
+        .code-item .size { color: var(--muted); font-size: 0.8em; }
+
+        /* Footer */
+        footer { text-align: center; padding: 40px 0 20px; color: var(--muted); font-size: 0.85em; border-top: 1px solid var(--border); margin-top: 40px; }
+
+        @media (max-width: 600px) {
+            .hero h1 { font-size: 1.8em; }
+            .cards { grid-template-columns: 1fr; }
+            .code-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="hero">
+            <h1>秦岭碳收支遥感监测系统</h1>
+            <p>基于微信小程序 + CloudBase 云开发的秦岭地区碳收支遥感监测平台，集成 NEP 碳汇数据可视化、3D 地图、地形分析等功能</p>
+            <div class="tags">
+                <span class="tag">微信小程序</span>
+                <span class="tag blue">CloudBase</span>
+                <span class="tag">Cesium 3D</span>
+                <span class="tag blue">ECharts</span>
+                <span class="tag">遥感监测</span>
+            </div>
+        </div>
+
+        <!-- Live Demos -->
+        <div class="section">
+            <div class="section-title">在线可视化演示</div>
+            <div class="cards">
+                <a class="card" href="static/qinling-carbon-map.html">
+                    <h3><i class="fa fa-map"></i> 秦岭碳汇数据平台</h3>
+                    <p>交互式碳汇地图，支持年份/月份切换、县域数据查看、图例展示，基于 Leaflet + GeoJSON</p>
+                    <span class="link">打开演示 &rarr;</span>
+                </a>
+                <a class="card" href="static/index.html">
+                    <h3><i class="fa fa-globe"></i> 3D 遥感地球</h3>
+                    <p>基于 Cesium 的 3D 地球视角，秦岭碳汇数据立体展示，支持视角旋转和缩放</p>
+                    <span class="link">打开演示 &rarr;</span>
+                </a>
+                <a class="card" href="static/qinling-3d-cesium.html">
+                    <h3><i class="fa fa-cube"></i> 3D Cesium 地图</h3>
+                    <p>增强版 Cesium 3D 地图，地形渲染与碳汇数据叠加展示</p>
+                    <span class="link">打开演示 &rarr;</span>
+                </a>
+                <a class="card" href="static/terrain-bar-chart-monthly1.html">
+                    <h3><i class="fa fa-bar-chart"></i> 地形碳汇图表</h3>
+                    <p>按地形类型分类的碳汇数据柱状图，月度数据对比分析</p>
+                    <span class="link">打开演示 &rarr;</span>
+                </a>
+                <a class="card" href="static/terrain-bar-chart-monthly.html">
+                    <h3><i class="fa fa-line-chart"></i> 月度碳汇趋势</h3>
+                    <p>碳汇数据的月度变化趋势可视化</p>
+                    <span class="link">打开演示 &rarr;</span>
+                </a>
+                <a class="card" href="static/aa1.html">
+                    <h3><i class="fa fa-area-chart"></i> 数据分析页面</h3>
+                    <p>碳汇数据统计分析与可视化展示</p>
+                    <span class="link">打开演示 &rarr;</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Project Source Code -->
+        <div class="section">
+            <div class="section-title">项目源代码</div>
+            <div class="cards">
+                <a class="card" href="static/data/carbonData2.json" target="_blank">
+                    <h3><i class="fa fa-database"></i> 碳汇核心数据</h3>
+                    <p>2012-2024年秦岭各县域月度NEP碳汇数据 (carbonData2.json)</p>
+                    <span class="link">查看数据 &rarr;</span>
+                </a>
+                <a class="card" href="static/data/qinling.geojson" target="_blank">
+                    <h3><i class="fa fa-map-o"></i> 秦岭 GeoJSON</h3>
+                    <p>秦岭地区县域边界地理信息数据</p>
+                    <span class="link">查看数据 &rarr;</span>
+                </a>
+                <a class="card" href="static/monthlyCarbonData.js" target="_blank">
+                    <h3><i class="fa fa-file-code-o"></i> 月度碳汇数据 (JS)</h3>
+                    <p>JavaScript格式的月度碳汇数据模块</p>
+                    <span class="link">查看代码 &rarr;</span>
+                </a>
+                <a class="card" href="static/qinling-geojson.js" target="_blank">
+                    <h3><i class="fa fa-file-code-o"></i> GeoJSON 数据 (JS)</h3>
+                    <p>JavaScript格式的秦岭地理边界数据模块</p>
+                    <span class="link">查看代码 &rarr;</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Mini Program Structure -->
+        <div class="section">
+            <div class="section-title">小程序项目结构</div>
+            <div class="code-grid">
+                <a class="code-item" href="app.js" target="_blank"><i class="fa fa-js"></i><span class="name">app.js</span><span class="size">2.2 KB</span></a>
+                <a class="code-item" href="app.json" target="_blank"><i class="fa fa-file-code-o"></i><span class="name">app.json</span><span class="size">0.7 KB</span></a>
+                <a class="code-item" href="app.wxss" target="_blank"><i class="fa fa-css3"></i><span class="name">app.wxss</span><span class="size">0.3 KB</span></a>
+                <a class="code-item" href="config.js" target="_blank"><i class="fa fa-js"></i><span class="name">config.js</span><span class="size">9.3 KB</span></a>
+                <a class="code-item" href="index.js" target="_blank"><i class="fa fa-js"></i><span class="name">index.js</span><span class="size">6.8 KB</span></a>
+                <a class="code-item" href="sync_cloud_to_web.js" target="_blank"><i class="fa fa-js"></i><span class="name">sync_cloud_to_web.js</span><span class="size">8.6 KB</span></a>
+                <div class="code-item"><i class="fa fa-folder"></i><span class="name">pages/ (9 pages)</span><span class="size">目录</span></div>
+                <div class="code-item"><i class="fa fa-folder"></i><span class="name">cloudfunctions/ (3 functions)</span><span class="size">目录</span></div>
+                <div class="code-item"><i class="fa fa-folder"></i><span class="name">data/ (数据文件)</span><span class="size">目录</span></div>
+                <div class="code-item"><i class="fa fa-folder"></i><span class="name">components/ (组件)</span><span class="size">目录</span></div>
+                <div class="code-item"><i class="fa fa-folder"></i><span class="name">ec-canvas/ (ECharts)</span><span class="size">目录</span></div>
+                <a class="code-item" href="cloudbaserc.json" target="_blank"><i class="fa fa-file-code-o"></i><span class="name">cloudbaserc.json</span><span class="size">0.4 KB</span></a>
+                <a class="code-item" href="project.config.json" target="_blank"><i class="fa fa-file-code-o"></i><span class="name">project.config.json</span><span class="size">0.3 KB</span></a>
+                <a class="code-item" href="package.json" target="_blank"><i class="fa fa-file-code-o"></i><span class="name">package.json</span><span class="size">0.4 KB</span></a>
+            </div>
+        </div>
+
+        <!-- Cloud Functions -->
+        <div class="section">
+            <div class="section-title">云函数</div>
+            <div class="code-grid" id="cloudFunctions"></div>
+        </div>
+
+        <!-- Mini Program Pages -->
+        <div class="section">
+            <div class="section-title">小程序页面</div>
+            <div class="code-grid" id="miniPages"></div>
+        </div>
+
+        <!-- Data Files -->
+        <div class="section">
+            <div class="section-title">数据文件 (static/data/)</div>
+            <div class="code-grid" id="dataFiles"></div>
+        </div>
+
+        <!-- Docs -->
+        <div class="section">
+            <div class="section-title">文档</div>
+            <div class="code-grid">
+                <a class="code-item" href="README.md" target="_blank"><i class="fa fa-file-text-o"></i><span class="name">README.md</span><span class="size">项目说明</span></a>
+                <a class="code-item" href="DEPLOY_GUIDE.md" target="_blank"><i class="fa fa-file-text-o"></i><span class="name">DEPLOY_GUIDE.md</span><span class="size">部署指南</span></a>
+                <a class="code-item" href="DEPLOY_CLOUD_FUNCTION.md" target="_blank"><i class="fa fa-file-text-o"></i><span class="name">DEPLOY_CLOUD_FUNCTION.md</span><span class="size">云函数部署</span></a>
+                <a class="code-item" href="TIF_PROCESSING_GUIDE.md" target="_blank"><i class="fa fa-file-text-o"></i><span class="name">TIF_PROCESSING_GUIDE.md</span><span class="size">TIF处理指南</span></a>
+                <a class="code-item" href="README_TIF_PROCESSING.md" target="_blank"><i class="fa fa-file-text-o"></i><span class="name">README_TIF_PROCESSING.md</span><span class="size">TIF处理说明</span></a>
+            </div>
+        </div>
+
+        <footer>
+            <p>秦岭碳收支遥感监测系统 &copy; 2024-2026 | 微信小程序 + CloudBase 云开发</p>
+        </footer>
+    </div>
+
+    <script>
+        // Populate cloud functions
+        const fns = [
+            { name: 'carbon-data-extractor/', icon: 'fa-cloud', desc: '碳数据提取' },
+            { name: 'getOpenId/', icon: 'fa-cloud', desc: '获取用户OpenID' },
+            { name: 'tif-processor-simple-node/', icon: 'fa-cloud', desc: 'TIF遥感数据处理' }
+        ];
+        document.getElementById('cloudFunctions').innerHTML = fns.map(f =>
+            `<a class="code-item" href="cloudfunctions/${f.name}index.js" target="_blank"><i class="fa ${f.icon}"></i><span class="name">${f.name}</span><span class="size">${f.desc}</span></a>`
+        ).join('');
+
+        // Populate pages
+        const pages = ['3d-map','about','admin-upload','carbon-chart','chart','county-stats','index','performance-report','terrain-webview'];
+        document.getElementById('miniPages').innerHTML = pages.map(p =>
+            `<a class="code-item" href="pages/${p}/${p}.js" target="_blank"><i class="fa fa-file-code-o"></i><span class="name">pages/${p}/</span><span class="size">.js .wxml .wxss</span></a>`
+        ).join('');
+
+        // Populate data files
+        const dataFiles = [
+            { name: 'carbonData2.js', size: '156 KB' },
+            { name: 'carbonData2.json', size: '137 KB' },
+            { name: 'carbonData3d.js', size: '2.4 KB' },
+            { name: 'monthly_data.js', size: '8.8 KB' },
+            { name: 'map3d_sampled.js', size: '12.7 KB' },
+            { name: 'map3d_sampled.json', size: '12.6 KB' },
+            { name: 'carbon_data.json', size: '2.7 KB' },
+            { name: 'carbon_samples.json', size: '8.9 KB' },
+            { name: 'yearly_data.js', size: '0.2 KB' },
+            { name: 'monthly_stats.js', size: '0.2 KB' }
+        ];
+        document.getElementById('dataFiles').innerHTML = dataFiles.map(f => {
+            const icon = f.name.endsWith('.json') ? 'fa-database' : 'fa-js';
+            return `<a class="code-item" href="data/${f.name}" target="_blank"><i class="fa ${icon}"></i><span class="name">${f.name}</span><span class="size">${f.size}</span></a>`;
+        }).join('');
+    </script>
+</body>
+</html>

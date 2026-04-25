@@ -7,17 +7,15 @@
 
     <!-- Cesium 1.118 CSS -->
     <link rel="stylesheet" href="https://unpkg.com/cesium@1.118.0/Build/Cesium/Widgets/widgets.css" />
-
-    <!-- Bootstrap 3 & Font Awesome -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
-
     <style>
         html, body, #cesiumContainer {
             width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden;
-            font-family: "Helvetica Neue", Arial, sans-serif;
         }
-
+        .loading-screen {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+            background: rgba(0,0,0,0.7); color: white; padding: 20px; border-radius: 8px;
+            font-size: 20px; z-index: 3000;
+        }
         .navbar {
             position: absolute; top: 0; left: 0; right: 0; z-index: 2000;
             background: rgba(20,20,30,0.85); backdrop-filter: blur(10px);
@@ -26,7 +24,6 @@
         .navbar-brand { color: #f0f0f0 !important; font-weight: bold; font-size: 20px; }
         .navbar-nav > li > a { color: #ccc !important; }
         .navbar-nav > li > a:hover { color: white !important; background-color: rgba(255,255,255,0.1) !important; }
-
         .toolbox-left {
             position: absolute; left: 12px; top: 70px; z-index: 1500;
             display: flex; flex-direction: column; gap: 8px;
@@ -35,11 +32,10 @@
             background: rgba(20,20,30,0.85); backdrop-filter: blur(10px);
             border: 1px solid #555; border-radius: 8px; padding: 10px; color: #ddd;
         }
-        .card-panel select, .card-panel button {
+        .card-panel select {
             margin: 4px 0; width: 100%; padding: 5px;
             background: #2a2a3a; color: white; border: 1px solid #666; border-radius: 4px;
         }
-
         .tool-btn {
             width: 42px; height: 42px;
             background: rgba(20,20,30,0.85); backdrop-filter: blur(8px);
@@ -48,7 +44,6 @@
             cursor: pointer; font-size: 18px; transition: 0.2s;
         }
         .tool-btn:hover { background: rgba(30,60,90,0.9); border-color: #888; color: white; }
-
         .legend {
             position: absolute; right: 20px; bottom: 100px; z-index: 1500;
             background: rgba(20,20,30,0.85); backdrop-filter: blur(8px);
@@ -63,6 +58,9 @@
     </style>
 </head>
 <body>
+    <div id="cesiumContainer"></div>
+    <div class="loading-screen" id="loading">🔄 加载地图中...</div>
+
     <nav class="navbar">
         <div class="container-fluid">
             <div class="navbar-header">
@@ -75,8 +73,6 @@
         </div>
     </nav>
 
-    <div id="cesiumContainer"></div>
-
     <div class="toolbox-left">
         <div class="card-panel">
             <label>年份</label>
@@ -84,14 +80,14 @@
             <label>月份</label>
             <select id="monthSelect"></select>
         </div>
-        <div class="tool-btn" id="zoomIn" title="放大"><i class="fa fa-plus"></i></div>
-        <div class="tool-btn" id="zoomOut" title="缩小"><i class="fa fa-minus"></i></div>
-        <div class="tool-btn" id="resetView" title="重置视角"><i class="fa fa-home"></i></div>
+        <div class="tool-btn" id="zoomIn" title="放大">➕</div>
+        <div class="tool-btn" id="zoomOut" title="缩小">➖</div>
+        <div class="tool-btn" id="resetView" title="重置视角">🏠</div>
     </div>
 
     <div class="legend" id="legendPanel">
         <div style="text-align:center; font-weight:bold; margin-bottom:4px;">碳汇强度</div>
-        <div class="bar" id="colorBar"></div>
+        <div class="bar"></div>
         <div class="labels">
             <span id="minVal">-10</span>
             <span id="maxVal">10</span>
@@ -99,26 +95,37 @@
         <div style="margin-top:6px; font-size:11px; opacity:0.7;">单位: gC·m⁻²·month⁻¹</div>
     </div>
 
-    <!-- Cesium 1.118 JS -->
     <script src="https://unpkg.com/cesium@1.118.0/Build/Cesium/Cesium.js"></script>
 
     <script>
-        // 请使用你提供的新 Access Token
+        // ========== 请替换为你的 Cesium Ion Access Token ==========
         Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI0YmY0Y2JjYS1kZDhjLTQzMmEtYThmNy0zOWQyNmNlMmEzYWMiLCJpZCI6NDIzMzA0LCJpYXQiOjE3NzcwODQ4MTN9.5IebdRrbJ2GRjaVP8WuPpK1NjOKohXG5J-dfkx86dTA';
 
         (async function() {
-            // 从 CDN 加载数据
-            const [geoJSON, carbonData] = await Promise.all([
-                fetch('https://cdn.jsdelivr.net/gh/gangshangka/qinling-carbon-map@carbon-map/static/data/qinling.geojson').then(r => r.json()),
-                fetch('https://cdn.jsdelivr.net/gh/gangshangka/qinling-carbon-map@carbon-map/static/data/carbonData2.json').then(r => r.json())
-            ]);
+            // 隐藏 loading
+            const hideLoading = () => document.getElementById('loading').style.display = 'none';
+
+            // 加载数据
+            let geoJSON, carbonData;
+            try {
+                [geoJSON, carbonData] = await Promise.all([
+                    fetch('https://cdn.jsdelivr.net/gh/gangshangka/qinling-carbon-map@carbon-map/static/data/qinling.geojson').then(r => r.json()),
+                    fetch('https://cdn.jsdelivr.net/gh/gangshangka/qinling-carbon-map@carbon-map/static/data/carbonData2.json').then(r => r.json())
+                ]);
+            } catch (e) {
+                alert('数据加载失败，请检查网络或数据地址。');
+                hideLoading();
+                return;
+            }
 
             // 初始化 Cesium Viewer
             const viewer = new Cesium.Viewer('cesiumContainer', {
+                // 使用 Cesium World Terrain + 全球默认影像（会自动使用 Bing 或 ArcGIS，取决于 token）
                 terrainProvider: Cesium.createWorldTerrain({
                     requestWaterMask: true,
                     requestVertexNormals: true
                 }),
+                // 显式使用 ESRI 高分辨率卫星影像（免费，无需额外 token）
                 imageryProvider: new Cesium.ArcGisMapServerImageryProvider({
                     url: 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
                 }),
@@ -134,17 +141,36 @@
                 selectionIndicator: false
             });
 
+            // 移除默认的 credit 显示可能挡视角
+            viewer._cesiumWidget._creditContainer.style.display = "none";
+
+            // 增强光照
             viewer.scene.globe.enableLighting = true;
 
-            // 定位到秦岭
+            // 初始视角：先展示中国中部上空，然后下潜到秦岭
             viewer.camera.flyTo({
-                destination: Cesium.Cartesian3.fromDegrees(108.2, 33.8, 250000),
+                destination: Cesium.Cartesian3.fromDegrees(108, 35, 8000000),
                 orientation: {
-                    heading: Cesium.Math.toRadians(0),
-                    pitch: Cesium.Math.toRadians(-70),
+                    heading: 0,
+                    pitch: Cesium.Math.toRadians(-90),
                     roll: 0
-                }
+                },
+                duration: 0
             });
+            // 第二段飞行动画：滑向秦岭细节
+            setTimeout(() => {
+                viewer.camera.flyTo({
+                    destination: Cesium.Cartesian3.fromDegrees(108.2, 33.8, 250000),
+                    orientation: {
+                        heading: Cesium.Math.toRadians(0),
+                        pitch: Cesium.Math.toRadians(-60),
+                        roll: 0
+                    },
+                    duration: 3
+                });
+            }, 1000);
+
+            hideLoading();
 
             // 加载 GeoJSON 图层
             const dataSource = await Cesium.GeoJsonDataSource.load(geoJSON, {
@@ -177,8 +203,8 @@
             yearSelect.value = currentYear;
             monthSelect.value = currentMonth;
 
-            // 获取指定县的碳汇值
-            function getCountyValue(name, year, month) {
+            // 获取碳汇值
+            function getValue(name, year, month) {
                 try {
                     const yd = carbonData[year];
                     if (!yd) return null;
@@ -188,14 +214,14 @@
                 } catch { return null; }
             }
 
-            // 计算数值范围
+            // 动态范围
             function computeRange(year, month) {
                 let min = Infinity, max = -Infinity;
                 geoJSON.features.forEach(f => {
-                    const val = getCountyValue(f.properties.NAME, year, month);
-                    if (val !== null && !isNaN(val)) {
-                        if (val < min) min = val;
-                        if (val > max) max = val;
+                    const v = getValue(f.properties.NAME, year, month);
+                    if (v !== null && !isNaN(v)) {
+                        if (v < min) min = v;
+                        if (v > max) max = v;
                     }
                 });
                 if (min === Infinity) return { min: 0, max: 1 };
@@ -203,60 +229,53 @@
                 return { min, max };
             }
 
-            // 颜色映射：白 -> 绿 -> 深绿
+            // 颜色映射
             function getColor(value, min, max) {
                 if (value === null || isNaN(value)) return Cesium.Color.GRAY.withAlpha(0.4);
                 const t = Math.max(0, Math.min(1, (value - min) / (max - min)));
-                const r = 247 - 200 * t;
-                const g = 252 - 170 * t;
-                const b = 245 - 200 * t;
-                return new Cesium.Color(r / 255, (77 + 130 * t) / 255, (122 - 100 * t) / 255, 0.75);
+                const r = 255 - 100 * t;
+                const g = 237 - 120 * t;
+                const b = 160 - 100 * t;
+                return new Cesium.Color(r / 255, g / 255, b / 255, 0.75);
             }
 
-            // 刷新图层颜色和图例
-            function refreshColors() {
+            // 刷新图层
+            function refresh() {
                 const range = computeRange(currentYear, currentMonth);
                 document.getElementById('minVal').textContent = range.min.toFixed(2);
                 document.getElementById('maxVal').textContent = range.max.toFixed(2);
-
                 entities.forEach(entity => {
                     const name = entity.properties?.NAME?.getValue();
                     if (!name) return;
-                    const val = getCountyValue(name, currentYear, currentMonth);
-                    const color = getColor(val, range.min, range.max);
-                    entity.polygon.material = new Cesium.ColorMaterialProperty(color);
-                    entity.description = `<b>${name}</b><br>碳汇: ${val !== null ? val.toFixed(2) : '无数据'}`;
+                    const v = getValue(name, currentYear, currentMonth);
+                    const col = getColor(v, range.min, range.max);
+                    entity.polygon.material = new Cesium.ColorMaterialProperty(col);
+                    entity.description = `<b>${name}</b><br/>碳汇：${v !== null ? v.toFixed(2) : '无数据'}`;
                 });
             }
+            refresh();
 
-            refreshColors();
+            yearSelect.addEventListener('change', () => { currentYear = yearSelect.value; refresh(); });
+            monthSelect.addEventListener('change', () => { currentMonth = monthSelect.value; refresh(); });
 
-            yearSelect.addEventListener('change', () => {
-                currentYear = yearSelect.value;
-                refreshColors();
-            });
-            monthSelect.addEventListener('change', () => {
-                currentMonth = monthSelect.value;
-                refreshColors();
-            });
-
-            // 自定义按钮
+            // 按钮
             document.getElementById('zoomIn').onclick = () => viewer.camera.zoomIn(100000);
             document.getElementById('zoomOut').onclick = () => viewer.camera.zoomOut(100000);
             document.getElementById('resetView').onclick = () => {
                 viewer.camera.flyTo({
                     destination: Cesium.Cartesian3.fromDegrees(108.2, 33.8, 250000),
-                    orientation: { heading: 0, pitch: Cesium.Math.toRadians(-70), roll: 0 }
+                    orientation: { heading: 0, pitch: Cesium.Math.toRadians(-60), roll: 0 }
                 });
             };
 
-            // 点击多边形弹出信息
-            new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas).setInputAction(function(click) {
+            // 点击多边形
+            const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+            handler.setInputAction(function(click) {
                 const picked = viewer.scene.pick(click.position);
                 if (Cesium.defined(picked) && picked.id && picked.id.properties) {
                     const name = picked.id.properties.NAME?.getValue();
-                    const val = getCountyValue(name, currentYear, currentMonth);
-                    alert(`${name}\n碳汇: ${val !== null ? val.toFixed(2) : '无数据'}`);
+                    const v = getValue(name, currentYear, currentMonth);
+                    alert(`${name}\n碳汇：${v !== null ? v.toFixed(2) : '无数据'}`);
                 }
             }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
         })();
