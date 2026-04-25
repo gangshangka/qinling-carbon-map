@@ -1,0 +1,11 @@
+{
+  "year": 2019,
+  "data": [
+    {
+      "month": 1,
+      "carbon_sink_mean": 633.38,
+      "carbon_sink_max": 2122.92,
+      "carbon_sink_min": -1373.21
+    }
+  ]
+}

@@ -46,3 +46,5 @@ project.private.config.json
 *.backup
 *_backup.js
 carbon-chart_backup.js
+# Environment variables
+.env.local

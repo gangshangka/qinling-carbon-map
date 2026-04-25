@@ -1,0 +1,77 @@
+{
+  "year": 2026,
+  "data": [
+    {
+      "month": 1,
+      "carbon_sink_mean": 850.25,
+      "carbon_sink_max": 2450.75,
+      "carbon_sink_min": -1450.50
+    },
+    {
+      "month": 2,
+      "carbon_sink_mean": 920.45,
+      "carbon_sink_max": 2680.30,
+      "carbon_sink_min": -1320.25
+    },
+    {
+      "month": 3,
+      "carbon_sink_mean": 1250.75,
+      "carbon_sink_max": 3420.50,
+      "carbon_sink_min": -980.75
+    },
+    {
+      "month": 4,
+      "carbon_sink_mean": 1560.90,
+      "carbon_sink_max": 4250.80,
+      "carbon_sink_min": -750.25
+    },
+    {
+      "month": 5,
+      "carbon_sink_mean": 1820.35,
+      "carbon_sink_max": 4850.90,
+      "carbon_sink_min": -520.60
+    },
+    {
+      "month": 6,
+      "carbon_sink_mean": 1950.80,
+      "carbon_sink_max": 5250.75,
+      "carbon_sink_min": -380.25
+    },
+    {
+      "month": 7,
+      "carbon_sink_mean": 1880.45,
+      "carbon_sink_max": 5120.60,
+      "carbon_sink_min": -420.90
+    },
+    {
+      "month": 8,
+      "carbon_sink_mean": 1720.75,
+      "carbon_sink_max": 4780.25,
+      "carbon_sink_min": -580.45
+    },
+    {
+      "month": 9,
+      "carbon_sink_mean": 1480.90,
+      "carbon_sink_max": 4320.80,
+      "carbon_sink_min": -720.75
+    },
+    {
+      "month": 10,
+      "carbon_sink_mean": 1250.25,
+      "carbon_sink_max": 3980.45,
+      "carbon_sink_min": -850.90
+    },
+    {
+      "month": 11,
+      "carbon_sink_mean": 980.60,
+      "carbon_sink_max": 3250.75,
+      "carbon_sink_min": -1120.25
+    },
+    {
+      "month": 12,
+      "carbon_sink_mean": 820.75,
+      "carbon_sink_max": 2850.90,
+      "carbon_sink_min": -1350.60
+    }
+  ]
+}

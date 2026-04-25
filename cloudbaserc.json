@@ -11,5 +11,13 @@
         "NODE_ENV": "production"
       }
     }
-  ]
+  ],
+  "ai": {
+    "agents": {
+      "codebuddy": {
+        "type": "none"
+      }
+    },
+    "defaultAgent": "{{env.AI_DEFAULT_AGENT}}"
+  }
 }
