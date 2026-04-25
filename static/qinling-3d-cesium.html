@@ -87,9 +87,9 @@
         <div class="row"><span class="label">碳源区</span><span class="val" id="statsSource">-</span></div>
     </div>
 
-    <!-- 先加载本地数据（file:// 下 script 标签不受 CORS 限制） -->
-    <script src="qinling-geojson.js"></script>
-    <script src="monthlyCarbonData.js"></script>
+    <!-- 通过 CDN 加载数据（全球加速） -->
+    <script src="https://cdn.jsdelivr.net/gh/gangshangka/qinling-carbon-map@master/static/qinling-geojson.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/gangshangka/qinling-carbon-map@master/static/monthlyCarbonData.js"></script>
 
     <!-- 设置 Cesium 资源根路径（必须在加载 Cesium.js 之前） -->
     <script>

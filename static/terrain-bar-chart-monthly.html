@@ -14,8 +14,8 @@
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
     <!-- ECharts GL 3D库（可选，3D模式需要） -->
     <script src="https://cdn.jsdelivr.net/npm/echarts-gl@2.0.9/dist/echarts-gl.min.js"></script>
-    <!-- 秦岭GeoJSON数据（本地文件，提供地形边界） -->
-    <script src="qinling-geojson.js"></script>
+    <!-- 秦岭GeoJSON数据（CDN加速） -->
+    <script src="https://cdn.jsdelivr.net/gh/gangshangka/qinling-carbon-map@master/static/qinling-geojson.js"></script>
     
     <!-- 备用CDN：如果主CDN加载失败，尝试从unpkg加载 -->
     <script>
@@ -272,8 +272,8 @@
 }
     </script>
     
-    <!-- 月度碳汇数据脚本（本地文件，提供按年月的动态数据） -->
-    <script src="monthlyCarbonData.js"></script>
+    <!-- 月度碳汇数据脚本（CDN加速） -->
+    <script src="https://cdn.jsdelivr.net/gh/gangshangka/qinling-carbon-map@master/static/monthlyCarbonData.js"></script>
 </head>
 <body>
     <div class="container">
@@ -605,7 +605,7 @@
                 if (!geoJSON) {
                     console.warn('window.qinlingGeoJSON未找到，尝试从本地文件加载...');
                     // 通过XHR加载本地 qinling.geojson 文件，兼容 file:// 协议
-                    const url = 'qinling.geojson';
+                    const url = 'https://cdn.jsdelivr.net/gh/gangshangka/qinling-carbon-map@master/static/qinling.geojson';
                     geoJSON = await new Promise((resolve, reject) => {
                         const xhr = new XMLHttpRequest();
                         xhr.open('GET', url, true);
@@ -692,7 +692,7 @@
                     return;
                 }
                 // 否则尝试 fetch map3d_sampled.json
-                const url = 'map3d_sampled.json';
+                const url = 'https://cdn.jsdelivr.net/gh/gangshangka/qinling-carbon-map@master/static/data/map3d_sampled.json';
                 const response = await fetch(url);
                 if (!response.ok) throw new Error(`坐标数据加载失败: ${response.status}`);
                 const data = await response.json();
@@ -732,7 +732,7 @@
                     return;
                 }
                 // 否则 fetch carbonData2.json
-                const url = 'carbonData2.json';
+                const url = 'https://cdn.jsdelivr.net/gh/gangshangka/qinling-carbon-map@master/static/data/carbonData2.json';
                 const response = await fetch(url);
                 if (!response.ok) throw new Error(`月度数据加载失败: ${response.status}`);
                 monthlyCarbonData = await response.json();

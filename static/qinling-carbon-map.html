@@ -1053,12 +1053,12 @@ function addContinentFills() {
 async function loadAllData() {
     updateLoading(10, '正在加载碳汇数据...');
     try {
-        var resp = await fetch('data/carbonData2.json');
+        var resp = await fetch('https://cdn.jsdelivr.net/gh/gangshangka/qinling-carbon-map@master/static/data/carbonData2.json');
         monthlyData = await resp.json();
         updateLoading(40, '碳汇数据加载完成');
 
         updateLoading(50, '正在加载县区坐标...');
-        var coordResp = await fetch('data/map3d_sampled.json');
+        var coordResp = await fetch('https://cdn.jsdelivr.net/gh/gangshangka/qinling-carbon-map@master/static/data/map3d_sampled.json');
         var coordData = await coordResp.json();
         if (coordData.features) {
             coordData.features.forEach(function(f) {
@@ -1072,7 +1072,7 @@ async function loadAllData() {
     }
 
     try {
-        var geoResp = await fetch('data/qinling.geojson');
+        var geoResp = await fetch('https://cdn.jsdelivr.net/gh/gangshangka/qinling-carbon-map@master/static/data/qinling.geojson');
         var geoText = await geoResp.text();
         var geoJSON = JSON.parse(geoText);
         updateLoading(85, '正在渲染地图...');

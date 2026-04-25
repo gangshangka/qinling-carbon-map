@@ -11,7 +11,7 @@
     <!-- ECharts GL 3D库 -->
     <script src="https://cdn.jsdelivr.net/npm/echarts-gl@2.0.9/dist/echarts-gl.min.js"></script>
     <!-- 秦岭GeoJSON数据 -->
-    <script src="qinling-geojson.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/gangshangka/qinling-carbon-map@master/static/qinling-geojson.js"></script>
     <!-- 备用ECharts CDN (unpkg) -->
     <script>
         // 检查ECharts是否加载成功，如果失败则尝试备用CDN
@@ -803,7 +803,7 @@
 }
     </script>
     
-    <script src="monthlyCarbonData.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/gangshangka/qinling-carbon-map@master/static/monthlyCarbonData.js"></script>
 </head>
 <body>
     <div class="container">
@@ -1290,7 +1290,7 @@
                 if (!geoJSON) {
                     console.warn('window.qinlingGeoJSON未找到，尝试从本地文件加载...');
                     // 使用XMLHttpRequest加载本地GeoJSON文件，兼容file://协议
-                    const url = 'qinling.geojson';
+                    const url = 'https://cdn.jsdelivr.net/gh/gangshangka/qinling-carbon-map@master/static/qinling.geojson';
                     console.log('请求URL:', url);
                     
                     geoJSON = await new Promise((resolve, reject) => {
@@ -1461,7 +1461,7 @@
                 }
                 
                 // 否则尝试从本地文件加载
-                const url = 'map3d_sampled.json';
+                const url = 'https://cdn.jsdelivr.net/gh/gangshangka/qinling-carbon-map@master/static/data/map3d_sampled.json';
                 const response = await fetch(url);
                 if (!response.ok) throw new Error(`坐标数据加载失败: ${response.status}`);
                 const data = await response.json();
@@ -1507,7 +1507,7 @@
                 }
                 
                 // 否则尝试从本地文件加载
-                const url = 'carbonData2.json';
+                const url = 'https://cdn.jsdelivr.net/gh/gangshangka/qinling-carbon-map@master/static/data/carbonData2.json';
                 const response = await fetch(url);
                 if (!response.ok) throw new Error(`月度数据加载失败: ${response.status}`);
                 monthlyCarbonData = await response.json();
