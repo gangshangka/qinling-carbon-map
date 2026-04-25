@@ -173,7 +173,8 @@
             const dataSource = await Cesium.GeoJsonDataSource.load(geoJSON, {
                 stroke: Cesium.Color.DARKGRAY,
                 fill: Cesium.Color.GRAY.withAlpha(0.3),
-                strokeWidth: 2
+                strokeWidth: 2,
+                clampToGround: true
             });
             viewer.dataSources.add(dataSource);
             const entities = dataSource.entities.values;
