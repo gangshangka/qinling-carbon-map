@@ -527,8 +527,8 @@
     <div class="map-toolbox-container-box">
         <!-- 2D/3D切换 -->
         <div class="cesium-change-map">
-            <div class="current" onclick="switchDimension('2d', this)">2D</div>
-            <div onclick="switchDimension('3d', this)">3D</div>
+            <div onclick="switchDimension('2d', this)">2D</div>
+            <div class="current" onclick="switchDimension('3d', this)">3D</div>
         </div>
         <!-- 底图切换 -->
         <div class="basemap-switcher">
@@ -667,7 +667,7 @@ var showLabels = true;
 var miniChartInstance = null;
 var currentParam = 'total';
 var currentBasemap = 'hybrid';
-var currentDimension = '2d';
+var currentDimension = '3d';
 var labelEntities = [];
 var satelliteLayer, roadLayer, labelLayer;
 
@@ -742,7 +742,16 @@ function initCesium() {
         selectionIndicator: false,
         infoBox: false,
         creditContainer: document.createElement('div'),
-        skyBox: false,
+        skyBox: new Cesium.SkyBox({
+            sources: {
+                positiveX: Cesium.buildModuleUrl('Assets/Textures/SkyBox/tycho2t3_80_px.jpg'),
+                negativeX: Cesium.buildModuleUrl('Assets/Textures/SkyBox/tycho2t3_80_mx.jpg'),
+                positiveY: Cesium.buildModuleUrl('Assets/Textures/SkyBox/tycho2t3_80_py.jpg'),
+                negativeY: Cesium.buildModuleUrl('Assets/Textures/SkyBox/tycho2t3_80_my.jpg'),
+                positiveZ: Cesium.buildModuleUrl('Assets/Textures/SkyBox/tycho2t3_80_pz.jpg'),
+                negativeZ: Cesium.buildModuleUrl('Assets/Textures/SkyBox/tycho2t3_80_mz.jpg')
+            }
+        }),
         skyAtmosphere: new Cesium.SkyAtmosphere(),
         orderIndependentTranslucency: false,
         contextOptions: {
@@ -785,15 +794,27 @@ function initCesium() {
 
     viewer.scene.postProcessStages.fxaa.enabled = true;
 
-    // 初始相机 - 秦岭上空
+    // 初始相机 - 秦岭上空（3D透视角度，可缩放看到地球）
     viewer.camera.setView({
-        destination: Cesium.Cartesian3.fromDegrees(108.5, 33.8, 500000),
+        destination: Cesium.Cartesian3.fromDegrees(108.5, 33.8, 800000),
         orientation: {
             heading: Cesium.Math.toRadians(0),
-            pitch: Cesium.Math.toRadians(-90),
+            pitch: Cesium.Math.toRadians(-60),
             roll: 0
         }
     });
+
+    // 确保启用鼠标缩放（滚轮）
+    viewer.scene.screenSpaceCameraController.enableZoom = true;
+    viewer.scene.screenSpaceCameraController.enableRotate = true;
+    viewer.scene.screenSpaceCameraController.enableTilt = true;
+    viewer.scene.screenSpaceCameraController.enableTranslate = true;
+    // 缩放速率
+    viewer.scene.screenSpaceCameraController.zoomEventTypes = [
+        Cesium.CameraEventType.WHEEL,
+        Cesium.CameraEventType.PINCH,
+        { eventType: Cesium.CameraEventType.LEFT_DRAG, modifier: Cesium.KeyboardEventModifier.CTRL }
+    ];
 
     setupInteractivity();
     loadWorldOutlines();
@@ -808,9 +829,17 @@ function switchDimension(dim, el) {
 
     if (dim === '2d') {
         viewer.scene.morphTo2D(1.0);
-    } else {
+    } else if (dim === '3d') {
         viewer.scene.morphTo3D(1.0);
     }
+
+    // 模式切换后重新确保缩放/旋转可用
+    setTimeout(function() {
+        viewer.scene.screenSpaceCameraController.enableZoom = true;
+        viewer.scene.screenSpaceCameraController.enableRotate = (dim === '3d');
+        viewer.scene.screenSpaceCameraController.enableTilt = (dim === '3d');
+        viewer.scene.screenSpaceCameraController.enableTranslate = true;
+    }, 1200);
 }
 
 // ========== 底图切换 ==========
@@ -910,16 +939,15 @@ function setupInteractivity() {
 
 // ========== 缩放控制 ==========
 function zoomIn() {
-    var camera = viewer.camera;
-    var direction = camera.directionWC;
-    var distance = Math.max(camera.positionCartographic.height * 0.3, 10000);
-    camera.move(direction, distance);
+    // 每次缩放当前高度的30%，最小保证1万米
+    var height = viewer.camera.positionCartographic.height;
+    var offset = Math.max(height * 0.3, 10000);
+    viewer.camera.zoomIn(offset);
 }
 function zoomOut() {
-    var camera = viewer.camera;
-    var direction = camera.directionWC;
-    var distance = Math.max(camera.positionCartographic.height * 0.3, 10000);
-    camera.move(direction, -distance);
+    var height = viewer.camera.positionCartographic.height;
+    var offset = Math.max(height * 0.3, 10000);
+    viewer.camera.zoomOut(offset);
 }
 
 function flyToQinling() {
