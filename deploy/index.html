@@ -3,57 +3,154 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>秦岭碳汇地图 - MEIC风格</title>
-    <!-- Leaflet -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
-    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
-    <!-- ECharts for mini charts -->
+    <title>秦岭碳汇数据平台</title>
+    <!-- 高质量中文字体 Noto Sans SC -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome (MEIC同款图标库) -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- Cesium JS (MEIC同款3D地球引擎) -->
+    <script>window.CESIUM_BASE_URL = 'https://cdn.jsdelivr.net/npm/cesium@1.119/Build/Cesium/';</script>
+    <script src="https://cdn.jsdelivr.net/npm/cesium@1.119/Build/Cesium/Cesium.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/cesium@1.119/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <!-- ECharts -->
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <!-- TopoJSON Client (官方转换库) -->
+    <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body { width: 100%; height: 100%; overflow: hidden; font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; }
+        html, body { width: 100%; height: 100%; overflow: hidden; font-family: 'Noto Sans SC', 'Microsoft YaHei', 'PingFang SC', sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 
-        /* ========== 顶部导航栏 ========== */
-        .top-bar {
-            position: absolute; top: 0; left: 0; right: 0; z-index: 1000;
-            height: 52px;
-            background: linear-gradient(90deg, #1a237e 0%, #0d47a1 50%, #1a237e 100%);
+        /* ========== MEIC风格顶部导航栏 ========== */
+        .site-header {
+            position: relative; z-index: 1000;
+            background: #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .header-core {
             display: flex; align-items: center; justify-content: space-between;
-            padding: 0 16px;
+            height: 72px; padding: 0 24px;
+            max-width: 100%;
+        }
+        /* Logo */
+        .site-logo {
+            display: flex; align-items: center; gap: 10px;
+            text-decoration: none; color: #1a237e;
+        }
+        .site-logo:hover { text-decoration: none; }
+        .logo-icon-wrap {
+            width: 40px; height: 40px;
+            background: linear-gradient(135deg, #1a237e, #0d47a1);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; font-weight: bold; color: #fff;
+        }
+        .logo-text-wrap { display: flex; flex-direction: column; }
+        .logo-main { font-size: 17px; font-weight: 700; color: #1a237e; letter-spacing: 1px; line-height: 1.2; }
+        .logo-sub { font-size: 10px; color: #666; letter-spacing: 0.5px; line-height: 1.2; margin-top: 1px; }
+
+        /* 主导航 */
+        .main-nav { display: flex; align-items: center; height: 100%; }
+        .nav-list { display: flex; list-style: none; margin: 0; padding: 0; height: 100%; align-items: center; }
+        .nav-item {
+            position: relative; height: 100%; display: flex; align-items: center;
+        }
+        .nav-item > a {
+            display: flex; align-items: center; height: 100%;
+            padding: 0 18px; font-size: 14px; font-weight: 500;
+            color: #333; text-decoration: none; transition: color 0.2s;
+            letter-spacing: 0.5px;
+        }
+        .nav-item > a:hover, .nav-item:hover > a { color: #1a237e; }
+        .nav-item.active > a { color: #1a237e; font-weight: 600; }
+        .nav-item > a .caret {
+            margin-left: 4px; font-size: 10px; transition: transform 0.2s;
+        }
+        .nav-item:hover > a .caret { transform: rotate(180deg); }
+
+        /* 下拉菜单 */
+        .dropdown-menu {
+            position: absolute; top: 100%; left: 0;
+            min-width: 180px; padding: 6px 0;
+            background: #fff; border: 1px solid #e8e8e8;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+            border-radius: 4px;
+            opacity: 0; visibility: hidden;
+            transform: translateY(4px);
+            transition: all 0.2s;
+            z-index: 1001;
+        }
+        .nav-item:hover .dropdown-menu {
+            opacity: 1; visibility: visible; transform: translateY(0);
+        }
+        .dropdown-menu a {
+            display: block; padding: 9px 20px; font-size: 13px;
+            color: #555; text-decoration: none; transition: all 0.15s;
+            white-space: nowrap;
+        }
+        .dropdown-menu a:hover {
+            background: #f5f7fa; color: #1a237e; padding-left: 24px;
+        }
+
+        /* 红色分割线 */
+        .red-line {
+            height: 3px;
+            background: linear-gradient(90deg, #c62828, #d32f2f, #c62828);
+        }
+
+        /* 移动端菜单按钮 */
+        .mobile-toggle {
+            display: none; background: none; border: none;
+            font-size: 22px; color: #333; cursor: pointer; padding: 8px;
+        }
+
+        /* ========== 内容区域 ========== */
+        #content-core {
+            width: 100%; height: calc(100vh - 75px);
+            position: relative;
+        }
+
+        /* ========== Cesium 容器 ========== */
+        #cesiumContainer {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: #020810;
+        }
+
+        /* 隐藏 Cesium 默认 UI */
+        .cesium-viewer-toolbar,
+        .cesium-viewer-animationContainer,
+        .cesium-viewer-timelineContainer,
+        .cesium-viewer-bottom,
+        .cesium-viewer-fullscreenContainer,
+        .cesium-viewer-infoBoxContainer,
+        .cesium-viewer-selectionIndicatorContainer,
+        .cesium-viewer-geocoderContainer { display: none !important; }
+        .cesium-widget-credits { display: none !important; }
+
+        /* ========== 地图工具栏顶部导航 ========== */
+        .map-toolbox {
+            position: absolute; top: 12px; left: 12px; z-index: 900;
+            display: flex; align-items: flex-start; gap: 0;
+        }
+        .toolbox-nav {
+            display: flex; background: rgba(13, 25, 48, 0.92);
+            border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px); overflow: hidden;
             box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         }
-        .top-bar .logo {
-            display: flex; align-items: center; gap: 8px; color: #fff;
+        .toolbox-nav-item {
+            padding: 10px 20px; font-size: 13px; font-weight: 500;
+            color: rgba(255,255,255,0.7); cursor: pointer;
+            transition: all 0.2s; border-bottom: 2px solid transparent;
         }
-        .top-bar .logo-icon {
-            width: 28px; height: 28px;
-            background: linear-gradient(135deg, #4caf50, #00e676);
-            border-radius: 6px; display: flex; align-items: center; justify-content: center;
-            font-size: 14px; font-weight: bold;
-        }
-        .top-bar .logo-text { font-size: 15px; font-weight: 600; letter-spacing: 1px; }
-        .top-bar .nav-items { display: flex; gap: 2px; }
-        .top-bar .nav-item {
-            color: rgba(255,255,255,0.8); font-size: 13px; padding: 6px 14px;
-            border-radius: 4px; cursor: pointer; transition: all 0.2s; position: relative;
-        }
-        .top-bar .nav-item:hover, .top-bar .nav-item.active {
-            background: rgba(255,255,255,0.15); color: #fff;
-        }
-        .top-bar .nav-item.active::after {
-            content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
-            width: 20px; height: 2px; background: #00e676; border-radius: 1px;
+        .toolbox-nav-item:hover { color: #fff; background: rgba(255,255,255,0.05); }
+        .toolbox-nav-item.active {
+            color: #4fc3f7; border-bottom-color: #4fc3f7;
+            background: rgba(79, 195, 247, 0.08);
         }
 
-        /* ========== 地图容器 ========== */
-        #map {
-            position: absolute; top: 52px; left: 0; right: 0; bottom: 0;
-            background: #0a1628;
-        }
-
-        /* ========== 左侧面板 - 类似MEIC的污染物/模型选择 ========== */
+        /* ========== 左侧面板 ========== */
         .left-panel {
-            position: absolute; top: 62px; left: 10px; z-index: 900;
+            position: absolute; top: 56px; left: 12px; z-index: 900;
             background: rgba(13, 25, 48, 0.92);
             border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);
             backdrop-filter: blur(10px);
@@ -65,19 +162,14 @@
             border-bottom: 1px solid rgba(255,255,255,0.08);
             background: rgba(0,0,0,0.2);
         }
-        .mode-tabs {
-            display: flex; border-bottom: 1px solid rgba(255,255,255,0.08);
-        }
+        .mode-tabs { display: flex; border-bottom: 1px solid rgba(255,255,255,0.08); }
         .mode-tab {
             flex: 1; text-align: center; padding: 8px 4px; font-size: 11px;
             color: rgba(255,255,255,0.6); cursor: pointer; transition: all 0.2s;
             border-bottom: 2px solid transparent;
         }
         .mode-tab:hover { color: #fff; }
-        .mode-tab.active {
-            color: #4fc3f7; border-bottom-color: #4fc3f7;
-            background: rgba(79, 195, 247, 0.08);
-        }
+        .mode-tab.active { color: #4fc3f7; border-bottom-color: #4fc3f7; background: rgba(79, 195, 247, 0.08); }
         .param-list { padding: 6px 0; max-height: 300px; overflow-y: auto; }
         .param-list::-webkit-scrollbar { width: 3px; }
         .param-list::-webkit-scrollbar-thumb { background: rgba(79,195,247,0.3); border-radius: 2px; }
@@ -87,13 +179,125 @@
         }
         .param-item:hover { background: rgba(79,195,247,0.08); color: #fff; }
         .param-item.active { background: rgba(79,195,247,0.15); color: #4fc3f7; }
-        .param-item .dot {
-            width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+        .param-item .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+        /* ========== 右侧工具区 ========== */
+        .map-toolbox-container-box {
+            position: absolute; right: 12px; top: 12px; z-index: 900;
+            display: flex; flex-direction: column; align-items: flex-end; gap: 6px;
         }
 
-        /* ========== 右侧时间控制 ========== */
-        .time-panel {
-            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+        /* 2D/3D切换 */
+        .cesium-change-map {
+            display: flex; background: rgba(13, 25, 48, 0.92);
+            border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px); overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        .cesium-change-map div {
+            padding: 8px 14px; font-size: 12px; font-weight: 500;
+            color: rgba(255,255,255,0.6); cursor: pointer; transition: all 0.2s;
+        }
+        .cesium-change-map div:hover { color: #fff; background: rgba(255,255,255,0.05); }
+        .cesium-change-map div.current { color: #4fc3f7; background: rgba(79,195,247,0.12); }
+
+        /* 底图切换 */
+        .basemap-switcher {
+            display: flex; gap: 3px;
+            background: rgba(13, 25, 48, 0.92);
+            border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px); overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        .basemap-btn {
+            background: none; border: none;
+            color: rgba(255,255,255,0.6); padding: 8px 12px; font-size: 12px;
+            cursor: pointer; transition: all 0.2s; outline: none;
+        }
+        .basemap-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
+        .basemap-btn.active { color: #4fc3f7; background: rgba(79,195,247,0.12); }
+
+        /* 右侧工具按钮组 */
+        .map-toolbox-container {
+            display: flex; flex-direction: column; gap: 2px;
+            background: rgba(13, 25, 48, 0.92);
+            border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px); overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        .map-toolbox-item {
+            width: 40px; height: 40px;
+            display: flex; align-items: center; justify-content: center;
+            color: rgba(255,255,255,0.7); cursor: pointer; transition: all 0.2s;
+            font-size: 14px;
+        }
+        .map-toolbox-item:hover { color: #4fc3f7; background: rgba(79,195,247,0.1); }
+        .map-toolbox-item.active { color: #4fc3f7; background: rgba(79,195,247,0.15); }
+        .map-toolbox-divider { height: 1px; background: rgba(255,255,255,0.08); margin: 0 6px; }
+
+        /* ========== 缩放控件 ========== */
+        .tools-zoom {
+            display: flex; flex-direction: column; gap: 1px;
+            background: rgba(13, 25, 48, 0.92);
+            border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px); overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        .tools-zoom-item {
+            width: 40px; height: 40px;
+            display: flex; align-items: center; justify-content: center;
+            color: rgba(255,255,255,0.8); cursor: pointer; transition: all 0.2s;
+        }
+        .tools-zoom-item:hover { color: #4fc3f7; background: rgba(79,195,247,0.1); }
+        .tools-zoom-item .line { background: rgba(255,255,255,0.7); position: absolute; }
+        .tools-zoom-item .bigScale1 { width: 12px; height: 2px; }
+        .tools-zoom-item .bigScale2 { width: 2px; height: 12px; }
+        .tools-zoom-item .reduce { width: 12px; height: 2px; }
+        .tools-zoom-item { position: relative; }
+
+        /* ========== 右侧色标与统计 ========== */
+        .app-zone-r {
+            position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+            z-index: 900; display: flex; align-items: center; gap: 10px;
+        }
+        .app-zone-r .col {
+            display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
+        }
+
+        /* 色标条 */
+        .color-bar {
+            background: rgba(13, 25, 48, 0.92);
+            border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 12px 10px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+        }
+        .color-bar-title { font-size: 10px; color: rgba(255,255,255,0.6); text-align: center; margin-bottom: 8px; }
+        .color-bar-gradient { width: 16px; height: 200px; border-radius: 3px; margin: 0 auto; position: relative; }
+        .color-bar-labels {
+            position: absolute; top: 0; right: -32px; height: 200px;
+            display: flex; flex-direction: column; justify-content: space-between;
+        }
+        .color-bar-labels span { font-size: 9px; color: rgba(255,255,255,0.6); white-space: nowrap; }
+
+        /* 统计面板 */
+        .stats-panel {
+            background: rgba(13, 25, 48, 0.92);
+            border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 12px; width: 200px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+        }
+        .stats-title { font-size: 12px; color: #4fc3f7; font-weight: 600; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+        .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; font-size: 11px; }
+        .stat-row .label { color: rgba(255,255,255,0.5); }
+        .stat-row .value { color: #fff; font-weight: 600; font-family: 'Courier New', monospace; }
+        .stat-row .value.positive { color: #66bb6a; }
+        .stat-row .value.negative { color: #ef5350; }
+
+        /* ========== 底部时间播放器 ========== */
+        .timeplayerBox {
+            position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%);
             z-index: 900;
             background: rgba(13, 25, 48, 0.92);
             border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);
@@ -103,10 +307,7 @@
             box-shadow: 0 4px 16px rgba(0,0,0,0.4);
             min-width: 500px;
         }
-        .time-label {
-            font-size: 13px; color: #4fc3f7; font-weight: 600;
-            min-width: 90px; text-align: center;
-        }
+        .time-label { font-size: 13px; color: #4fc3f7; font-weight: 600; min-width: 90px; text-align: center; }
         .time-controls { display: flex; align-items: center; gap: 6px; }
         .time-btn {
             width: 30px; height: 30px; border-radius: 50%;
@@ -123,57 +324,9 @@
         .speed-control { display: flex; align-items: center; gap: 4px; }
         .speed-label { font-size: 10px; color: rgba(255,255,255,0.5); }
 
-        /* ========== 色标条 ========== */
-        .color-bar {
-            position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
-            z-index: 900;
-            background: rgba(13, 25, 48, 0.92);
-            border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
-            padding: 12px 10px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.4);
-        }
-        .color-bar-title {
-            font-size: 10px; color: rgba(255,255,255,0.6); text-align: center;
-            margin-bottom: 8px; writing-mode: horizontal-tb;
-        }
-        .color-bar-gradient {
-            width: 16px; height: 200px; border-radius: 3px; margin: 0 auto;
-            position: relative;
-        }
-        .color-bar-labels {
-            position: absolute; top: 0; right: -32px; height: 200px;
-            display: flex; flex-direction: column; justify-content: space-between;
-        }
-        .color-bar-labels span {
-            font-size: 9px; color: rgba(255,255,255,0.6); white-space: nowrap;
-        }
-
-        /* ========== 统计面板 ========== */
-        .stats-panel {
-            position: absolute; top: 62px; right: 10px; z-index: 900;
-            background: rgba(13, 25, 48, 0.92);
-            border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
-            padding: 12px; width: 200px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.4);
-        }
-        .stats-title {
-            font-size: 12px; color: #4fc3f7; font-weight: 600; margin-bottom: 8px;
-            padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.08);
-        }
-        .stat-row {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 4px 0; font-size: 11px;
-        }
-        .stat-row .label { color: rgba(255,255,255,0.5); }
-        .stat-row .value { color: #fff; font-weight: 600; font-family: 'Courier New', monospace; }
-        .stat-row .value.positive { color: #66bb6a; }
-        .stat-row .value.negative { color: #ef5350; }
-
         /* ========== 迷你趋势图 ========== */
         .mini-chart-container {
-            position: absolute; bottom: 90px; right: 10px; z-index: 900;
+            position: absolute; bottom: 90px; right: 12px; z-index: 900;
             background: rgba(13, 25, 48, 0.92);
             border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);
             backdrop-filter: blur(10px);
@@ -181,10 +334,18 @@
             box-shadow: 0 4px 16px rgba(0,0,0,0.4);
             display: none;
         }
-        .mini-chart-title {
-            font-size: 11px; color: #4fc3f7; margin-bottom: 4px;
-        }
+        .mini-chart-title { font-size: 11px; color: #4fc3f7; margin-bottom: 4px; }
         #miniChart { width: 100%; height: calc(100% - 20px); }
+
+        /* ========== 比例尺 & Logo ========== */
+        .map-scale {
+            position: absolute; bottom: 8px; left: 12px; z-index: 900;
+            color: rgba(255,255,255,0.4); font-size: 10px;
+        }
+        .map-logo {
+            position: absolute; bottom: 8px; right: 12px; z-index: 900;
+            color: rgba(255,255,255,0.3); font-size: 10px;
+        }
 
         /* ========== 加载遮罩 ========== */
         .loading-overlay {
@@ -195,53 +356,65 @@
             transition: opacity 0.5s;
         }
         .loading-overlay.hidden { opacity: 0; pointer-events: none; }
-        .loading-text { color: #4fc3f7; font-size: 16px; margin-bottom: 20px; font-weight: 600; }
+        .loading-text { color: #4fc3f7; font-size: 18px; margin-bottom: 20px; font-weight: 600; letter-spacing: 2px; }
         .loading-bar { width: 260px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; }
         .loading-bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #4fc3f7, #00e676); border-radius: 2px; transition: width 0.3s; }
         .loading-detail { color: rgba(255,255,255,0.4); font-size: 11px; margin-top: 12px; }
 
-        /* ========== Leaflet 覆盖样式 ========== */
-        .leaflet-container { background: #0a1628 !important; }
-        .leaflet-control-zoom { display: none; }
-        .leaflet-control-attribution { display: none !important; }
+        /* ========== Tooltip ========== */
+        .cesium-tooltip {
+            position: absolute; z-index: 2000;
+            background: rgba(13, 25, 48, 0.95);
+            border: 1px solid rgba(79,195,247,0.3);
+            border-radius: 6px; color: #fff; font-size: 12px;
+            padding: 8px 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            pointer-events: none;
+            display: none;
+        }
+        .cesium-tooltip .tt-name { font-weight: 600; color: #4fc3f7; margin-bottom: 4px; font-size: 13px; }
+        .cesium-tooltip .tt-val { display: flex; justify-content: space-between; gap: 16px; }
+        .cesium-tooltip .tt-label { color: rgba(255,255,255,0.6); }
+        .cesium-tooltip .tt-num { font-weight: 600; font-family: 'Courier New', monospace; }
+        .cesium-tooltip .tt-num.sink { color: #66bb6a; }
+        .cesium-tooltip .tt-num.source { color: #ef5350; }
 
-        .county-tooltip {
-            background: rgba(13, 25, 48, 0.95) !important;
-            border: 1px solid rgba(79,195,247,0.3) !important;
-            border-radius: 6px !important;
-            color: #fff !important; font-size: 12px !important;
-            padding: 8px 12px !important;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.4) !important;
+        /* ========== 底部Footer ========== */
+        .site-footer {
+            position: absolute; bottom: 0; left: 0; right: 0; z-index: 800;
+            height: 32px; background: rgba(13, 25, 48, 0.88);
+            backdrop-filter: blur(6px);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 20px; font-size: 11px; color: rgba(255,255,255,0.5);
         }
-        .county-tooltip::before { border: none !important; }
-        .county-tooltip .tt-name { font-weight: 600; color: #4fc3f7; margin-bottom: 4px; font-size: 13px; }
-        .county-tooltip .tt-val { display: flex; justify-content: space-between; gap: 16px; }
-        .county-tooltip .tt-label { color: rgba(255,255,255,0.6); }
-        .county-tooltip .tt-num { font-weight: 600; font-family: 'Courier New', monospace; }
-        .county-tooltip .tt-num.sink { color: #66bb6a; }
-        .county-tooltip .tt-num.source { color: #ef5350; }
-
-        /* ========== 工具栏 ========== */
-        .map-tools {
-            position: absolute; top: 62px; left: 50%; transform: translateX(-50%);
-            z-index: 900; display: flex; gap: 4px;
-        }
-        .map-tool-btn {
-            background: rgba(13, 25, 48, 0.92); border: 1px solid rgba(255,255,255,0.1);
-            color: rgba(255,255,255,0.7); padding: 6px 12px; border-radius: 4px;
-            font-size: 11px; cursor: pointer; transition: all 0.2s;
-            backdrop-filter: blur(10px);
-        }
-        .map-tool-btn:hover { background: rgba(79,195,247,0.15); color: #4fc3f7; border-color: rgba(79,195,247,0.3); }
-        .map-tool-btn.active { background: rgba(79,195,247,0.2); color: #4fc3f7; border-color: #4fc3f7; }
+        .site-footer a { color: rgba(255,255,255,0.5); text-decoration: none; margin-left: 12px; }
+        .site-footer a:hover { color: rgba(255,255,255,0.8); }
 
         /* ========== 响应式 ========== */
         @media (max-width: 768px) {
-            .left-panel { width: 160px; }
+            .header-core { padding: 0 12px; height: 56px; }
+            .main-nav { display: none; }
+            .mobile-toggle { display: block; }
+            .main-nav.open {
+                display: flex; flex-direction: column;
+                position: absolute; top: 100%; left: 0; right: 0;
+                background: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                padding: 8px 0;
+            }
+            .main-nav.open .nav-list { flex-direction: column; height: auto; }
+            .main-nav.open .nav-item > a { padding: 12px 20px; }
+            .main-nav.open .dropdown-menu {
+                position: static; opacity: 1; visibility: visible;
+                transform: none; box-shadow: none; border: none;
+                padding-left: 20px;
+            }
+            #content-core { height: calc(100vh - 59px); }
+            .left-panel { width: 160px; top: 50px; }
             .stats-panel { width: 160px; }
-            .time-panel { min-width: auto; width: calc(100% - 20px); padding: 8px 10px; gap: 8px; }
+            .timeplayerBox { min-width: auto; width: calc(100% - 24px); padding: 8px 10px; gap: 8px; }
             .mini-chart-container { width: 220px; height: 150px; }
             .color-bar { display: none; }
+            .map-toolbox-container-box { right: 8px; top: 8px; }
         }
     </style>
 </head>
@@ -251,118 +424,241 @@
 <div class="loading-overlay" id="loadingOverlay">
     <div class="loading-text">秦岭碳汇数据平台</div>
     <div class="loading-bar"><div class="loading-bar-fill" id="loadingFill"></div></div>
-    <div class="loading-detail" id="loadingDetail">正在初始化...</div>
+    <div class="loading-detail" id="loadingDetail">正在初始化3D地球...</div>
 </div>
 
-<!-- 顶部导航 -->
-<div class="top-bar">
-    <div class="logo">
-        <div class="logo-icon">C</div>
-        <span class="logo-text">秦岭碳汇数据平台</span>
-    </div>
-    <div class="nav-items">
-        <div class="nav-item active">碳汇地图</div>
-        <div class="nav-item" onclick="toggleChart()">趋势分析</div>
-        <div class="nav-item" onclick="toggle3D()">3D视图</div>
-    </div>
-</div>
+<!-- MEIC风格顶部导航 -->
+<header class="site-header">
+    <div class="header-core">
+        <!-- Logo -->
+        <a href="#" class="site-logo">
+            <div class="logo-icon-wrap">C</div>
+            <div class="logo-text-wrap">
+                <span class="logo-main">秦岭碳汇数据平台</span>
+                <span class="logo-sub">Qinling Carbon Sink Data Platform</span>
+            </div>
+        </a>
 
-<!-- 地图 -->
-<div id="map"></div>
+        <!-- 移动端菜单按钮 -->
+        <button class="mobile-toggle" onclick="toggleMobileNav()">
+            <i class="fa fa-bars"></i>
+        </button>
 
-<!-- 左侧面板 -->
-<div class="left-panel">
-    <div class="panel-title">数据图层</div>
-    <div class="mode-tabs">
-        <div class="mode-tab active" data-mode="nep" onclick="switchMode(this)">NEP碳汇</div>
-        <div class="mode-tab" data-mode="seasonal" onclick="switchMode(this)">季节变化</div>
+        <!-- 主导航 -->
+        <nav class="main-nav" id="mainNav">
+            <ul class="nav-list">
+                <li class="nav-item active">
+                    <a href="#"><span>碳汇地图</span></a>
+                </li>
+                <li class="nav-item">
+                    <a href="#"><span>数据产品 <i class="fa fa-caret-down caret"></i></span></a>
+                    <div class="dropdown-menu">
+                        <a href="javascript:void(0)" onclick="selectParamByKey('total')">NEP碳汇总值</a>
+                        <a href="javascript:void(0)" onclick="selectParamByKey('spring')">春季碳汇 (3-5月)</a>
+                        <a href="javascript:void(0)" onclick="selectParamByKey('summer')">夏季碳汇 (6-8月)</a>
+                        <a href="javascript:void(0)" onclick="selectParamByKey('autumn')">秋季碳汇 (9-11月)</a>
+                        <a href="javascript:void(0)" onclick="selectParamByKey('winter')">冬季碳汇 (12-2月)</a>
+                    </div>
+                </li>
+                <li class="nav-item">
+                    <a href="#"><span>方法说明 <i class="fa fa-caret-down caret"></i></span></a>
+                    <div class="dropdown-menu">
+                        <a href="javascript:void(0)">NEP计算方法</a>
+                        <a href="javascript:void(0)">数据来源</a>
+                        <a href="javascript:void(0)">引用方式</a>
+                    </div>
+                </li>
+                <li class="nav-item">
+                    <a href="#"><span>数据下载 <i class="fa fa-caret-down caret"></i></span></a>
+                    <div class="dropdown-menu">
+                        <a href="javascript:void(0)">月度碳汇数据</a>
+                        <a href="javascript:void(0)">季节碳汇数据</a>
+                        <a href="javascript:void(0)">县区矢量边界</a>
+                    </div>
+                </li>
+                <li class="nav-item">
+                    <a href="#"><span>出版物 <i class="fa fa-caret-down caret"></i></span></a>
+                    <div class="dropdown-menu">
+                        <a href="javascript:void(0)">团队论文</a>
+                        <a href="javascript:void(0)">相关研究</a>
+                    </div>
+                </li>
+                <li class="nav-item">
+                    <a href="#"><span>用户 <i class="fa fa-caret-down caret"></i></span></a>
+                    <div class="dropdown-menu">
+                        <a href="javascript:void(0)">使用协议</a>
+                        <a href="javascript:void(0)">常见问题</a>
+                        <a href="javascript:void(0)">联系方式</a>
+                    </div>
+                </li>
+                <li class="nav-item">
+                    <a href="javascript:void(0)" onclick="toggleChart()"><span>趋势分析</span></a>
+                </li>
+                <li class="nav-item">
+                    <a href="javascript:void(0)" onclick="flyToGlobe()"><span>全球视图</span></a>
+                </li>
+            </ul>
+        </nav>
     </div>
-    <div class="param-list" id="paramList">
-        <div class="param-item active" data-key="total" onclick="selectParam(this)">
-            <div class="dot" style="background:#4fc3f7"></div>碳汇总值
+    <div class="red-line"></div>
+</header>
+
+<!-- 内容区域 -->
+<div id="content-core">
+
+    <!-- Cesium 容器 -->
+    <div id="cesiumContainer"></div>
+
+    <!-- Tooltip -->
+    <div class="cesium-tooltip" id="cesiumTooltip">
+        <div class="tt-name" id="ttName"></div>
+        <div class="tt-val"><span class="tt-label">NEP碳汇值</span><span class="tt-num" id="ttNum"></span></div>
+    </div>
+
+    <!-- 地图工具栏顶部导航 -->
+    <div class="map-toolbox">
+        <div class="toolbox-nav">
+            <div class="toolbox-nav-item active" data-mode="nep" onclick="switchMode(this)">NEP碳汇</div>
+            <div class="toolbox-nav-item" data-mode="seasonal" onclick="switchMode(this)">季节变化</div>
         </div>
-        <div class="param-item" data-key="spring" onclick="selectParam(this)">
-            <div class="dot" style="background:#66bb6a"></div>春季 (3-5月)
+    </div>
+
+    <!-- 右侧工具区 -->
+    <div class="map-toolbox-container-box">
+        <!-- 2D/3D切换 -->
+        <div class="cesium-change-map">
+            <div class="current" onclick="switchDimension('2d', this)">2D</div>
+            <div onclick="switchDimension('3d', this)">3D</div>
         </div>
-        <div class="param-item" data-key="summer" onclick="selectParam(this)">
-            <div class="dot" style="background:#fdd835"></div>夏季 (6-8月)
+        <!-- 底图切换 -->
+        <div class="basemap-switcher">
+            <button class="basemap-btn" onclick="switchBasemap('satellite', this)" title="卫星图">卫星</button>
+            <button class="basemap-btn active" onclick="switchBasemap('hybrid', this)" title="卫星+路网">混合</button>
+            <button class="basemap-btn" onclick="switchBasemap('dark', this)" title="暗色">暗色</button>
         </div>
-        <div class="param-item" data-key="autumn" onclick="selectParam(this)">
-            <div class="dot" style="background:#ff9800"></div>秋季 (9-11月)
+        <!-- 工具按钮组 -->
+        <div class="map-toolbox-container">
+            <div class="map-toolbox-item" onclick="flyToQinling()" title="复位"><i class="fa fa-crosshairs"></i></div>
+            <div class="map-toolbox-item active" id="labelToggle" onclick="toggleLabels()" title="标签"><i class="fa fa-tag"></i></div>
+            <div class="map-toolbox-item" id="chartToggle" onclick="toggleChart()" title="趋势图"><i class="fa fa-bar-chart"></i></div>
+            <div class="map-toolbox-divider"></div>
+            <div class="map-toolbox-item" onclick="downloadData()" title="数据下载"><i class="fa fa-download"></i></div>
         </div>
-        <div class="param-item" data-key="winter" onclick="selectParam(this)">
-            <div class="dot" style="background:#42a5f5"></div>冬季 (12-2月)
+        <!-- 缩放控件 -->
+        <div class="tools-zoom">
+            <div class="tools-zoom-item" onclick="zoomIn()" title="放大">
+                <div class="line bigScale1"></div>
+                <div class="line bigScale2"></div>
+            </div>
+            <div class="tools-zoom-item" onclick="zoomOut()" title="缩小">
+                <div class="line reduce"></div>
+            </div>
         </div>
     </div>
-</div>
 
-<!-- 右侧统计 -->
-<div class="stats-panel">
-    <div class="stats-title">区域统计</div>
-    <div class="stat-row"><span class="label">时间</span><span class="value" id="statTime">--</span></div>
-    <div class="stat-row"><span class="label">县区数</span><span class="value" id="statCount">--</span></div>
-    <div class="stat-row"><span class="label">碳汇总量</span><span class="value" id="statTotal">--</span></div>
-    <div class="stat-row"><span class="label">均值</span><span class="value" id="statMean">--</span></div>
-    <div class="stat-row"><span class="label">最高值</span><span class="value positive" id="statMax">--</span></div>
-    <div class="stat-row"><span class="label">最低值</span><span class="value negative" id="statMin">--</span></div>
-    <div class="stat-row"><span class="label">碳汇县区</span><span class="value positive" id="statSink">--</span></div>
-    <div class="stat-row"><span class="label">碳源县区</span><span class="value negative" id="statSource">--</span></div>
-</div>
-
-<!-- 色标条 -->
-<div class="color-bar">
-    <div class="color-bar-title">NEP (gC/m²/月)</div>
-    <div class="color-bar-gradient" id="colorBarGradient" style="background: linear-gradient(to bottom, #006400, #228b22, #90ee90, #ffffe0, #ffd700, #ff8c00, #ff4500, #8b0000);">
+    <!-- 左侧面板 -->
+    <div class="left-panel">
+        <div class="panel-title">数据图层</div>
+        <div class="mode-tabs">
+            <div class="mode-tab active" data-mode="nep" onclick="switchMode(this)">NEP碳汇</div>
+            <div class="mode-tab" data-mode="seasonal" onclick="switchMode(this)">季节变化</div>
+        </div>
+        <div class="param-list" id="paramList">
+            <div class="param-item active" data-key="total" onclick="selectParam(this)">
+                <div class="dot" style="background:#4fc3f7"></div>碳汇总值
+            </div>
+            <div class="param-item" data-key="spring" onclick="selectParam(this)">
+                <div class="dot" style="background:#66bb6a"></div>春季 (3-5月)
+            </div>
+            <div class="param-item" data-key="summer" onclick="selectParam(this)">
+                <div class="dot" style="background:#fdd835"></div>夏季 (6-8月)
+            </div>
+            <div class="param-item" data-key="autumn" onclick="selectParam(this)">
+                <div class="dot" style="background:#ff9800"></div>秋季 (9-11月)
+            </div>
+            <div class="param-item" data-key="winter" onclick="selectParam(this)">
+                <div class="dot" style="background:#42a5f5"></div>冬季 (12-2月)
+            </div>
+        </div>
     </div>
-    <div class="color-bar-labels">
-        <span>500</span>
-        <span>300</span>
-        <span>100</span>
-        <span>0</span>
-        <span>-100</span>
-        <span>-400</span>
-        <span>-700</span>
-    </div>
-</div>
 
-<!-- 时间控制 -->
-<div class="time-panel">
-    <div class="time-label" id="timeLabel">2022年7月</div>
-    <div class="time-controls">
-        <button class="time-btn" onclick="prevYear()" title="上一年">⏮</button>
-        <button class="time-btn" onclick="prevMonth()" title="上一月">◀</button>
-        <select class="time-select" id="yearSelect" onchange="onYearChange()"></select>
-        <select class="time-select" id="monthSelect" onchange="onMonthChange()"></select>
-        <button class="time-btn" onclick="nextMonth()" title="下一月">▶</button>
-        <button class="time-btn" onclick="nextYear()" title="下一年">⏭</button>
+    <!-- 右侧色标与统计 -->
+    <div class="app-zone-r">
+        <div class="col">
+            <!-- 色标条 -->
+            <div class="color-bar">
+                <div class="color-bar-title">NEP (kg C/(m²·mon))</div>
+                <div class="color-bar-gradient" id="colorBarGradient" style="background: linear-gradient(to bottom, #006400, #228b22, #90ee90, #ffffe0, #ffd700, #ff8c00, #ff4500, #8b0000);">
+                </div>
+                <div class="color-bar-labels">
+                    <span>500</span><span>300</span><span>100</span><span>0</span>
+                    <span>-100</span><span>-400</span><span>-700</span>
+                </div>
+            </div>
+            <!-- 统计面板 -->
+            <div class="stats-panel">
+                <div class="stats-title">区域统计</div>
+                <div class="stat-row"><span class="label">时间</span><span class="value" id="statTime">--</span></div>
+                <div class="stat-row"><span class="label">县区数</span><span class="value" id="statCount">--</span></div>
+                <div class="stat-row"><span class="label">碳汇总量</span><span class="value" id="statTotal">--</span></div>
+                <div class="stat-row"><span class="label">均值</span><span class="value" id="statMean">--</span></div>
+                <div class="stat-row"><span class="label">最高值</span><span class="value positive" id="statMax">--</span></div>
+                <div class="stat-row"><span class="label">最低值</span><span class="value negative" id="statMin">--</span></div>
+                <div class="stat-row"><span class="label">碳汇县区</span><span class="value positive" id="statSink">--</span></div>
+                <div class="stat-row"><span class="label">碳源县区</span><span class="value negative" id="statSource">--</span></div>
+            </div>
+        </div>
     </div>
-    <button class="time-btn" id="playBtn" onclick="togglePlay()" title="自动播放">▶</button>
-    <div class="speed-control">
-        <span class="speed-label">速度</span>
-        <select class="time-select" id="speedSelect">
-            <option value="2000">慢</option>
-            <option value="1000" selected>中</option>
-            <option value="500">快</option>
-        </select>
+
+    <!-- 时间播放器 -->
+    <div class="timeplayerBox">
+        <div class="time-label" id="timeLabel">2022年7月</div>
+        <div class="time-controls">
+            <button class="time-btn" onclick="prevYear()" title="上一年">⏮</button>
+            <button class="time-btn" onclick="prevMonth()" title="上一月">◀</button>
+            <select class="time-select" id="yearSelect" onchange="onYearChange()"></select>
+            <select class="time-select" id="monthSelect" onchange="onMonthChange()"></select>
+            <button class="time-btn" onclick="nextMonth()" title="下一月">▶</button>
+            <button class="time-btn" onclick="nextYear()" title="下一年">⏭</button>
+        </div>
+        <button class="time-btn" id="playBtn" onclick="togglePlay()" title="自动播放">▶</button>
+        <div class="speed-control">
+            <span class="speed-label">速度</span>
+            <select class="time-select" id="speedSelect">
+                <option value="2000">慢</option>
+                <option value="1000" selected>中</option>
+                <option value="500">快</option>
+            </select>
+        </div>
     </div>
-</div>
 
-<!-- 迷你趋势图 -->
-<div class="mini-chart-container" id="miniChartPanel">
-    <div class="mini-chart-title" id="miniChartTitle">区域碳汇月度趋势</div>
-    <div id="miniChart"></div>
-</div>
+    <!-- 迷你趋势图 -->
+    <div class="mini-chart-container" id="miniChartPanel">
+        <div class="mini-chart-title" id="miniChartTitle">区域碳汇月度趋势</div>
+        <div id="miniChart"></div>
+    </div>
 
-<!-- 工具栏 -->
-<div class="map-tools">
-    <button class="map-tool-btn" onclick="resetView()">复位</button>
-    <button class="map-tool-btn" id="labelToggle" onclick="toggleLabels()">标签</button>
-    <button class="map-tool-btn" id="chartToggle" onclick="toggleChart()">趋势图</button>
+    <!-- 比例尺 -->
+    <div class="map-scale" id="mapScale"></div>
+    <!-- 地图Logo -->
+    <div class="map-logo">Qinling Carbon Sink Platform</div>
+
+    <!-- 底部Footer -->
+    <div class="site-footer">
+        <span id="copyrightText">Copyright &copy; 2026 秦岭碳汇数据平台</span>
+        <div>
+            <a href="javascript:void(0)">使用协议</a>
+            <a href="javascript:void(0)">隐私政策</a>
+            <a href="javascript:void(0)">联系我们</a>
+        </div>
+    </div>
 </div>
 
 <script>
 // ========== 全局变量 ==========
-var map, geoLayer, labelMarkers = [];
+var viewer, geoDataSource = null;
+var worldDataSource = null;
+var geoJSONData = null;
 var monthlyData = {};
 var countyCoords = {};
 var currentYear = '2022', currentMonth = '7';
@@ -370,11 +666,14 @@ var isPlaying = false, playTimer = null;
 var showLabels = true;
 var miniChartInstance = null;
 var currentParam = 'total';
+var currentBasemap = 'hybrid';
+var currentDimension = '2d';
+var labelEntities = [];
+var satelliteLayer, roadLayer, labelLayer;
 
-// ========== 颜色映射 ==========
-function getCarbonColor(val) {
+// ========== 颜色映射 (返回Cesium.Color) ==========
+function getCarbonColorCss(val) {
     if (val === null || val === undefined) return 'rgba(128,128,128,0.3)';
-    // 碳汇正值=绿色, 碳源负值=红/橙色, 零=淡黄
     if (val <= -500) return '#8b0000';
     if (val <= -300) return '#c62828';
     if (val <= -150) return '#ef5350';
@@ -390,71 +689,332 @@ function getCarbonColor(val) {
     return '#1b5e20';
 }
 
-function getCarbonColorAlpha(val, alpha) {
-    if (val === null || val === undefined) return 'rgba(128,128,128,' + alpha + ')';
-    var r, g, b;
-    if (val < 0) {
-        // 碳源: 红->橙
-        var t = Math.min(Math.abs(val) / 500, 1);
-        r = Math.round(255);
-        g = Math.round(200 * (1 - t));
-        b = Math.round(100 * (1 - t));
-    } else {
-        // 碳汇: 黄->深绿
-        var t = Math.min(val / 400, 1);
-        r = Math.round(200 * (1 - t));
-        g = Math.round(200 + 55 * (1 - t));
-        b = Math.round(50 * t);
-    }
-    return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
+function getCarbonCesiumColor(val) {
+    var css = getCarbonColorCss(val);
+    return Cesium.Color.fromCssColorString(css).withAlpha(0.78);
 }
 
-// ========== 初始化地图 ==========
-function initMap() {
-    map = L.map('map', {
-        center: [33.8, 108.5],
-        zoom: 8,
-        minZoom: 7,
-        maxZoom: 12,
-        zoomControl: false,
-        attributionControl: false,
-        preferCanvas: true
+// ========== 获取县区碳汇值 ==========
+function getCountyValue(name) {
+    if (!monthlyData[currentYear] || !monthlyData[currentYear][currentMonth]) return 0;
+    var monthData = monthlyData[currentYear][currentMonth];
+    if (!monthData || monthData[name] === undefined) return 0;
+    return monthData[name];
+}
+
+function getSeasonalValue(name, season) {
+    if (!monthlyData[currentYear]) return 0;
+    var months;
+    switch(season) {
+        case 'spring': months = ['3','4','5']; break;
+        case 'summer': months = ['6','7','8']; break;
+        case 'autumn': months = ['9','10','11']; break;
+        case 'winter': months = ['12','1','2']; break;
+        default: return getCountyValue(name);
+    }
+    var sum = 0, count = 0;
+    months.forEach(function(m) {
+        if (monthlyData[currentYear][m] && monthlyData[currentYear][m][name] !== undefined) {
+            sum += monthlyData[currentYear][m][name]; count++;
+        }
+    });
+    return count > 0 ? sum / count : 0;
+}
+
+// ========== 初始化 Cesium ==========
+function initCesium() {
+    Cesium.Ion.defaultAccessToken = undefined;
+
+    viewer = new Cesium.Viewer('cesiumContainer', {
+        imageryProvider: new Cesium.UrlTemplateImageryProvider({
+            url: 'https://webst01.is.autonavi.com/appmaptile?style=6&x={x}&y={y}&z={z}',
+            maximumLevel: 18,
+            credit: new Cesium.Credit('高德地图')
+        }),
+        baseLayerPicker: false,
+        geocoder: false,
+        homeButton: false,
+        sceneModePicker: false,
+        navigationHelpButton: false,
+        animation: false,
+        timeline: false,
+        fullscreenButton: false,
+        selectionIndicator: false,
+        infoBox: false,
+        creditContainer: document.createElement('div'),
+        skyBox: false,
+        skyAtmosphere: new Cesium.SkyAtmosphere(),
+        orderIndependentTranslucency: false,
+        contextOptions: {
+            webgl: { alpha: false }
+        }
     });
 
-    // 暗色底图
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        maxZoom: 19,
-        subdomains: 'abcd'
-    }).addTo(map);
+    satelliteLayer = viewer.imageryLayers.get(0);
 
-    updateLoading(30, '地图底图加载完成');
+    labelLayer = viewer.imageryLayers.addImageryProvider(
+        new Cesium.UrlTemplateImageryProvider({
+            url: 'https://webst01.is.autonavi.com/appmaptile?style=8&x={x}&y={y}&z={z}',
+            maximumLevel: 18,
+            credit: new Cesium.Credit('高德地图')
+        })
+    );
+    labelLayer.alpha = 0.8;
+
+    roadLayer = viewer.imageryLayers.addImageryProvider(
+        new Cesium.UrlTemplateImageryProvider({
+            url: 'https://webrd01.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=7&x={x}&y={y}&z={z}',
+            maximumLevel: 18,
+            credit: new Cesium.Credit('高德地图')
+        })
+    );
+    roadLayer.show = false;
+
+    viewer.scene.globe.baseColor = Cesium.Color.fromCssColorString('#0a1628');
+    viewer.scene.backgroundColor = Cesium.Color.fromCssColorString('#020810');
+    viewer.scene.globe.enableLighting = true;
+    viewer.scene.globe.showGroundAtmosphere = true;
+    viewer.scene.fog.enabled = true;
+    viewer.scene.fog.density = 2.0e-4;
+
+    if (viewer.scene.skyAtmosphere) {
+        viewer.scene.skyAtmosphere.hueShift = -0.05;
+        viewer.scene.skyAtmosphere.saturationShift = -0.2;
+        viewer.scene.skyAtmosphere.brightnessShift = -0.2;
+    }
+
+    viewer.scene.postProcessStages.fxaa.enabled = true;
+
+    // 初始相机 - 秦岭上空
+    viewer.camera.setView({
+        destination: Cesium.Cartesian3.fromDegrees(108.5, 33.8, 500000),
+        orientation: {
+            heading: Cesium.Math.toRadians(0),
+            pitch: Cesium.Math.toRadians(-90),
+            roll: 0
+        }
+    });
+
+    setupInteractivity();
+    loadWorldOutlines();
+    updateLoading(30, '3D地球初始化完成');
+}
+
+// ========== 2D/3D切换 ==========
+function switchDimension(dim, el) {
+    currentDimension = dim;
+    document.querySelectorAll('.cesium-change-map div').forEach(function(d) { d.classList.remove('current'); });
+    if (el) el.classList.add('current');
+
+    if (dim === '2d') {
+        viewer.scene.morphTo2D(1.0);
+    } else {
+        viewer.scene.morphTo3D(1.0);
+    }
+}
+
+// ========== 底图切换 ==========
+function switchBasemap(type, btnEl) {
+    currentBasemap = type;
+    switch(type) {
+        case 'satellite':
+            satelliteLayer.show = true;
+            labelLayer.show = false;
+            roadLayer.show = false;
+            satelliteLayer.alpha = 1.0;
+            satelliteLayer.brightness = 1.0;
+            satelliteLayer.contrast = 1.0;
+            satelliteLayer.saturation = 1.0;
+            break;
+        case 'hybrid':
+            satelliteLayer.show = true;
+            labelLayer.show = true;
+            roadLayer.show = false;
+            satelliteLayer.alpha = 1.0;
+            satelliteLayer.brightness = 1.0;
+            satelliteLayer.contrast = 1.0;
+            satelliteLayer.saturation = 1.0;
+            labelLayer.alpha = 0.8;
+            break;
+        case 'dark':
+            satelliteLayer.show = true;
+            labelLayer.show = true;
+            roadLayer.show = false;
+            satelliteLayer.alpha = 1.0;
+            satelliteLayer.brightness = 0.35;
+            satelliteLayer.contrast = 1.4;
+            satelliteLayer.saturation = 0.3;
+            labelLayer.alpha = 0.5;
+            break;
+    }
+    document.querySelectorAll('.basemap-btn').forEach(function(b) { b.classList.remove('active'); });
+    if (btnEl) btnEl.classList.add('active');
+}
+
+// ========== 鼠标交互 ==========
+function setupInteractivity() {
+    var tooltip = document.getElementById('cesiumTooltip');
+    var lastHoveredEntity = null;
+
+    var handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+    handler.setInputAction(function(movement) {
+        var pickedObject = viewer.scene.pick(movement.endPosition);
+        if (Cesium.defined(pickedObject) && pickedObject.id && pickedObject.id.properties) {
+            var entity = pickedObject.id;
+            var name = entity.properties.name ? entity.properties.name.getValue() :
+                       (entity.properties.NAME ? entity.properties.NAME.getValue() : null);
+            if (name) {
+                var val = currentParam === 'total' ? getCountyValue(name) : getSeasonalValue(name, currentParam);
+                var cls = val >= 0 ? 'sink' : 'source';
+                var sign = val >= 0 ? '+' : '';
+
+                document.getElementById('ttName').textContent = name;
+                var numEl = document.getElementById('ttNum');
+                numEl.textContent = sign + val.toFixed(2) + ' kg C/(m²·mon)';
+                numEl.className = 'tt-num ' + cls;
+
+                tooltip.style.display = 'block';
+                tooltip.style.left = (movement.endPosition.x + 15) + 'px';
+                tooltip.style.top = (movement.endPosition.y - 10) + 'px';
+
+                if (entity.polygon) {
+                    entity.polygon.outlineColor = Cesium.Color.fromCssColorString('#4fc3f7');
+                    entity.polygon.outlineWidth = 3;
+                }
+                lastHoveredEntity = entity;
+                viewer.scene.canvas.style.cursor = 'pointer';
+                return;
+            }
+        }
+
+        if (lastHoveredEntity && lastHoveredEntity.polygon) {
+            lastHoveredEntity.polygon.outlineColor = Cesium.Color.fromCssColorString('rgba(79,195,247,0.5)');
+            lastHoveredEntity.polygon.outlineWidth = 1.5;
+            lastHoveredEntity = null;
+        }
+        tooltip.style.display = 'none';
+        viewer.scene.canvas.style.cursor = '';
+    }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+
+    handler.setInputAction(function(click) {
+        var pickedObject = viewer.scene.pick(click.position);
+        if (Cesium.defined(pickedObject) && pickedObject.id && pickedObject.id.properties) {
+            var name = pickedObject.id.properties.name ? pickedObject.id.properties.name.getValue() :
+                       (pickedObject.id.properties.NAME ? pickedObject.id.properties.NAME.getValue() : null);
+            if (name) {
+                showCountyChart(name);
+            }
+        }
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+}
+
+// ========== 缩放控制 ==========
+function zoomIn() {
+    viewer.camera.zoomIn(viewer.camera.positionCartographic.height * 0.3);
+}
+function zoomOut() {
+    viewer.camera.zoomOut(viewer.camera.positionCartographic.height * 0.3);
+}
+
+function flyToQinling() {
+    viewer.camera.flyTo({
+        destination: Cesium.Cartesian3.fromDegrees(108.5, 33.8, 500000),
+        orientation: {
+            heading: Cesium.Math.toRadians(0),
+            pitch: Cesium.Math.toRadians(-60),
+            roll: 0
+        },
+        duration: 2.5
+    });
+}
+
+function flyToGlobe() {
+    var height = viewer.camera.positionCartographic.height;
+    if (height < 5000000) {
+        viewer.camera.flyTo({
+            destination: Cesium.Cartesian3.fromDegrees(108.5, 33.8, 20000000),
+            orientation: {
+                heading: 0,
+                pitch: Cesium.Math.toRadians(-90),
+                roll: 0
+            },
+            duration: 3.0
+        });
+    } else {
+        flyToQinling();
+    }
+}
+
+// ========== 加载全球大洲轮廓 ==========
+async function loadWorldOutlines() {
+    try {
+        var worldResp = await fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json');
+        var worldData = await worldResp.json();
+
+        if (worldData.type === 'Topology' && worldData.objects && worldData.objects.countries) {
+            var geoJSON = topojson.feature(worldData, worldData.objects.countries);
+
+            geoJSON.features.forEach(function(f) {
+                if (!f.geometry || !f.geometry.coordinates) return;
+                var lines = [];
+                var coords = f.geometry.coordinates;
+                if (f.geometry.type === 'Polygon') {
+                    coords.forEach(function(ring) {
+                        if (ring && ring.length >= 2) lines.push(ring);
+                    });
+                } else if (f.geometry.type === 'MultiPolygon') {
+                    coords.forEach(function(poly) {
+                        poly.forEach(function(ring) {
+                            if (ring && ring.length >= 2) lines.push(ring);
+                        });
+                    });
+                }
+                f.geometry = { type: 'MultiLineString', coordinates: lines };
+            });
+
+            worldDataSource = await Cesium.GeoJsonDataSource.load(geoJSON, {
+                stroke: Cesium.Color.fromCssColorString('rgba(100, 150, 200, 0.3)'),
+                strokeWidth: 1,
+                clampToGround: true
+            });
+            viewer.dataSources.add(worldDataSource);
+            viewer.dataSources.lowerToBottom(worldDataSource);
+            addContinentFills();
+        }
+    } catch(e) {
+        console.warn('全球轮廓加载失败(不影响主要功能):', e);
+    }
+}
+
+function addContinentFills() {
+    var continents = [
+        { name: '亚洲', west: 25, south: 0, east: 150, north: 75 },
+        { name: '欧洲', west: -10, south: 35, east: 40, north: 72 },
+        { name: '非洲', west: -18, south: -35, east: 52, north: 37 },
+        { name: '北美洲', west: -170, south: 15, east: -50, north: 75 },
+        { name: '南美洲', west: -82, south: -56, east: -34, north: 13 },
+        { name: '大洋洲', west: 110, south: -47, east: 180, north: 0 }
+    ];
+    continents.forEach(function(c) {
+        viewer.entities.add({
+            rectangle: {
+                coordinates: Cesium.Rectangle.fromDegrees(c.west, c.south, c.east, c.north),
+                material: Cesium.Color.fromCssColorString('rgba(30, 55, 90, 0.12)'),
+                heightReference: Cesium.HeightReference.CLAMP_TO_GROUND
+            }
+        });
+    });
 }
 
 // ========== 加载数据 ==========
 async function loadAllData() {
     updateLoading(10, '正在加载碳汇数据...');
-
     try {
-        // 加载碳汇数据
         var resp = await fetch('data/carbonData2.json');
         monthlyData = await resp.json();
         updateLoading(40, '碳汇数据加载完成');
 
-        // 尝试合并云端数据
-        try {
-            var cloudResp = await fetch('https://cloudbase-8gdof83j7fdc6094.tcb.qcloud.la/qinling-carbon-data/web/carbonData2.json?t=' + Date.now());
-            if (cloudResp.ok) {
-                var cloudData = await cloudResp.json();
-                for (var y in cloudData) {
-                    if (!monthlyData[y]) monthlyData[y] = cloudData[y];
-                    else for (var m in cloudData[y]) monthlyData[y][m] = cloudData[y][m];
-                }
-                console.log('云端数据合并成功');
-            }
-        } catch(e) { console.log('云端数据加载失败，使用本地数据'); }
-
         updateLoading(50, '正在加载县区坐标...');
-        // 加载坐标
         var coordResp = await fetch('data/map3d_sampled.json');
         var coordData = await coordResp.json();
         if (coordData.features) {
@@ -468,33 +1028,12 @@ async function loadAllData() {
         updateLoading(50, '数据加载失败，使用备用数据');
     }
 
-    // 加载GeoJSON
     try {
         var geoResp = await fetch('data/qinling.geojson');
-        var total = parseInt(geoResp.headers.get('content-length')) || 0;
-        var geoText;
-        if (total > 0 && typeof ReadableStream !== 'undefined') {
-            var reader = geoResp.body.getReader();
-            var chunks = [], received = 0;
-            while (true) {
-                var result = await reader.read();
-                if (result.done) break;
-                chunks.push(result.value);
-                received += result.value.length;
-                var pct = 60 + Math.round((received / total) * 20);
-                updateLoading(pct, '下载地形数据... ' + (received/1024/1024).toFixed(1) + 'MB');
-            }
-            var allChunks = new Uint8Array(received);
-            var pos = 0;
-            chunks.forEach(function(c) { allChunks.set(c, pos); pos += c.length; });
-            geoText = new TextDecoder().decode(allChunks);
-        } else {
-            geoText = await geoResp.text();
-        }
+        var geoText = await geoResp.text();
         var geoJSON = JSON.parse(geoText);
         updateLoading(85, '正在渲染地图...');
 
-        // 处理GeoJSON
         if (geoJSON.crs) delete geoJSON.crs;
         geoJSON.features.forEach(function(f) {
             if (f.properties && f.properties.NAME && !f.properties.name) {
@@ -502,12 +1041,11 @@ async function loadAllData() {
             }
         });
 
-        // 渲染GeoJSON图层
-        renderGeoLayer(geoJSON);
+        geoJSONData = geoJSON;
+        await renderGeoLayer(geoJSON);
 
         updateLoading(95, '正在添加标注...');
         setupSelectors();
-        addLabelMarkers();
         updateMapData();
         updateStats();
 
@@ -523,109 +1061,89 @@ async function loadAllData() {
 }
 
 // ========== 渲染GeoJSON图层 ==========
-function renderGeoLayer(geoJSON) {
-    if (geoLayer) map.removeLayer(geoLayer);
+async function renderGeoLayer(geoJSON) {
+    try {
+        geoDataSource = await Cesium.GeoJsonDataSource.load(geoJSON, {
+            stroke: Cesium.Color.fromCssColorString('rgba(79, 195, 247, 0.5)'),
+            fill: Cesium.Color.fromCssColorString('rgba(76, 175, 80, 0.5)'),
+            strokeWidth: 1.5,
+            clampToGround: true
+        });
+        viewer.dataSources.add(geoDataSource);
 
-    geoLayer = L.geoJSON(geoJSON, {
-        style: function(feature) {
-            var name = feature.properties.name || feature.properties.NAME;
-            var val = getCountyValue(name);
-            return {
-                fillColor: getCarbonColor(val),
-                fillOpacity: 0.75,
-                color: 'rgba(79, 195, 247, 0.5)',
-                weight: 1.5,
-                dashArray: '',
-            };
-        },
-        onEachFeature: function(feature, layer) {
-            layer.on({
-                mouseover: highlightFeature,
-                mouseout: resetHighlight,
-                click: onCountyClick
-            });
+        if (worldDataSource) {
+            viewer.dataSources.raiseToTop(geoDataSource);
         }
-    }).addTo(map);
-}
 
-function highlightFeature(e) {
-    var layer = e.target;
-    layer.setStyle({
-        weight: 3,
-        color: '#4fc3f7',
-        fillOpacity: 0.9,
-    });
-    layer.bringToFront();
+        updateEntityColors();
+        addLabelEntities();
 
-    var name = layer.feature.properties.name || layer.feature.properties.NAME;
-    var val = getCountyValue(name);
-    var cls = val >= 0 ? 'sink' : 'source';
-    var sign = val >= 0 ? '+' : '';
-
-    layer.bindTooltip(
-        '<div class="tt-name">' + name + '</div>' +
-        '<div class="tt-val"><span class="tt-label">NEP碳汇值</span><span class="tt-num ' + cls + '">' + sign + val.toFixed(2) + ' gC/m²</span></div>',
-        { className: 'county-tooltip', direction: 'top', offset: [0, -10] }
-    ).openTooltip();
-}
-
-function resetHighlight(e) {
-    geoLayer.resetStyle(e.target);
-    e.target.closeTooltip();
-}
-
-function onCountyClick(e) {
-    var name = e.target.feature.properties.name || e.target.feature.properties.NAME;
-    showCountyChart(name);
-}
-
-// ========== 获取县区碳汇值 ==========
-function getCountyValue(name) {
-    if (!monthlyData[currentYear] || !monthlyData[currentYear][currentMonth]) return 0;
-    var monthData = monthlyData[currentYear][currentMonth];
-    if (!monthData || monthData[name] === undefined) return 0;
-    return monthData[name];
-}
-
-// ========== 获取季节值 ==========
-function getSeasonalValue(name, season) {
-    if (!monthlyData[currentYear]) return 0;
-    var months;
-    switch(season) {
-        case 'spring': months = ['3','4','5']; break;
-        case 'summer': months = ['6','7','8']; break;
-        case 'autumn': months = ['9','10','11']; break;
-        case 'winter': months = ['12','1','2']; break;
-        default: return getCountyValue(name);
+    } catch(e) {
+        console.error('GeoJSON渲染失败:', e);
     }
-    var sum = 0, count = 0;
-    months.forEach(function(m) {
-        if (monthlyData[currentYear][m] && monthlyData[currentYear][m][name] !== undefined) {
-            sum += monthlyData[currentYear][m][name];
-            count++;
+}
+
+// ========== 更新实体颜色 ==========
+function updateEntityColors() {
+    if (!geoDataSource) return;
+
+    var entities = geoDataSource.entities.values;
+    for (var i = 0; i < entities.length; i++) {
+        var entity = entities[i];
+        var name = entity.properties.name ?
+            entity.properties.name.getValue() :
+            (entity.properties.NAME ? entity.properties.NAME.getValue() : null);
+        if (!name) continue;
+
+        var val = currentParam === 'total' ? getCountyValue(name) : getSeasonalValue(name, currentParam);
+        var cesiumColor = getCarbonCesiumColor(val);
+
+        if (entity.polygon) {
+            entity.polygon.material = cesiumColor;
+            entity.polygon.outline = true;
+            entity.polygon.outlineColor = Cesium.Color.fromCssColorString('rgba(79,195,247,0.5)');
+            entity.polygon.outlineWidth = 1.5;
+            entity.polygon.heightReference = Cesium.HeightReference.CLAMP_TO_GROUND;
         }
+    }
+}
+
+// ========== 添加标签实体 ==========
+function addLabelEntities() {
+    labelEntities.forEach(function(e) {
+        viewer.entities.remove(e);
     });
-    return count > 0 ? sum / count : 0;
+    labelEntities = [];
+
+    if (!showLabels) return;
+
+    for (var name in countyCoords) {
+        var coords = countyCoords[name];
+        var shortName = name.replace(/(区|县)$/, '');
+
+        var labelEntity = viewer.entities.add({
+            position: Cesium.Cartesian3.fromDegrees(coords[1], coords[0]),
+            label: {
+                text: shortName,
+                font: 'bold 13px Noto Sans SC, Microsoft YaHei, sans-serif',
+                fillColor: Cesium.Color.fromCssColorString('rgba(255,255,255,0.85)'),
+                outlineColor: Cesium.Color.fromCssColorString('rgba(0,0,0,0.8)'),
+                outlineWidth: 2,
+                style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+                verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+                pixelOffset: new Cesium.Cartesian2(0, -8),
+                disableDepthTestDistance: Number.POSITIVE_INFINITY,
+                scaleByDistance: new Cesium.NearFarScalar(1e4, 1.0, 8e5, 0.4),
+                translucencyByDistance: new Cesium.NearFarScalar(1e4, 1.0, 2e6, 0.0)
+            }
+        });
+        labelEntities.push(labelEntity);
+    }
 }
 
 // ========== 更新地图数据 ==========
 function updateMapData() {
-    if (!geoLayer) return;
-
-    geoLayer.eachLayer(function(layer) {
-        var name = layer.feature.properties.name || layer.feature.properties.NAME;
-        var val;
-        if (currentParam === 'total') {
-            val = getCountyValue(name);
-        } else {
-            val = getSeasonalValue(name, currentParam);
-        }
-        layer.setStyle({
-            fillColor: getCarbonColor(val),
-            fillOpacity: 0.75,
-        });
-    });
-
+    updateEntityColors();
     document.getElementById('timeLabel').textContent = currentYear + '年' + currentMonth + '月';
     updateStats();
 }
@@ -658,38 +1176,15 @@ function updateStats() {
     document.getElementById('statSource').textContent = sourceCount;
 }
 
-// ========== 标注 ==========
-function addLabelMarkers() {
-    clearLabels();
-    if (!showLabels) return;
-    for (var name in countyCoords) {
-        var coords = countyCoords[name];
-        var shortName = name.replace(/(区|县)$/, '');
-        var marker = L.marker(coords, {
-            icon: L.divIcon({
-                className: '',
-                html: '<span style="color:rgba(255,255,255,0.8);font-size:9px;text-shadow:0 0 3px rgba(0,0,0,0.8);white-space:nowrap;font-family:Microsoft YaHei,sans-serif;">' + shortName + '</span>',
-                iconSize: [0, 0],
-                iconAnchor: [0, 0]
-            }),
-            interactive: false
-        }).addTo(map);
-        labelMarkers.push(marker);
-    }
-}
-
-function clearLabels() {
-    labelMarkers.forEach(function(m) { map.removeLayer(m); });
-    labelMarkers = [];
-}
-
+// ========== 标签切换 ==========
 function toggleLabels() {
     showLabels = !showLabels;
     if (showLabels) {
-        addLabelMarkers();
+        addLabelEntities();
         document.getElementById('labelToggle').classList.add('active');
     } else {
-        clearLabels();
+        labelEntities.forEach(function(e) { viewer.entities.remove(e); });
+        labelEntities = [];
         document.getElementById('labelToggle').classList.remove('active');
     }
 }
@@ -697,7 +1192,6 @@ function toggleLabels() {
 // ========== 选择器 ==========
 function setupSelectors() {
     var yearSel = document.getElementById('yearSelect');
-    var monthSel = document.getElementById('monthSelect');
     var years = Object.keys(monthlyData).sort();
     yearSel.innerHTML = '';
     years.forEach(function(y) {
@@ -733,15 +1227,12 @@ function updateMonthOptions() {
 
 function onYearChange() {
     currentYear = document.getElementById('yearSelect').value;
-    updateMonthOptions();
-    updateMapData();
+    updateMonthOptions(); updateMapData();
 }
-
 function onMonthChange() {
     currentMonth = document.getElementById('monthSelect').value;
     updateMapData();
 }
-
 function prevYear() {
     var years = Object.keys(monthlyData).sort();
     var idx = years.indexOf(currentYear);
@@ -787,9 +1278,13 @@ function stopPlay() {
 
 // ========== 面板切换 ==========
 function switchMode(el) {
+    // 同步更新左侧面板和顶部工具栏的标签
     document.querySelectorAll('.mode-tab').forEach(function(t) { t.classList.remove('active'); });
-    el.classList.add('active');
+    document.querySelectorAll('.toolbox-nav-item').forEach(function(t) { t.classList.remove('active'); });
     var mode = el.dataset.mode;
+    document.querySelectorAll('.mode-tab[data-mode="' + mode + '"]').forEach(function(t) { t.classList.add('active'); });
+    document.querySelectorAll('.toolbox-nav-item[data-mode="' + mode + '"]').forEach(function(t) { t.classList.add('active'); });
+
     if (mode === 'seasonal') {
         currentParam = 'spring';
         document.querySelectorAll('.param-item').forEach(function(p) {
@@ -813,6 +1308,23 @@ function selectParam(el) {
     updateMapData();
 }
 
+// 通过key选择参数（从导航菜单调用）
+function selectParamByKey(key) {
+    currentParam = key;
+    document.querySelectorAll('.param-item').forEach(function(p) {
+        p.classList.remove('active');
+        if (p.dataset.key === key) p.classList.add('active');
+    });
+    // 如果选择的是季节，切换到季节变化模式
+    if (key !== 'total') {
+        document.querySelectorAll('.mode-tab').forEach(function(t) { t.classList.remove('active'); });
+        document.querySelectorAll('.toolbox-nav-item').forEach(function(t) { t.classList.remove('active'); });
+        document.querySelectorAll('.mode-tab[data-mode="seasonal"]').forEach(function(t) { t.classList.add('active'); });
+        document.querySelectorAll('.toolbox-nav-item[data-mode="seasonal"]').forEach(function(t) { t.classList.add('active'); });
+    }
+    updateMapData();
+}
+
 // ========== 趋势图 ==========
 function toggleChart() {
     var panel = document.getElementById('miniChartPanel');
@@ -826,9 +1338,7 @@ function toggleChart() {
 
 function showRegionChart() {
     var chartDom = document.getElementById('miniChart');
-    if (!miniChartInstance) {
-        miniChartInstance = echarts.init(chartDom);
-    }
+    if (!miniChartInstance) miniChartInstance = echarts.init(chartDom);
     document.getElementById('miniChartTitle').textContent = currentYear + '年 区域碳汇月度趋势';
 
     var months = [], values = [];
@@ -839,9 +1349,7 @@ function showRegionChart() {
             var sum = 0, cnt = 0;
             for (var n in md) { sum += md[n]; cnt++; }
             values.push(cnt > 0 ? (sum / cnt) : 0);
-        } else {
-            values.push(0);
-        }
+        } else { values.push(0); }
     }
 
     miniChartInstance.setOption({
@@ -849,14 +1357,7 @@ function showRegionChart() {
         grid: { left: 40, right: 10, top: 10, bottom: 24 },
         xAxis: { type: 'category', data: months, axisLine: { lineStyle: { color: 'rgba(255,255,255,0.2)' } }, axisLabel: { color: 'rgba(255,255,255,0.5)', fontSize: 9 } },
         yAxis: { type: 'value', axisLine: { show: false }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } }, axisLabel: { color: 'rgba(255,255,255,0.5)', fontSize: 9 } },
-        series: [{
-            type: 'bar', data: values,
-            itemStyle: {
-                color: function(p) { return p.value >= 0 ? '#4caf50' : '#ef5350'; },
-                borderRadius: [2,2,0,0]
-            },
-            barWidth: '50%'
-        }],
+        series: [{ type: 'bar', data: values, itemStyle: { color: function(p) { return p.value >= 0 ? '#4caf50' : '#ef5350'; }, borderRadius: [2,2,0,0] }, barWidth: '50%' }],
         tooltip: { trigger: 'axis', backgroundColor: 'rgba(13,25,48,0.95)', borderColor: 'rgba(79,195,247,0.3)', textStyle: { color: '#fff', fontSize: 11 } }
     });
 }
@@ -866,7 +1367,6 @@ function showCountyChart(name) {
     panel.style.display = 'block';
     var chartDom = document.getElementById('miniChart');
     if (!miniChartInstance) miniChartInstance = echarts.init(chartDom);
-
     document.getElementById('miniChartTitle').textContent = name + ' - ' + currentYear + '年月度趋势';
 
     var months = [], values = [];
@@ -874,9 +1374,7 @@ function showCountyChart(name) {
         months.push(m + '月');
         if (monthlyData[currentYear] && monthlyData[currentYear][String(m)] && monthlyData[currentYear][String(m)][name] !== undefined) {
             values.push(monthlyData[currentYear][String(m)][name]);
-        } else {
-            values.push(0);
-        }
+        } else { values.push(0); }
     }
 
     miniChartInstance.setOption({
@@ -884,25 +1382,20 @@ function showCountyChart(name) {
         grid: { left: 50, right: 10, top: 10, bottom: 24 },
         xAxis: { type: 'category', data: months, axisLine: { lineStyle: { color: 'rgba(255,255,255,0.2)' } }, axisLabel: { color: 'rgba(255,255,255,0.5)', fontSize: 9 } },
         yAxis: { type: 'value', axisLine: { show: false }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } }, axisLabel: { color: 'rgba(255,255,255,0.5)', fontSize: 9 } },
-        series: [{
-            type: 'bar', data: values,
-            itemStyle: {
-                color: function(p) { return p.value >= 0 ? '#4caf50' : '#ef5350'; },
-                borderRadius: [2,2,0,0]
-            },
-            barWidth: '50%'
-        }],
+        series: [{ type: 'bar', data: values, itemStyle: { color: function(p) { return p.value >= 0 ? '#4caf50' : '#ef5350'; }, borderRadius: [2,2,0,0] }, barWidth: '50%' }],
         tooltip: { trigger: 'axis', backgroundColor: 'rgba(13,25,48,0.95)', borderColor: 'rgba(79,195,247,0.3)', textStyle: { color: '#fff', fontSize: 11 } }
     });
 }
 
-// ========== 工具 ==========
-function resetView() {
-    map.setView([33.8, 108.5], 8);
+// ========== 数据下载 ==========
+function downloadData() {
+    alert('数据下载功能即将上线，敬请期待！');
 }
 
-function toggle3D() {
-    window.open('terrain-bar-chart-monthly1-fixed.html', '_blank');
+// ========== 移动端导航 ==========
+function toggleMobileNav() {
+    var nav = document.getElementById('mainNav');
+    nav.classList.toggle('open');
 }
 
 // ========== 加载进度 ==========
@@ -911,12 +1404,20 @@ function updateLoading(pct, text) {
     document.getElementById('loadingDetail').textContent = text || '';
 }
 
+// ========== 版权信息 ==========
+function updateCopyright() {
+    var date = new Date();
+    var year = date.getFullYear();
+    var str = 'Copyright \u00A9 ' + year + ' 秦岭碳汇数据平台';
+    document.getElementById('copyrightText').textContent = str;
+}
+
 // ========== 启动 ==========
 window.addEventListener('load', function() {
-    initMap();
+    initCesium();
     loadAllData();
+    updateCopyright();
 
-    // 标签默认开启
     document.getElementById('labelToggle').classList.add('active');
 
     window.addEventListener('resize', function() {
