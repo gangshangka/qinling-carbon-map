@@ -910,10 +910,16 @@ function setupInteractivity() {
 
 // ========== 缩放控制 ==========
 function zoomIn() {
-    viewer.camera.zoomIn(viewer.camera.positionCartographic.height * 0.3);
+    var camera = viewer.camera;
+    var direction = camera.directionWC;
+    var distance = Math.max(camera.positionCartographic.height * 0.3, 10000);
+    camera.move(direction, distance);
 }
 function zoomOut() {
-    viewer.camera.zoomOut(viewer.camera.positionCartographic.height * 0.3);
+    var camera = viewer.camera;
+    var direction = camera.directionWC;
+    var distance = Math.max(camera.positionCartographic.height * 0.3, 10000);
+    camera.move(direction, -distance);
 }
 
 function flyToQinling() {
@@ -974,9 +980,17 @@ async function loadWorldOutlines() {
 
             worldDataSource = await Cesium.GeoJsonDataSource.load(geoJSON, {
                 stroke: Cesium.Color.fromCssColorString('rgba(100, 150, 200, 0.3)'),
-                strokeWidth: 1,
-                clampToGround: true
+                strokeWidth: 1
             });
+            // 贴地处理
+            var wEntities = worldDataSource.entities.values;
+            for (var i = 0; i < wEntities.length; i++) {
+                if (wEntities[i].polygon) {
+                    wEntities[i].polygon.height = 0;
+                    wEntities[i].polygon.heightReference = Cesium.HeightReference.CLAMP_TO_GROUND;
+                    wEntities[i].polygon.perPositionHeight = false;
+                }
+            }
             viewer.dataSources.add(worldDataSource);
             viewer.dataSources.lowerToBottom(worldDataSource);
             addContinentFills();
@@ -1000,6 +1014,7 @@ function addContinentFills() {
             rectangle: {
                 coordinates: Cesium.Rectangle.fromDegrees(c.west, c.south, c.east, c.north),
                 material: Cesium.Color.fromCssColorString('rgba(30, 55, 90, 0.12)'),
+                height: 0,
                 heightReference: Cesium.HeightReference.CLAMP_TO_GROUND
             }
         });
@@ -1060,14 +1075,53 @@ async function loadAllData() {
     }
 }
 
+// ========== 简化多边形顶点 ==========
+function simplifyRing(ring, tolerance) {
+    if (!ring || ring.length < 4) return ring;
+    tolerance = tolerance || 0.005;
+    var result = [ring[0]];
+    for (var i = 1; i < ring.length - 1; i++) {
+        var dx = ring[i][0] - result[result.length - 1][0];
+        var dy = ring[i][1] - result[result.length - 1][1];
+        if (Math.sqrt(dx * dx + dy * dy) >= tolerance) {
+            result.push(ring[i]);
+        }
+    }
+    result.push(ring[ring.length - 1]); // 闭合点
+    return result;
+}
+
+function simplifyGeoJSON(geoJSON, tolerance) {
+    var simplified = JSON.parse(JSON.stringify(geoJSON));
+    simplified.features.forEach(function(f) {
+        if (!f.geometry || !f.geometry.coordinates) return;
+        if (f.geometry.type === 'Polygon') {
+            f.geometry.coordinates = f.geometry.coordinates.map(function(ring) {
+                return simplifyRing(ring, tolerance);
+            });
+        } else if (f.geometry.type === 'MultiPolygon') {
+            f.geometry.coordinates = f.geometry.coordinates.map(function(poly) {
+                return poly.map(function(ring) {
+                    return simplifyRing(ring, tolerance);
+                });
+            });
+        }
+    });
+    return simplified;
+}
+
 // ========== 渲染GeoJSON图层 ==========
 async function renderGeoLayer(geoJSON) {
     try {
-        geoDataSource = await Cesium.GeoJsonDataSource.load(geoJSON, {
+        // 简化过密顶点，避免 Cesium 几何体属性不匹配
+        var simplified = simplifyGeoJSON(geoJSON, 0.005);
+        console.log('GeoJSON simplified:', geoJSON.features[0].geometry.coordinates[0].length, '->', simplified.features[0].geometry.coordinates[0].length, 'vertices');
+
+        // 不使用 clampToGround: true（这是导致属性长度不匹配错误的根因）
+        geoDataSource = await Cesium.GeoJsonDataSource.load(simplified, {
             stroke: Cesium.Color.fromCssColorString('rgba(79, 195, 247, 0.5)'),
             fill: Cesium.Color.fromCssColorString('rgba(76, 175, 80, 0.5)'),
-            strokeWidth: 1.5,
-            clampToGround: true
+            strokeWidth: 1.5
         });
         viewer.dataSources.add(geoDataSource);
 
@@ -1075,11 +1129,38 @@ async function renderGeoLayer(geoJSON) {
             viewer.dataSources.raiseToTop(geoDataSource);
         }
 
+        // 后处理：逐个实体设置贴地属性
+        var entities = geoDataSource.entities.values;
+        for (var i = 0; i < entities.length; i++) {
+            var entity = entities[i];
+            if (entity.polygon) {
+                entity.polygon.height = 0;
+                entity.polygon.heightReference = Cesium.HeightReference.CLAMP_TO_GROUND;
+                entity.polygon.extrudedHeight = undefined;
+                entity.polygon.extrudedHeightReference = Cesium.HeightReference.CLAMP_TO_GROUND;
+                entity.polygon.perPositionHeight = false;
+            }
+        }
+
         updateEntityColors();
         addLabelEntities();
 
     } catch(e) {
         console.error('GeoJSON渲染失败:', e);
+        // 尝试不贴地加载作为降级方案
+        try {
+            var simplified = simplifyGeoJSON(geoJSON, 0.01);
+            geoDataSource = await Cesium.GeoJsonDataSource.load(simplified, {
+                stroke: Cesium.Color.fromCssColorString('rgba(79, 195, 247, 0.5)'),
+                fill: Cesium.Color.fromCssColorString('rgba(76, 175, 80, 0.5)'),
+                strokeWidth: 1.5
+            });
+            viewer.dataSources.add(geoDataSource);
+            updateEntityColors();
+            addLabelEntities();
+        } catch(e2) {
+            console.error('GeoJSON降级渲染也失败:', e2);
+        }
     }
 }
 
@@ -1103,7 +1184,9 @@ function updateEntityColors() {
             entity.polygon.outline = true;
             entity.polygon.outlineColor = Cesium.Color.fromCssColorString('rgba(79,195,247,0.5)');
             entity.polygon.outlineWidth = 1.5;
+            entity.polygon.height = 0;
             entity.polygon.heightReference = Cesium.HeightReference.CLAMP_TO_GROUND;
+            entity.polygon.perPositionHeight = false;
         }
     }
 }
