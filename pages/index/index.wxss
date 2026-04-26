@@ -211,6 +211,11 @@
 .month-picker-panel.hide {
   opacity: 0;
   visibility: hidden;
+  pointer-events: none;
+}
+
+.year-picker-panel {
+  z-index: 10004;
 }
 
 .month-picker-content {

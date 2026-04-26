@@ -182,18 +182,187 @@
             padding: 15px;
             background: rgba(255, 255, 255, 0.05);
             border-radius: 12px;
+            position: relative;
         }
         .month-selector label {
             font-size: 1rem;
             opacity: 0.9;
         }
-        .month-selector select {
-            min-width: 120px;
-        }
         .year-month {
             display: flex;
             gap: 10px;
             align-items: center;
+            position: relative;
+        }
+        .picker-trigger {
+            background: rgba(0, 0, 0, 0.3);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 8px 32px 8px 15px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            min-width: 120px;
+            text-align: left;
+            position: relative;
+            transition: border-color 0.2s;
+        }
+        .picker-trigger:hover {
+            border-color: #00dbde;
+        }
+        .picker-trigger::after {
+            content: '▾';
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255,255,255,0.6);
+            font-size: 0.8rem;
+        }
+        .picker-modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            pointer-events: auto;
+        }
+        .picker-modal-overlay.active {
+            display: flex !important;
+        }
+        .picker-modal {
+            background: linear-gradient(135deg, #1a2a4a, #0d1b2e);
+            border-radius: 16px;
+            padding: 20px;
+            min-width: 320px;
+            max-width: 90vw;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.15);
+            animation: pickerSlideIn 0.25s ease-out;
+            pointer-events: auto;
+            position: relative;
+            z-index: 10001;
+        }
+        @keyframes pickerSlideIn {
+            from { opacity: 0; transform: translateY(-20px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .picker-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .picker-modal-title {
+            font-size: 1.1rem;
+            color: #00dbde;
+            font-weight: bold;
+        }
+        .picker-close-btn {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: rgba(255,255,255,0.8);
+            font-size: 1.5rem;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s;
+            line-height: 1;
+            pointer-events: auto;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        .picker-close-btn:hover {
+            background: rgba(255,255,255,0.2);
+            color: #fff;
+        }
+        .picker-close-btn:active {
+            background: rgba(255,80,80,0.3);
+        }
+        .picker-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .picker-item {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #fff;
+            padding: 10px 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .picker-item:hover {
+            background: rgba(0, 219, 222, 0.15);
+            border-color: rgba(0, 219, 222, 0.4);
+        }
+        .picker-item.selected {
+            background: linear-gradient(135deg, #00dbde, #0099cc);
+            border-color: #00dbde;
+            font-weight: bold;
+        }
+        .picker-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        .picker-confirm-btn {
+            background: linear-gradient(135deg, #00dbde, #fc00ff);
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        .picker-confirm-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(0, 219, 222, 0.5);
+        }
+        .picker-cancel-btn {
+            background: rgba(255,255,255,0.08);
+            color: rgba(255,255,255,0.7);
+            border: 1px solid rgba(255,255,255,0.15);
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .picker-cancel-btn:hover {
+            background: rgba(255,255,255,0.15);
+            color: #fff;
+        }
+        @media (max-width: 480px) {
+            .month-selector {
+                flex-wrap: wrap;
+                padding: 10px;
+                gap: 8px;
+            }
+            .picker-modal {
+                min-width: auto;
+                width: 92vw;
+                padding: 16px;
+            }
+            .picker-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 6px;
+            }
         }
         .loading-tip {
             position: fixed;
@@ -817,37 +986,12 @@
         <!-- 月份选择器 -->
         <div class="month-selector">
             <div class="year-month">
-                <label for="yearSelect">年份:</label>
-                <select id="yearSelect">
-                    <option value="2012">2012</option>
-                    <option value="2013">2013</option>
-                    <option value="2014">2014</option>
-                    <option value="2015">2015</option>
-                    <option value="2016">2016</option>
-                    <option value="2017">2017</option>
-                    <option value="2018">2018</option>
-                    <option value="2019">2019</option>
-                    <option value="2020">2020</option>
-                    <option value="2021">2021</option>
-                    <option value="2022">2022</option>
-                </select>
+                <label>年份:</label>
+                <button class="picker-trigger" id="yearTrigger">2022</button>
             </div>
             <div class="year-month">
-                <label for="monthSelect">月份:</label>
-                <select id="monthSelect">
-                    <option value="1">1月</option>
-                    <option value="2">2月</option>
-                    <option value="3">3月</option>
-                    <option value="4">4月</option>
-                    <option value="5">5月</option>
-                    <option value="6">6月</option>
-                    <option value="7">7月</option>
-                    <option value="8">8月</option>
-                    <option value="9">9月</option>
-                    <option value="10">10月</option>
-                    <option value="11">11月</option>
-                    <option value="12">12月</option>
-                </select>
+                <label>月份:</label>
+                <button class="picker-trigger" id="monthTrigger">1月</button>
             </div>
             <button id="updateBtn" class="toggle-btn">更新图表</button>
         </div>
@@ -1011,24 +1155,7 @@
         
         // 绑定控件事件
         function setupControls() {
-            const yearSelect = document.getElementById('yearSelect');
-            const monthSelect = document.getElementById('monthSelect');
             const updateBtn = document.getElementById('updateBtn');
-            
-            if (yearSelect) {
-                yearSelect.addEventListener('change', function() {
-                    currentYear = this.value;
-                });
-                // 设置默认值
-                yearSelect.value = currentYear;
-            }
-            
-            if (monthSelect) {
-                monthSelect.addEventListener('change', function() {
-                    currentMonth = this.value;
-                });
-                monthSelect.value = currentMonth;
-            }
             
             if (updateBtn) {
                 updateBtn.addEventListener('click', function() {
@@ -1567,9 +1694,9 @@
                         if (months.length > 0) {
                             currentYear = firstYear;
                             currentMonth = months[0];
-                            // 更新选择器
-                            document.getElementById('yearSelect').value = currentYear;
-                            document.getElementById('monthSelect').value = currentMonth;
+                            // 更新触发按钮显示
+                            document.getElementById('yearTrigger').textContent = currentYear;
+                            document.getElementById('monthTrigger').textContent = parseInt(currentMonth) + '月';
                         }
                     }
                 }
@@ -1774,7 +1901,7 @@
                 ]
             });
             
-            console.log('3D柱状图添加完成');
+            console.log('2D柱状图添加完成');
         }
         
         // 获取3D颜色
@@ -1889,6 +2016,182 @@
             setupControls();
             initMap();
         });
+    </script>
+
+    <!-- 年份选择弹窗（放在body最外层，避免被ECharts canvas遮挡） -->
+    <div class="picker-modal-overlay" id="yearPickerOverlay">
+        <div class="picker-modal">
+            <div class="picker-modal-header">
+                <span class="picker-modal-title">选择年份</span>
+                <button class="picker-close-btn" id="yearCloseBtn">&times;</button>
+            </div>
+            <div class="picker-grid" id="yearPickerGrid"></div>
+            <div class="picker-actions">
+                <button class="picker-cancel-btn" id="yearCancelBtn">取消</button>
+                <button class="picker-confirm-btn" id="yearConfirmBtn">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 月份选择弹窗 -->
+    <div class="picker-modal-overlay" id="monthPickerOverlay">
+        <div class="picker-modal">
+            <div class="picker-modal-header">
+                <span class="picker-modal-title">选择月份</span>
+                <button class="picker-close-btn" id="monthCloseBtn">&times;</button>
+            </div>
+            <div class="picker-grid" id="monthPickerGrid"></div>
+            <div class="picker-actions">
+                <button class="picker-cancel-btn" id="monthCancelBtn">取消</button>
+                <button class="picker-confirm-btn" id="monthConfirmBtn">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // ========== 选择器弹窗逻辑（独立脚本，确保在DOM之后执行） ==========
+    (function() {
+        var tempYear = currentYear;
+        var tempMonth = currentMonth;
+
+        // 生成年份网格
+        function renderYearPickerGrid() {
+            var grid = document.getElementById('yearPickerGrid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            var years = Object.keys(monthlyCarbonData).sort();
+            var yearList = years.length > 0 ? years : ['2012','2013','2014','2015','2016','2017','2018','2019','2020','2021','2022'];
+            yearList.forEach(function(y) {
+                var item = document.createElement('div');
+                item.className = 'picker-item' + (y === tempYear ? ' selected' : '');
+                item.textContent = y;
+                item.setAttribute('data-value', y);
+                item.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    tempYear = y;
+                    grid.querySelectorAll('.picker-item').forEach(function(el) { el.classList.remove('selected'); });
+                    item.classList.add('selected');
+                });
+                grid.appendChild(item);
+            });
+        }
+
+        // 生成月份网格
+        function renderMonthPickerGrid() {
+            var grid = document.getElementById('monthPickerGrid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            for (var m = 1; m <= 12; m++) {
+                var mStr = String(m);
+                var item = document.createElement('div');
+                item.className = 'picker-item' + (mStr === tempMonth ? ' selected' : '');
+                item.textContent = m + '月';
+                item.setAttribute('data-value', mStr);
+                item.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    var val = this.getAttribute('data-value');
+                    tempMonth = val;
+                    grid.querySelectorAll('.picker-item').forEach(function(el) { el.classList.remove('selected'); });
+                    this.classList.add('selected');
+                });
+                grid.appendChild(item);
+            }
+        }
+
+        // 打开/关闭年份选择器
+        function openYearPicker() {
+            tempYear = currentYear;
+            renderYearPickerGrid();
+            var overlay = document.getElementById('yearPickerOverlay');
+            overlay.style.display = 'flex';
+            overlay.classList.add('active');
+        }
+        function closeYearPicker() {
+            var overlay = document.getElementById('yearPickerOverlay');
+            overlay.classList.remove('active');
+            overlay.style.display = 'none';
+        }
+        function confirmYearPicker() {
+            currentYear = tempYear;
+            var trigger = document.getElementById('yearTrigger');
+            if (trigger) trigger.textContent = currentYear;
+            closeYearPicker();
+        }
+
+        // 打开/关闭月份选择器
+        function openMonthPicker() {
+            tempMonth = currentMonth;
+            renderMonthPickerGrid();
+            var overlay = document.getElementById('monthPickerOverlay');
+            overlay.style.display = 'flex';
+            overlay.classList.add('active');
+        }
+        function closeMonthPicker() {
+            var overlay = document.getElementById('monthPickerOverlay');
+            overlay.classList.remove('active');
+            overlay.style.display = 'none';
+        }
+        function confirmMonthPicker() {
+            currentMonth = tempMonth;
+            var trigger = document.getElementById('monthTrigger');
+            if (trigger) trigger.textContent = parseInt(currentMonth) + '月';
+            closeMonthPicker();
+        }
+
+        // 绑定所有事件（DOM加载后）
+        function bindPickerEvents() {
+            // 触发按钮
+            var yearTrigger = document.getElementById('yearTrigger');
+            var monthTrigger = document.getElementById('monthTrigger');
+            if (yearTrigger) yearTrigger.addEventListener('click', function(e) { e.stopPropagation(); openYearPicker(); });
+            if (monthTrigger) monthTrigger.addEventListener('click', function(e) { e.stopPropagation(); openMonthPicker(); });
+
+            // 年份弹窗按钮
+            var yearCloseBtn = document.getElementById('yearCloseBtn');
+            var yearCancelBtn = document.getElementById('yearCancelBtn');
+            var yearConfirmBtn = document.getElementById('yearConfirmBtn');
+            if (yearCloseBtn) yearCloseBtn.addEventListener('click', function(e) { e.stopPropagation(); closeYearPicker(); });
+            if (yearCancelBtn) yearCancelBtn.addEventListener('click', function(e) { e.stopPropagation(); closeYearPicker(); });
+            if (yearConfirmBtn) yearConfirmBtn.addEventListener('click', function(e) { e.stopPropagation(); confirmYearPicker(); });
+
+            // 月份弹窗按钮
+            var monthCloseBtn = document.getElementById('monthCloseBtn');
+            var monthCancelBtn = document.getElementById('monthCancelBtn');
+            var monthConfirmBtn = document.getElementById('monthConfirmBtn');
+            if (monthCloseBtn) monthCloseBtn.addEventListener('click', function(e) { e.stopPropagation(); closeMonthPicker(); });
+            if (monthCancelBtn) monthCancelBtn.addEventListener('click', function(e) { e.stopPropagation(); closeMonthPicker(); });
+            if (monthConfirmBtn) monthConfirmBtn.addEventListener('click', function(e) { e.stopPropagation(); confirmMonthPicker(); });
+
+            // 点击遮罩层关闭
+            var yearOverlay = document.getElementById('yearPickerOverlay');
+            var monthOverlay = document.getElementById('monthPickerOverlay');
+            if (yearOverlay) yearOverlay.addEventListener('click', function(e) {
+                if (e.target === yearOverlay) closeYearPicker();
+            });
+            if (monthOverlay) monthOverlay.addEventListener('click', function(e) {
+                if (e.target === monthOverlay) closeMonthPicker();
+            });
+
+            // ESC键关闭
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeYearPicker();
+                    closeMonthPicker();
+                }
+            });
+
+            // 初始化按钮文字
+            if (yearTrigger) yearTrigger.textContent = currentYear;
+            if (monthTrigger) monthTrigger.textContent = parseInt(currentMonth) + '月';
+        }
+
+        // DOM就绪后绑定
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', bindPickerEvents);
+        } else {
+            bindPickerEvents();
+        }
+    })();
     </script>
 </body>
 </html>

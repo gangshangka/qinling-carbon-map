@@ -907,13 +907,10 @@
                         backgroundColor: 'rgba(0,0,0,0.8)',
                         textStyle: { color: '#fff' }
                     },
-                    emphasis: { itemStyle: { areaColor: '#3a9ef9' }, label: { show: true, color: '#fff', fontSize: 10, fontWeight: 'bold' } },
+                    emphasis: { itemStyle: { areaColor: '#3a9ef9' }, label: { show: false } },
                     roam: true,
                     label: {
-                        show: true,
-                        color: '#334',
-                        fontSize: 9,
-                        formatter: function(params) { return params.name.replace(/(区|县)$/, ''); }
+                        show: false
                     }
                 }
             });
@@ -1113,12 +1110,10 @@
                 zlevel: 2,
                 label: {
                     show: true,
-                    formatter: function(params) { return params.name.replace(/(区|县)$/, ''); },
+                    formatter: function(params) { return params.name.replace(/(鍖簗鍘?$/, ''); },
                     position: 'top',
-                    color: '#fff',
-                    fontSize: 9,
-                    textBorderColor: 'rgba(0,0,0,0.6)',
-                    textBorderWidth: 1.5
+                    color: '#ffffff',
+                    fontSize: 9
                 }
             }]
         });

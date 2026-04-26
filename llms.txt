@@ -1,0 +1,89 @@
+# 秦岭碳收支遥感监测系统
+
+> 基于 NEP 遥感数据的秦岭地区碳收支监测平台，覆盖 2012-2024 年各县域月度碳汇数据，支持交互式地图、3D 地球、地形分析。
+
+## 项目概述
+
+- **名称**: 秦岭碳收支遥感监测系统 (Qinling Carbon Budget Remote Sensing Monitoring System)
+- **技术栈**: 微信小程序 + CloudBase 云开发 + Cesium 3D + ECharts + Leaflet
+- **数据范围**: 2012-2024 年，秦岭地区 40+ 县域，月度 NEP 碳汇数据
+- **数据单位**: gC·m⁻²·month⁻¹ (克碳每平方米每月)
+- **部署地址**: https://gangshangka.github.io/qinling-carbon-map/
+- **源代码**: https://github.com/gangshangka/qinling-carbon-map
+
+## 可访问页面
+
+| 页面 | URL | 说明 |
+|------|-----|------|
+| 项目主页 | / | 项目总览与导航 |
+| 碳汇地图 | /static/qinling-carbon-map.html | MEIC 风格交互式碳汇 Choropleth 地图 |
+| 3D 地球 | /static/index.html | Cesium 3D 地球视角碳汇展示 |
+| 3D Cesium | /static/qinling-3d-cesium.html | 增强版 3D 地形渲染 |
+| 地形图表 | /static/terrain-bar-chart-monthly1.html | 按地形分类的碳汇柱状图 |
+| 月度趋势 | /static/terrain-bar-chart-monthly.html | 月度碳汇变化趋势 |
+
+## 数据 API（CDN 直连）
+
+所有数据文件可通过 jsDelivr CDN 直接访问，无需 API Key：
+
+| 数据 | URL | 格式 | 说明 |
+|------|-----|------|------|
+| 碳汇核心数据 | https://cdn.jsdelivr.net/gh/gangshangka/qinling-carbon-map@master/static/data/carbonData2.json | JSON | 2012-2024各县域月度NEP值 |
+| 秦岭GeoJSON | https://cdn.jsdelivr.net/gh/gangshangka/qinling-carbon-map@master/static/data/qinling.geojson | GeoJSON | 县域边界地理数据 |
+| 采样点坐标 | https://cdn.jsdelivr.net/gh/gangshangka/qinling-carbon-map@master/static/data/map3d_sampled.json | JSON | 县区中心点坐标 |
+| 月度数据(JS) | https://cdn.jsdelivr.net/gh/gangshangka/qinling-carbon-map@master/static/monthlyCarbonData.js | JS | 月度碳汇数据模块 |
+| GeoJSON(JS) | https://cdn.jsdelivr.net/gh/gangshangka/qinling-carbon-map@master/static/qinling-geojson.js | JS | GeoJSON数据模块 |
+
+## 数据结构
+
+### carbonData2.json
+```json
+{
+  "2012": {
+    "1": { "太白县": 5.23, "凤县": 3.45, ... },
+    "2": { ... },
+    ...
+  },
+  "2013": { ... }
+}
+```
+- 外层 key: 年份 (string)
+- 第二层 key: 月份 (string, "1"-"12")
+- 内层 key: 县名 (string)
+- 内层 value: NEP 碳汇值 (number, gC·m⁻²·month⁻¹)
+- 正值 = 碳汇（吸收CO2），负值 = 碳源（释放CO2）
+
+### qinling.geojson
+标准 GeoJSON FeatureCollection，每个 Feature 包含：
+- `properties.NAME`: 县域名
+- `geometry`: MultiPolygon 县域边界
+
+## AI 使用指南
+
+### 查询碳汇数据示例
+```
+获取2020年6月太白县的碳汇值:
+1. fetch carbonData2.json
+2. data["2020"]["6"]["太白县"] → 返回数值
+```
+
+### 县域列表
+太白县、凤县、留坝县、佛坪县、洋县、城固县、勉县、略阳县、宁强县、南郑区、汉台区、西乡县、镇巴县、石泉县、汉阴县、宁陕县、紫阳县、岚皋县、平利县、镇坪县、旬阳县、白河县、商州区、洛南县、丹凤县、商南县、山阳县、镇安县、柞水县、周至县、眉县、户县、长安区、蓝田县、华州区、华阴市、潼关县、渭滨区、金台区、陈仓区、凤翔区、岐山县、扶风县、千阳县、陇县、麟游县
+
+## 项目结构
+```
+├── index.html              # 项目主页
+├── static/                 # Web 可视化页面
+│   ├── qinling-carbon-map.html  # 碳汇地图
+│   ├── index.html               # 3D 地球
+│   ├── qinling-3d-cesium.html   # 3D Cesium
+│   ├── terrain-bar-chart-monthly1.html  # 地形图表
+│   ├── data/                    # 数据文件
+│   └── icons/                   # 图标
+├── pages/                  # 微信小程序页面
+├── cloudfunctions/         # 云函数
+├── data/                   # 原始数据
+├── components/             # 小程序组件
+├── app.js / app.json       # 小程序入口
+└── config.js               # 配置文件
+```

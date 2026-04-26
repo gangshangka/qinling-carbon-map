@@ -132,62 +132,6 @@
           </view>
         </view>
         
-        <!-- 月份选择器弹窗：点击月份选择器后弹出的面板 -->
-        <!-- class 根据 showMonthPicker 为 true 时显示，false 时隐藏 -->
-        <!-- catchtap="closeMonthPicker" 表示点击弹窗背景时关闭弹窗，catchtap 阻止事件冒泡（防止触发父元素的点击） -->
-        <view class="month-picker-panel {{showMonthPicker ? 'show' : 'hide'}}" catchtap="closeMonthPicker">
-          <!-- 弹窗内容，catchtap="stopPropagation" 阻止点击内容区域时关闭弹窗（防止冒泡） -->
-          <view class="month-picker-content" catchtap="stopPropagation">
-            <view class="month-picker-header">
-              <text class="month-picker-title">选择月份</text>
-              <!-- 关闭按钮，点击关闭弹窗 -->
-              <text class="month-picker-close" catchtap="closeMonthPicker">×</text>
-            </view>
-            <view class="month-picker-options">
-              <!-- 月份网格：3行4列，共12个月份 -->
-              <view class="month-options-grid">
-                <block wx:for="{{monthTabs}}" wx:key="index">
-                  <!-- 每个月份的选项，点击时调用 selectMonth 函数，并传递当前月份数据 data-month="{{item}}" -->
-                  <!-- class 中根据当前选中的月份（currentMonth）与 item 是否相等，添加 selected 样式 -->
-                  <view 
-                    class="month-option {{currentMonth === item ? 'selected' : ''}}" 
-                    catchtap="selectMonth" 
-                    data-month="{{item}}"
-                  >
-                    <text class="month-option-text">{{item}}月</text>
-                    <!-- 如果当前月份是选中的，显示一个对勾图标 -->
-                    <text wx:if="{{currentMonth === item}}" class="month-option-checkmark">✓</text>
-                  </view>
-                </block>
-              </view>
-            </view>
-          </view>
-        </view>
-        
-        <!-- 年份选择器弹窗，结构和月份弹窗类似 -->
-        <view class="month-picker-panel {{showYearPicker ? 'show' : 'hide'}}" catchtap="closeYearPicker">
-          <view class="month-picker-content" catchtap="stopPropagation">
-            <view class="month-picker-header">
-              <text class="month-picker-title">选择年份</text>
-              <text class="month-picker-close" catchtap="closeYearPicker">×</text>
-            </view>
-            <view class="month-picker-options">
-              <!-- 年份网格：3行4列，共12格（最后1格空） -->
-              <view class="year-options-grid">
-                <block wx:for="{{yearTabs}}" wx:key="index">
-                  <view 
-                    class="year-option {{currentYear === item ? 'selected' : ''}}" 
-                    catchtap="selectYear" 
-                    data-year="{{item}}"
-                  >
-                    <text class="year-option-text">{{item}}年</text>
-                    <text wx:if="{{currentYear === item}}" class="year-option-checkmark">✓</text>
-                  </view>
-                </block>
-              </view>
-            </view>
-          </view>
-        </view>
       </view>
     </view>
 
@@ -236,6 +180,54 @@
     <view class="nav-item" bindtap="navigateToAdmin">
       <text class="nav-icon">👨‍💼</text>
       <text class="nav-text">管理员</text>
+    </view>
+  </view>
+
+  <!-- 月份选择器弹窗（移到最外层，避免被flex容器干扰） -->
+  <view class="month-picker-panel {{showMonthPicker ? 'show' : 'hide'}}" catchtap="closeMonthPicker">
+    <view class="month-picker-content" catchtap="stopPropagation">
+      <view class="month-picker-header">
+        <text class="month-picker-title">选择月份</text>
+        <text class="month-picker-close" catchtap="closeMonthPicker">×</text>
+      </view>
+      <view class="month-picker-options">
+        <view class="month-options-grid">
+          <block wx:for="{{monthTabs}}" wx:key="index">
+            <view 
+              class="month-option {{currentMonth === item ? 'selected' : ''}}" 
+              catchtap="selectMonth" 
+              data-month="{{item}}"
+            >
+              <text class="month-option-text">{{item}}月</text>
+              <text wx:if="{{currentMonth === item}}" class="month-option-checkmark">✓</text>
+            </view>
+          </block>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 年份选择器弹窗（移到最外层，避免被flex容器干扰） -->
+  <view class="month-picker-panel year-picker-panel {{showYearPicker ? 'show' : 'hide'}}" catchtap="closeYearPicker">
+    <view class="month-picker-content" catchtap="stopPropagation">
+      <view class="month-picker-header">
+        <text class="month-picker-title">选择年份</text>
+        <text class="month-picker-close" catchtap="closeYearPicker">×</text>
+      </view>
+      <view class="month-picker-options">
+        <view class="year-options-grid">
+          <block wx:for="{{yearTabs}}" wx:key="index">
+            <view 
+              class="year-option {{currentYear === item ? 'selected' : ''}}" 
+              catchtap="selectYear" 
+              data-year="{{item}}"
+            >
+              <text class="year-option-text">{{item}}年</text>
+              <text wx:if="{{currentYear === item}}" class="year-option-checkmark">✓</text>
+            </view>
+          </block>
+        </view>
+      </view>
     </view>
   </view>
 </view>

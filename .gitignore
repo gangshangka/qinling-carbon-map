@@ -48,3 +48,5 @@ project.private.config.json
 carbon-chart_backup.js
 # Environment variables
 .env.local
+
+.vercel
